@@ -179,10 +179,10 @@ const Metronom = (function () {
                 <span data-rolle="tempo" class="btn" style="min-width:5.2rem; text-align:center">90 bpm</span>
                 <button type="button" class="btn" data-rolle="plus">+</button>
                 <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler" style="width:7rem">
-                <span class="schalter-feld" title="Vorlauf vor dem Vorklatschen">Vorlauf</span>
+                <span class="schalter-feld" title="Gilt nur für Vorklatschen/Mitklatschen, nicht für den Start-Knopf hier">Vorlauf</span>
                 <span data-rolle="vorlauf" class="leiste" style="gap:.25rem"></span>
-                <button type="button" data-rolle="mit" class="btn" title="Klickt auch waehrend des Vorklatschens weiter">Mitzählen</button>
-                <button type="button" data-rolle="start" class="btn btn-primär"><i class="fa-solid fa-play"></i> Start</button>
+                <button type="button" data-rolle="mit" class="btn" title="Lässt das Metronom beim Vorklatschen über den Vorlauf hinaus mitklicken, statt nur einzuzählen">Mitzählen beim Vorklatschen</button>
+                <button type="button" data-rolle="start" class="btn btn-primär" title="Läuft frei durch (unabhängig vom Vorlauf), bis du stoppst - zum Üben ohne Rhythmus"><i class="fa-solid fa-play"></i> Start</button>
             </div>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
         teil('minus').addEventListener('click', () => tempoSetzen(bpm - 5));
@@ -294,7 +294,12 @@ const Vorklatschen = (function () {
                 }
             }
             takt.bausteine.forEach(b => {
-                anzeigePlanen(t, () => stueckMarkieren(host, stueck.zeichen, taktNr, gelaufen));
+                // Schnappschuss, nicht die laufende Variable: Sonst zeigen bei der
+                // spaeteren Ausfuehrung (alle Marken desselben Takts teilen sich
+                // sonst dieselbe "gelaufen"-Bindung) alle Markierungen eines Takts
+                // auf dessen Endwert - also schon auf den naechsten Takt.
+                const gelaufenBeiStart = gelaufen;
+                anzeigePlanen(t, () => stueckMarkieren(host, stueck.zeichen, taktNr, gelaufenBeiStart));
                 if (!nurMetronom) {
                     let innerT = t;
                     b.teile.forEach(teil => { if (!teil.p) knoten.push(klatschKlang(ctx, innerT)); innerT += teil.d * viertel; });
