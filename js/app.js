@@ -134,6 +134,22 @@ function init() {
 
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
 
+    const vollbildKarte = document.getElementById('anzeige-karte');
+    const vollbildBtn = document.getElementById('vollbild-btn');
+    vollbildBtn.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else vollbildKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
+    });
+    document.addEventListener('fullscreenchange', () => {
+        const an = document.fullscreenElement === vollbildKarte;
+        vollbildKarte.classList.toggle('vollbild', an);
+        vollbildBtn.innerHTML = an
+            ? '<i class="fa-solid fa-compress"></i> Verlassen'
+            : '<i class="fa-solid fa-expand"></i> Vollbild';
+        // Die verfuegbare Breite aendert sich stark - Systeme neu aufteilen.
+        setTimeout(anzeigeNeuZeichnen, 50);
+    });
+
     generatorAufbauen();
 
     Metronom.bauen(document.getElementById('metronom'), () => editor.zeichen());
