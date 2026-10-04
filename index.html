@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rhythmus-Werkstatt</title>
+<meta name="description" content="Werkzeug für den Rhythmus-Unterricht: Takte bauen, vorklatschen, Übungen erzeugen, Arbeitsblätter drucken.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+
+<header class="kopfzeile">
+    <h1>🥁 Rhythmus-Werkstatt</h1>
+    <span class="untertitel">Takte bauen · vorklatschen · einüben</span>
+    <span class="fuellt"></span>
+    <button type="button" class="btn" id="theme-knopf" title="Helles/dunkles Layout umschalten">
+        <i class="fa-solid fa-circle-half-stroke"></i>
+    </button>
+</header>
+
+<main>
+    <!-- ---------- Takt bauen ---------- -->
+    <section class="karte">
+        <div class="leiste" style="justify-content: space-between; margin-bottom:.8rem;">
+            <h2 style="font-size:1rem;">Rhythmus eintragen</h2>
+            <div class="leiste">
+                <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem;">
+                    Taktart
+                    <select id="taktart-wahl"></select>
+                </label>
+            </div>
+        </div>
+
+        <div id="editor-takte" style="margin-bottom:.7rem;"></div>
+
+        <div class="leiste" style="margin-bottom:.8rem;">
+            <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
+            <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
+            <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
+        </div>
+
+        <div class="leiste" id="palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
+    </section>
+
+    <!-- ---------- Anzeige fuer den Beamer ---------- -->
+    <section class="karte anzeige-karte" id="anzeige-karte">
+        <div class="leiste" style="justify-content: space-between; margin-bottom:.6rem;">
+            <h2 style="font-size:1rem;">Anzeige</h2>
+            <div class="leiste">
+                <span class="schalter-feld"><input type="checkbox" id="opt-notenlinien"> Notenlinien</span>
+                <span class="schalter-feld"><input type="checkbox" id="opt-zaehlzeiten"> Zählzeiten</span>
+                <span class="schalter-feld"><input type="checkbox" id="opt-wiederholung"> Wiederholung</span>
+                <button type="button" class="btn" id="verdecken-btn"><i class="fa-solid fa-eye-slash"></i> Verdecken</button>
+            </div>
+        </div>
+        <div id="anzeige"></div>
+        <p class="anzeige-hinweis">Verdeckt - hör erst zu, dann klick auf „Zeigen".</p>
+    </section>
+
+    <!-- ---------- Metronom und Vorklatschen ---------- -->
+    <section class="karte">
+        <h2 style="font-size:1rem; margin-bottom:.6rem;">Metronom</h2>
+        <div id="metronom"></div>
+        <div class="leiste" style="margin-top:.8rem;">
+            <button type="button" class="btn btn-primär" id="vorklatschen-btn"><i class="fa-solid fa-hands-clapping"></i> Vorklatschen</button>
+            <button type="button" class="btn" id="mitklatschen-btn"><i class="fa-solid fa-person-walking-arrow-right"></i> Mitklatschen (nur Puls)</button>
+        </div>
+    </section>
+</main>
+
+<div id="toast-bereich"></div>
+
+<script src="js/noten.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

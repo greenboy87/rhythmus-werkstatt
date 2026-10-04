@@ -1,0 +1,184 @@
+/* ============================================================
+   Rhythmus-Werkstatt: Theme und Grundlayout.
+   Dunkel ist die Voreinstellung, hell kommt per [data-theme="light"]
+   auf <html> - umgeschaltet und in localStorage gemerkt von app.js.
+   ============================================================ */
+:root {
+    --bg: #0b1120;
+    --bg-erhoben: #111827;
+    --bg-karte: #0f172a;
+    --rand: #334155;
+    --rand-schwach: #1e293b;
+    --text: #e2e8f0;
+    --text-gedaempft: #94a3b8;
+    --text-schwach: #64748b;
+    --akzent: #8b5cf6;
+    --akzent-stark: #7c3aed;
+    --akzent-text: #ede9fe;
+    --warnung: #f59e0b;
+    --warnung-text: #1c1917;
+    --erfolg: #22c55e;
+    --gefahr: #f43f5e;
+    --schatten: 0 10px 30px -10px rgba(0,0,0,.5);
+}
+html[data-theme="light"] {
+    --bg: #f8fafc;
+    --bg-erhoben: #ffffff;
+    --bg-karte: #ffffff;
+    --rand: #cbd5e1;
+    --rand-schwach: #e2e8f0;
+    --text: #0f172a;
+    --text-gedaempft: #475569;
+    --text-schwach: #94a3b8;
+    --akzent: #7c3aed;
+    --akzent-stark: #6d28d9;
+    --akzent-text: #4c1d95;
+    --warnung: #d97706;
+    --warnung-text: #fffbeb;
+    --erfolg: #16a34a;
+    --gefahr: #e11d48;
+    --schatten: 0 10px 30px -12px rgba(15,23,42,.18);
+}
+
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+}
+body { min-height: 100vh; padding-bottom: 3rem; }
+h1, h2, h3 { font-weight: 800; margin: 0; }
+button { font-family: inherit; cursor: pointer; }
+a { color: var(--akzent); }
+
+/* ---------- Kopfzeile ---------- */
+.kopfzeile {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .9rem 1.2rem; border-bottom: 1px solid var(--rand-schwach);
+    background: var(--bg-erhoben);
+    position: sticky; top: 0; z-index: 20;
+}
+.kopfzeile h1 { font-size: 1.1rem; }
+.kopfzeile .untertitel { color: var(--text-gedaempft); font-size: .8rem; }
+.kopfzeile .fuellt { flex: 1; }
+
+/* ---------- Grundbausteine ---------- */
+.karte {
+    background: var(--bg-karte); border: 1px solid var(--rand-schwach);
+    border-radius: 14px; padding: 1rem; box-shadow: var(--schatten);
+}
+.leiste { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.btn {
+    border: 1px solid var(--rand); background: var(--bg-erhoben); color: var(--text);
+    border-radius: 10px; padding: .5rem .85rem; font-size: .85rem; font-weight: 700;
+    transition: transform .08s, background .15s; white-space: nowrap;
+}
+.btn:hover { background: var(--rand-schwach); }
+.btn:active { transform: scale(.96); }
+.btn.an { background: var(--akzent); border-color: var(--akzent-stark); color: #fff; }
+.btn-primär {
+    background: var(--akzent); border-color: var(--akzent-stark); color: #fff;
+}
+.btn-primär:hover { background: var(--akzent-stark); }
+.btn-warnung { background: var(--warnung); border-color: var(--warnung); color: var(--warnung-text); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.schalter-feld { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--text-gedaempft); font-weight: 600; }
+.schalter-feld input { accent-color: var(--akzent); width: 1.05rem; height: 1.05rem; }
+label.feld { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; color: var(--text-gedaempft); font-weight: 700; }
+select, input[type="text"], input[type="number"] {
+    background: var(--bg-erhoben); color: var(--text); border: 1px solid var(--rand);
+    border-radius: 8px; padding: .4rem .55rem; font-size: .85rem; font-family: inherit;
+}
+
+main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 1.2rem; }
+
+/* ============================================================
+   EDITOR: Kaestchen je Baustein, Takte als eigene Zeilen-Elemente.
+   Der aeussere Kasten darf umbrechen (flex-wrap) - jeder Takt bleibt
+   dabei als Ganzes zusammen, weil er selbst kein Umbruch-Kind ist.
+   ============================================================ */
+.editor-takte { display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-start; }
+.editor-takt {
+    display: flex; align-items: stretch; flex: 0 0 auto;
+    border: 1px solid var(--rand); border-radius: 10px; overflow: hidden;
+    background: var(--bg-erhoben); position: relative;
+}
+.editor-takt .takt-nr {
+    position: absolute; top: 2px; left: 5px; font-size: .62rem; font-weight: 800;
+    color: var(--text-schwach);
+}
+.editor-takt .takt-entfernen {
+    display: flex; align-items: center; justify-content: center;
+    width: 22px; color: var(--text-schwach); border-left: 1px solid var(--rand-schwach);
+    background: transparent; border-top: none; border-bottom: none; border-right: none;
+}
+.editor-takt .takt-entfernen:hover { color: var(--gefahr); background: var(--rand-schwach); }
+.editor-platz {
+    min-width: 34px; display: flex; align-items: center; justify-content: center;
+    padding: 2px 3px; border-right: 1px dashed var(--rand-schwach); cursor: pointer;
+    min-height: 58px;
+}
+.editor-platz:last-of-type { border-right: none; }
+.editor-platz.leer { background: var(--rand-schwach); opacity: .55; }
+.editor-platz.ziel { outline: 2px solid var(--akzent); outline-offset: -2px; }
+.editor-platz.jetzt { background: var(--warnung); opacity: 1; }
+.editor-platz svg { color: var(--text); }
+.editor-platz.jetzt svg { color: var(--warnung-text); }
+
+/* Palette der waehlbaren Bausteine */
+.palette { display: flex; flex-wrap: wrap; gap: .4rem; }
+.palette-gruppe { display: flex; flex-wrap: wrap; gap: .4rem; padding: .4rem; border-radius: 10px; background: var(--bg-erhoben); }
+.palette-baustein {
+    border: 1px solid var(--rand); background: var(--bg-karte); border-radius: 8px;
+    padding: 4px 6px; min-width: 40px; height: 52px; display: flex; align-items: center; justify-content: center;
+    color: var(--text); touch-action: none; user-select: none;
+}
+.palette-baustein:hover { border-color: var(--akzent); }
+.palette-baustein.gezogen { opacity: .35; }
+.palette-baustein.aus { opacity: .3; filter: grayscale(1); pointer-events: none; }
+.rhy-geist { position: fixed; z-index: 999; pointer-events: none; width: 60px; height: 60px; opacity: .85; }
+
+/* ============================================================
+   ANZEIGE: der grosse, mehrzeilige Notensatz fuer den Beamer.
+   ============================================================ */
+.anzeige-karte { text-align: center; }
+.anzeige-system { width: 100%; display: block; margin-bottom: .3rem; }
+.anzeige-system .kopf,
+.anzeige-system .zaehlzeit { fill: var(--text); }
+.anzeige-system line, .anzeige-system path, .anzeige-system rect, .anzeige-system ellipse, .anzeige-system circle {
+    color: var(--text);
+}
+.anzeige-system .linien-fuenf { color: var(--text-schwach); }
+.anzeige-system [data-ab] { transition: opacity .1s; }
+.anzeige-verdeckt .anzeige-system [data-ab] { opacity: 0; }
+.anzeige-verdeckt .anzeige-hinweis { display: block; }
+.anzeige-hinweis {
+    display: none; color: var(--text-gedaempft); font-weight: 700; font-size: .85rem; margin-top: -.4rem;
+}
+[data-ab].jetzt > * { fill: var(--warnung) !important; stroke: var(--warnung) !important; }
+
+/* ---------- Metronom ---------- */
+.metronom-puls { display: flex; gap: 5px; }
+.metro-punkt {
+    width: 11px; height: 11px; border-radius: 50%; background: var(--rand-schwach);
+    border: 1px solid var(--rand);
+}
+.metro-punkt.eins { border-color: var(--akzent); }
+.metro-punkt.an { background: var(--warnung); border-color: var(--warnung); }
+
+/* ---------- Toast ---------- */
+#toast-bereich { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: .4rem; align-items: center; }
+.toast {
+    background: var(--bg-erhoben); border: 1px solid var(--rand); color: var(--text);
+    padding: .55rem .9rem; border-radius: 10px; font-size: .85rem; font-weight: 600; box-shadow: var(--schatten);
+    animation: toast-ein .15s ease-out;
+}
+.toast.danger { border-color: var(--gefahr); color: var(--gefahr); }
+.toast.success { border-color: var(--erfolg); color: var(--erfolg); }
+@keyframes toast-ein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 640px) {
+    main { padding: .7rem; }
+    .editor-platz { min-width: 28px; min-height: 48px; }
+}
