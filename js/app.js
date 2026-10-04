@@ -24,9 +24,12 @@ function zeigeStand() {
     const el = document.getElementById('build-stamp');
     if (!el) return;
     const d = new Date(document.lastModified);
-    if (isNaN(d.getTime())) return;
-    el.textContent = 'Stand: ' + d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                    + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    let text = 'Version ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?');
+    if (!isNaN(d.getTime())) {
+        text += ' · Stand: ' + d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+    el.textContent = text;
 }
 
 /* ---------- Toast ---------- */
