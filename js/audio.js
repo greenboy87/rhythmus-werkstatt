@@ -8,6 +8,25 @@
    ============================================================ */
 
 let audioCtx = null, audioEntsperrt = false;
+let metronomGainNode = null, metronomLautstaerke = 1;
+
+/* Ein dauerhafter Gain-Knoten, durch den jeder Metronom-Klick laeuft (egal ob
+   Start, Vorlauf oder durchlaufender Puls). Der Lautstaerke-Regler setzt
+   dessen Wert direkt und sofort - anders als eine Lautstaerke, die in jeden
+   Klick einzeln eingebacken wuerde, wirkt das live, auch auf schon geplante
+   Klicks, und nicht erst beim naechsten Start. */
+function metronomZiel(ctx) {
+    if (!metronomGainNode || metronomGainNode.context !== ctx) {
+        metronomGainNode = ctx.createGain();
+        metronomGainNode.gain.value = metronomLautstaerke;
+        metronomGainNode.connect(ctx.destination);
+    }
+    return metronomGainNode;
+}
+function metronomLautstaerkeSetzen(wert) {
+    metronomLautstaerke = Math.max(0, Math.min(1, Number(wert)));
+    if (metronomGainNode) metronomGainNode.gain.value = metronomLautstaerke;
+}
 
 /* Safari legt eine frisch gebaute Ausgabe als 'suspended' an und bleibt
    stumm, wenn man sofort Toene einplant. Deshalb bei jeder Geste einen
@@ -72,19 +91,14 @@ function klatschKlang(ctx, zeit) {
     return quelle;
 }
 
-/* lautstaerke (0..1) skaliert die Spitzenlautstaerke - fuer den Puls-Regler
-   beim Mitklatschen, der bis ganz leise (nur das Aufleuchten bleibt) reicht.
-   Ein exponentieller Ramp darf nie auf 0 zulaufen, deshalb bleibt ein
-   winziger Bodenwert stehen statt ganz lautlos zu werden. */
-function metronomKlick(ctx, zeit, betont, lautstaerke) {
-    const faktor = Math.max(0.0005, lautstaerke === undefined ? 1 : lautstaerke);
+function metronomKlick(ctx, zeit, betont) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'square';
     o.frequency.value = betont ? 1760 : 1100;
     g.gain.setValueAtTime(0.0001, zeit);
-    g.gain.exponentialRampToValueAtTime((betont ? 0.5 : 0.28) * faktor, zeit + 0.002);
+    g.gain.exponentialRampToValueAtTime(betont ? 0.5 : 0.28, zeit + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, zeit + 0.05);
-    o.connect(g); g.connect(ctx.destination);
+    o.connect(g); g.connect(metronomZiel(ctx));
     o.start(zeit); o.stop(zeit + 0.07);
     return o;
 }
@@ -249,17 +263,17 @@ const Vorklatschen = (function () {
     }
 
     /* stueck: {zeichen, takte:[{bausteine}]}. nurMetronom: Mitklatschen -
-       kein Klatschklang, nur Puls und Mitlese-Markierung, mit eigener
-       Lautstaerke (0..1, Standard 1). */
-    function starten(stueck, host, nurMetronom, pulsLautstaerke) {
+       kein Klatschklang, nur Puls und Mitlese-Markierung. Der Puls selbst
+       laeuft in beiden Modi immer durch (nicht nur im Vorlauf) - ob er zu
+       hoeren ist, entscheidet der Lautstaerke-Regler, nicht der Modus. */
+    function starten(stueck, host, nurMetronom) {
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, pulsLautstaerke));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
         letzterHost = host; letztesZeichen = stueck.zeichen;
-        const lautstaerke = pulsLautstaerke === undefined ? 1 : pulsLautstaerke;
 
         const bpm = Metronom.bpm();
         const pw = pulsWert(stueck.zeichen);
@@ -282,12 +296,12 @@ const Vorklatschen = (function () {
         stueck.takte.forEach((takt, taktNr) => {
             const taktStartT = t;
             let gelaufen = 0;
-            if (nurMetronom) {
+            {
                 const n = taktPulse(stueck.zeichen);
                 for (let p = 0; p < n; p++) {
                     const wann = taktStartT + p * pw * viertel;
                     anzeigePlanen(wann, () => Metronom.pulsZeichnen(p));
-                    knoten.push(metronomKlick(ctx, wann, p === 0, lautstaerke));
+                    knoten.push(metronomKlick(ctx, wann, p === 0));
                 }
             }
             takt.bausteine.forEach(b => {

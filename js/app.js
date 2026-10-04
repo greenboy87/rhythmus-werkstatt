@@ -96,9 +96,14 @@ function init() {
         Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), false);
     });
     document.getElementById('mitklatschen-btn').addEventListener('click', () => {
-        const lautstaerke = Number(document.getElementById('puls-lautstaerke').value) / 100;
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true, lautstaerke);
+        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true);
     });
+
+    // Live-Regler fuer die Metronom-Lautstaerke: wirkt sofort, auch auf
+    // gerade laufendes Vorklatschen/Mitklatschen und auf das freie Metronom.
+    const lautstaerkeRegler = document.getElementById('puls-lautstaerke');
+    metronomLautstaerkeSetzen(lautstaerkeRegler.value / 100);
+    lautstaerkeRegler.addEventListener('input', () => metronomLautstaerkeSetzen(lautstaerkeRegler.value / 100));
 
     let resizeTimer = null;
     window.addEventListener('resize', () => {
