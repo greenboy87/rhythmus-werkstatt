@@ -140,8 +140,6 @@ const Metronom = (function () {
         jedeAnsicht((w, teil) => {
             const start = teil('start');
             if (start) start.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i> Stopp' : '<i class="fa-solid fa-play"></i> Start';
-            const vl = teil('vorlauf');
-            if (vl) [...vl.children].forEach(b => b.classList.toggle('an', Number(b.dataset.n) === vorlaufTakte));
         });
     }
     function tempoZeichnen() {
@@ -152,6 +150,21 @@ const Metronom = (function () {
         });
     }
     function tempoSetzen(wert) { bpm = Math.max(40, Math.min(200, Math.round(Number(wert) || 90))); tempoZeichnen(); }
+
+    const VORLAUF_MAX = 4;
+    function vorlaufZeichnen() {
+        jedeAnsicht((w, teil) => {
+            const anzeige = teil('vorlauf-anzeige');
+            if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? 'kein Vorlauf' : vorlaufTakte + (vorlaufTakte === 1 ? ' Takt' : ' Takte');
+            const minus = teil('vorlauf-minus'), plus = teil('vorlauf-plus');
+            if (minus) minus.disabled = vorlaufTakte <= 0;
+            if (plus) plus.disabled = vorlaufTakte >= VORLAUF_MAX;
+        });
+    }
+    function vorlaufSetzen(wert) {
+        vorlaufTakte = Math.max(0, Math.min(VORLAUF_MAX, Math.round(Number(wert))));
+        vorlaufZeichnen();
+    }
 
     function starten() {
         const ctx = tonBereit(starten);
@@ -192,7 +205,9 @@ const Metronom = (function () {
                 <button type="button" class="btn" data-rolle="plus">+</button>
                 <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler" style="width:7rem">
                 <span class="schalter-feld" title="Gilt nur für Vorklatschen/Mitklatschen, nicht für den Start-Knopf hier">Vorlauf</span>
-                <span data-rolle="vorlauf" class="leiste" style="gap:.25rem"></span>
+                <button type="button" class="btn" data-rolle="vorlauf-minus">−</button>
+                <span data-rolle="vorlauf-anzeige" class="btn" style="min-width:6.5rem; text-align:center">1 Takt</span>
+                <button type="button" class="btn" data-rolle="vorlauf-plus">+</button>
                 <button type="button" data-rolle="start" class="btn btn-primär" title="Läuft frei durch (unabhängig vom Vorlauf), bis du stoppst - zum Üben ohne Rhythmus"><i class="fa-solid fa-play"></i> Start</button>
             </div>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
@@ -200,17 +215,11 @@ const Metronom = (function () {
         teil('plus').addEventListener('click', () => tempoSetzen(bpm + 5));
         teil('regler').addEventListener('input', (e) => tempoSetzen(e.target.value));
         teil('start').addEventListener('click', umschalten);
-        const vlZiel = teil('vorlauf');
-        [['0', 0], ['1', 1], ['2', 2], ['3', 3], ['4', 4]].forEach(([wort, n]) => {
-            const b = document.createElement('button');
-            b.type = 'button'; b.className = 'btn'; b.textContent = wort; b.dataset.n = n;
-            b.title = n === 0 ? 'Kein Vorlauf - Vorklatschen/Mitklatschen starten sofort' : `${n} ${n === 1 ? 'Takt' : 'Takte'} Vorlauf`;
-            b.addEventListener('click', () => { vorlaufTakte = n; knopfZeichnen(); });
-            vlZiel.appendChild(b);
-        });
+        teil('vorlauf-minus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte - 1));
+        teil('vorlauf-plus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte + 1));
         ansichten = ansichten.filter(a => a.isConnected && a !== wurzel);
         ansichten.push(wurzel);
-        tempoZeichnen(); pulsZeichnen(-1); knopfZeichnen();
+        tempoZeichnen(); pulsZeichnen(-1); knopfZeichnen(); vorlaufZeichnen();
     }
 
     return {
