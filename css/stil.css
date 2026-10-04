@@ -125,6 +125,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .editor-platz.jetzt { background: var(--warnung); opacity: 1; }
 .editor-platz svg { color: var(--text); }
 .editor-platz.jetzt svg { color: var(--warnung-text); }
+/* Feste Hoechsthoehe statt Prozent: Prozentwerte brauchen eine definierte
+   Hoehe am Elternelement, die ein Flex-Kaestchen mit nur min-height nicht
+   hat - ohne diese feste Grenze waere die Skalierung in manchen Browsern
+   undefiniert. */
+.baustein-svg { display: block; width: auto; height: auto; max-width: 100%; max-height: 48px; margin: 0 auto; }
 
 /* Palette der waehlbaren Bausteine */
 .palette { display: flex; flex-wrap: wrap; gap: .4rem; }

@@ -183,7 +183,11 @@ function bausteinSvg(baustein) {
     const breite = Math.max(24, (isFinite(r.inkBis) ? r.inkBis : r.x) + 5 - von);
     const hoeheNackt = 62;
     const oben = (isFinite(r.inkOben) && isFinite(r.inkUnten) ? (r.inkOben + r.inkUnten) / 2 : LINIE_Y) - hoeheNackt / 2;
-    return `<svg viewBox="${von} ${oben} ${breite} ${hoeheNackt}" style="width:auto; display:block; margin:0 auto">${r.teile.join('')}</svg>`;
+    // Echte width/height-Attribute, nicht nur viewBox: ohne sie faellt eine
+    // SVG in manchen Browsern (vor allem Safari) auf eine feste Standardgroesse
+    // zurueck und ignoriert dabei die Zeichnung - sie bleibt dann unsichtbar,
+    // obwohl die Box selbst (mit Rand) ganz normal zu sehen ist.
+    return `<svg viewBox="${von} ${oben} ${breite} ${hoeheNackt}" width="${breite}" height="${hoeheNackt}" class="baustein-svg">${r.teile.join('')}</svg>`;
 }
 
 /* Position (x) fuer eine beliebige Viertel-Position innerhalb eines Taktes,
@@ -346,7 +350,8 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const obenGrenze = opt.notenlinien ? LINIE_Y - 30 : LINIE_Y - 18;
         const oben = Math.min(inkOben, obenGrenze) - 4;
         const unten = Math.max(inkUnten, LINIE_Y + 20) + 4;
-        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${unten - oben}" style="max-width:${Math.round(breiteSvg)}px">${teileSvg.join('')}</svg>`;
+        const hoeheSvg = unten - oben;
+        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="max-width:${Math.round(breiteSvg)}px">${teileSvg.join('')}</svg>`;
     });
 
     return svgListe.join('');
