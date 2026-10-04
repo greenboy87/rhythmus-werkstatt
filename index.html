@@ -67,6 +67,11 @@
         <div class="leiste" style="margin-top:.8rem;">
             <button type="button" class="btn btn-primär" id="vorklatschen-btn"><i class="fa-solid fa-hands-clapping"></i> Vorklatschen</button>
             <button type="button" class="btn" id="mitklatschen-btn"><i class="fa-solid fa-person-walking-arrow-right"></i> Mitklatschen (nur Puls)</button>
+            <span class="schalter-feld" title="Lautstärke des Pulses beim Mitklatschen - ganz links stumm, dann nur das Aufleuchten im Notenbild">
+                <i class="fa-solid fa-volume-low"></i>
+                <input type="range" id="puls-lautstaerke" min="0" max="100" value="55" step="5" style="width:6rem">
+                <i class="fa-solid fa-volume-high"></i>
+            </span>
         </div>
     </section>
 </main>

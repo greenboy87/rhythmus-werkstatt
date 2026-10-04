@@ -72,12 +72,17 @@ function klatschKlang(ctx, zeit) {
     return quelle;
 }
 
-function metronomKlick(ctx, zeit, betont) {
+/* lautstaerke (0..1) skaliert die Spitzenlautstaerke - fuer den Puls-Regler
+   beim Mitklatschen, der bis ganz leise (nur das Aufleuchten bleibt) reicht.
+   Ein exponentieller Ramp darf nie auf 0 zulaufen, deshalb bleibt ein
+   winziger Bodenwert stehen statt ganz lautlos zu werden. */
+function metronomKlick(ctx, zeit, betont, lautstaerke) {
+    const faktor = Math.max(0.0005, lautstaerke === undefined ? 1 : lautstaerke);
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'square';
     o.frequency.value = betont ? 1760 : 1100;
     g.gain.setValueAtTime(0.0001, zeit);
-    g.gain.exponentialRampToValueAtTime(betont ? 0.5 : 0.28, zeit + 0.002);
+    g.gain.exponentialRampToValueAtTime((betont ? 0.5 : 0.28) * faktor, zeit + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, zeit + 0.05);
     o.connect(g); g.connect(ctx.destination);
     o.start(zeit); o.stop(zeit + 0.07);
@@ -90,7 +95,7 @@ function metronomKlick(ctx, zeit, betont) {
    damit das Metronom immer zu dem passt, was gerade bearbeitet wird.
    ============================================================ */
 const Metronom = (function () {
-    let bpm = 90, vorlaufTakte = 1, mitzaehlen = localStorage.getItem('rw-metronom-mit') === '1';
+    let bpm = 90, vorlaufTakte = 1;
     let laeuft = false, uhr = null, naechste = 0, schlag = 0, takt = 0, sichtbarTimer = [];
     let ansichten = [];
     let zeichenGetter = () => '4/4';
@@ -121,8 +126,6 @@ const Metronom = (function () {
         jedeAnsicht((w, teil) => {
             const start = teil('start');
             if (start) start.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i> Stopp' : '<i class="fa-solid fa-play"></i> Start';
-            const mit = teil('mit');
-            if (mit) mit.classList.toggle('an', mitzaehlen);
             const vl = teil('vorlauf');
             if (vl) [...vl.children].forEach(b => b.classList.toggle('an', Number(b.dataset.n) === vorlaufTakte));
         });
@@ -164,11 +167,6 @@ const Metronom = (function () {
         knopfZeichnen(); pulsZeichnen(-1);
     }
     function umschalten() { laeuft ? stoppen() : starten(); }
-    function mitUmschalten() {
-        mitzaehlen = !mitzaehlen;
-        localStorage.setItem('rw-metronom-mit', mitzaehlen ? '1' : '0');
-        knopfZeichnen();
-    }
 
     function bauen(wurzel, zeichenGetterFn) {
         if (zeichenGetterFn) zeichenGetter = zeichenGetterFn;
@@ -181,7 +179,6 @@ const Metronom = (function () {
                 <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler" style="width:7rem">
                 <span class="schalter-feld" title="Gilt nur für Vorklatschen/Mitklatschen, nicht für den Start-Knopf hier">Vorlauf</span>
                 <span data-rolle="vorlauf" class="leiste" style="gap:.25rem"></span>
-                <button type="button" data-rolle="mit" class="btn" title="Lässt das Metronom beim Vorklatschen über den Vorlauf hinaus mitklicken, statt nur einzuzählen">Mitzählen beim Vorklatschen</button>
                 <button type="button" data-rolle="start" class="btn btn-primär" title="Läuft frei durch (unabhängig vom Vorlauf), bis du stoppst - zum Üben ohne Rhythmus"><i class="fa-solid fa-play"></i> Start</button>
             </div>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
@@ -189,12 +186,11 @@ const Metronom = (function () {
         teil('plus').addEventListener('click', () => tempoSetzen(bpm + 5));
         teil('regler').addEventListener('input', (e) => tempoSetzen(e.target.value));
         teil('start').addEventListener('click', umschalten);
-        teil('mit').addEventListener('click', mitUmschalten);
         const vlZiel = teil('vorlauf');
-        [['1', 1], ['2', 2], ['3', 3], ['4', 4], ['∞', 0]].forEach(([wort, n]) => {
+        [['0', 0], ['1', 1], ['2', 2], ['3', 3], ['4', 4]].forEach(([wort, n]) => {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'btn'; b.textContent = wort; b.dataset.n = n;
-            b.title = n ? `${n} ${n === 1 ? 'Takt' : 'Takte'} Vorlauf` : 'Läuft durch, bis du stoppst';
+            b.title = n === 0 ? 'Kein Vorlauf - Vorklatschen/Mitklatschen starten sofort' : `${n} ${n === 1 ? 'Takt' : 'Takte'} Vorlauf`;
             b.addEventListener('click', () => { vorlaufTakte = n; knopfZeichnen(); });
             vlZiel.appendChild(b);
         });
@@ -208,7 +204,6 @@ const Metronom = (function () {
         istAn: () => laeuft,
         bpm: () => bpm,
         vorlaufTakte: () => vorlaufTakte,
-        mitzaehlenAn: () => mitzaehlen,
         schlaege,
         pulsZeichnen,
         _tonBereit: tonBereit
@@ -254,22 +249,24 @@ const Vorklatschen = (function () {
     }
 
     /* stueck: {zeichen, takte:[{bausteine}]}. nurMetronom: Mitklatschen -
-       kein Klatschklang, nur Puls und Mitlese-Markierung. */
-    function starten(stueck, host, nurMetronom) {
+       kein Klatschklang, nur Puls und Mitlese-Markierung, mit eigener
+       Lautstaerke (0..1, Standard 1). */
+    function starten(stueck, host, nurMetronom, pulsLautstaerke) {
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, pulsLautstaerke));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
         letzterHost = host; letztesZeichen = stueck.zeichen;
+        const lautstaerke = pulsLautstaerke === undefined ? 1 : pulsLautstaerke;
 
         const bpm = Metronom.bpm();
         const pw = pulsWert(stueck.zeichen);
         const schlagDauer = 60 / bpm;             // Dauer EINES Metronom-Klicks
         const viertel = schlagDauer / pw;          // Dauer einer internen "Viertel"-Einheit
         const proTakt = Metronom.schlaege();
-        const vorlaufTakte = Math.max(1, Metronom.vorlaufTakte() || 1);
+        const vorlaufTakte = Math.max(0, Metronom.vorlaufTakte());
         const start = ctx.currentTime + 0.25;
 
         let t = start;
@@ -285,12 +282,12 @@ const Vorklatschen = (function () {
         stueck.takte.forEach((takt, taktNr) => {
             const taktStartT = t;
             let gelaufen = 0;
-            if (Metronom.mitzaehlenAn() || nurMetronom) {
+            if (nurMetronom) {
                 const n = taktPulse(stueck.zeichen);
                 for (let p = 0; p < n; p++) {
                     const wann = taktStartT + p * pw * viertel;
                     anzeigePlanen(wann, () => Metronom.pulsZeichnen(p));
-                    knoten.push(metronomKlick(ctx, wann, p === 0));
+                    knoten.push(metronomKlick(ctx, wann, p === 0, lautstaerke));
                 }
             }
             takt.bausteine.forEach(b => {
@@ -314,8 +311,10 @@ const Vorklatschen = (function () {
             Metronom.pulsZeichnen(-1);
         });
         anzeigeStarten(ctx);
-        const vorlaufWort = vorlaufTakte === 1 ? 'Ein Takt' : `${vorlaufTakte} Takte`;
-        zeigeToast(`${vorlaufWort} Vorlauf - danach ${nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus'}.`, 'info');
+        const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
+        const meldung = vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.`
+                       : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`;
+        zeigeToast(meldung, 'info');
     }
 
     return { starten, stoppen, istAn: () => laeuft };

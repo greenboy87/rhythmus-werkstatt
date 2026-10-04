@@ -96,7 +96,8 @@ function init() {
         Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), false);
     });
     document.getElementById('mitklatschen-btn').addEventListener('click', () => {
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true);
+        const lautstaerke = Number(document.getElementById('puls-lautstaerke').value) / 100;
+        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true, lautstaerke);
     });
 
     let resizeTimer = null;
