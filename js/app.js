@@ -15,6 +15,20 @@ function themeUmschalten() {
     localStorage.setItem('rw-theme', hell ? 'dark' : 'light');
 }
 
+/* Zeigt im Fuss, von wann die geladene Fassung ist (document.lastModified -
+   das Datum, das der Server fuer index.html meldet). Stimmen die Angaben auf
+   zwei Geraeten nicht ueberein, laeuft eines noch im Cache - dasselbe Muster
+   wie in musik-quiz, wo genau das zweimal einen vermeintlichen Audio-Bug vom
+   echten unterschieden hat. */
+function zeigeStand() {
+    const el = document.getElementById('build-stamp');
+    if (!el) return;
+    const d = new Date(document.lastModified);
+    if (isNaN(d.getTime())) return;
+    el.textContent = 'Stand: ' + d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+
 /* ---------- Toast ---------- */
 function zeigeToast(text, art) {
     const bereich = document.getElementById('toast-bereich');
@@ -89,6 +103,7 @@ function init() {
     });
 
     anzeigeNeuZeichnen();
+    zeigeStand();
 }
 
 document.addEventListener('DOMContentLoaded', init);
