@@ -8,7 +8,7 @@
    ============================================================ */
 
 let audioCtx = null, audioEntsperrt = false;
-let metronomGainNode = null, metronomLautstaerke = 1;
+let metronomGainNode = null, metronomLautstaerke = 0.6;
 
 /* Ein dauerhafter Gain-Knoten, durch den jeder Metronom-Klick laeuft (egal ob
    Start, Vorlauf oder durchlaufender Puls). Der Lautstaerke-Regler setzt
@@ -151,6 +151,25 @@ const Metronom = (function () {
     }
     function tempoSetzen(wert) { bpm = Math.max(40, Math.min(200, Math.round(Number(wert) || 90))); tempoZeichnen(); }
 
+    let stummVorher = 0.6;
+    function lautstaerkeZeichnen() {
+        jedeAnsicht((w, teil) => {
+            const regler = teil('lautstaerke');
+            if (regler) regler.value = Math.round(metronomLautstaerke * 100);
+            const mute = teil('mute');
+            if (mute) {
+                mute.innerHTML = metronomLautstaerke <= 0
+                    ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+                mute.classList.toggle('an', metronomLautstaerke <= 0);
+            }
+        });
+    }
+    function lautstaerkeSetzen(wert) { metronomLautstaerkeSetzen(wert); lautstaerkeZeichnen(); }
+    function stummUmschalten() {
+        if (metronomLautstaerke > 0) { stummVorher = metronomLautstaerke; lautstaerkeSetzen(0); }
+        else lautstaerkeSetzen(stummVorher || 0.6);
+    }
+
     const VORLAUF_MAX = 4;
     function vorlaufZeichnen() {
         jedeAnsicht((w, teil) => {
@@ -209,6 +228,11 @@ const Metronom = (function () {
                 <span data-rolle="vorlauf-anzeige" class="btn" style="min-width:6.5rem; text-align:center">1 Takt</span>
                 <button type="button" class="btn" data-rolle="vorlauf-plus">+</button>
                 <button type="button" data-rolle="start" class="btn btn-primär" title="Läuft frei durch (unabhängig vom Vorlauf), bis du stoppst - zum Üben ohne Rhythmus"><i class="fa-solid fa-play"></i> Start</button>
+                <span class="fuellt"></span>
+                <button type="button" class="btn" data-rolle="mute" title="Metronom stummschalten - das Aufleuchten im Notenbild läuft trotzdem immer mit">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" style="width:6rem" title="Lautstärke des Metronoms">
             </div>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
         teil('minus').addEventListener('click', () => tempoSetzen(bpm - 5));
@@ -217,9 +241,11 @@ const Metronom = (function () {
         teil('start').addEventListener('click', umschalten);
         teil('vorlauf-minus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte - 1));
         teil('vorlauf-plus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte + 1));
+        teil('mute').addEventListener('click', stummUmschalten);
+        teil('lautstaerke').addEventListener('input', (e) => lautstaerkeSetzen(e.target.value / 100));
         ansichten = ansichten.filter(a => a.isConnected && a !== wurzel);
         ansichten.push(wurzel);
-        tempoZeichnen(); pulsZeichnen(-1); knopfZeichnen(); vorlaufZeichnen();
+        tempoZeichnen(); pulsZeichnen(-1); knopfZeichnen(); vorlaufZeichnen(); lautstaerkeZeichnen();
     }
 
     return {

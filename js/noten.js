@@ -21,6 +21,14 @@ const RHYTHMUS_BAUSTEINE = [
     { code: 'SSA',  dauer: 1,   wort: '2 Sechzehntel + Achtel', teile: [{ d: .25 }, { d: .25 }, { d: .5 }] },
     { code: 'SAS',  dauer: 1,   wort: 'Sechzehntel + Achtel + Sechzehntel', teile: [{ d: .25 }, { d: .5 }, { d: .25 }] },
     { code: 'SSSS', dauer: 1,   wort: 'Vier Sechzehntel',       teile: [{ d: .25 }, { d: .25 }, { d: .25 }, { d: .25 }] },
+    /* Triolen: drei (bzw. sechs) gleich lange Noten in der Zeit, die sonst
+       zwei (bzw. vier) brauchen. Keine binaere Dauer, deshalb als Bruch statt
+       als Dezimalzahl - 1/3 und 1/6 bleiben so exakt und vergleichbar. Das
+       "triole"-Feld sagt dem Zeichner, welche Klammerzahl ueber den Balken
+       gehoert; die Balkenbreite fuer diese Dauern steht eigens in VORSCHUB. */
+    { code: 'A3',   dauer: 1,   wort: 'Achteltriole (3 in der Zeit von 2)', triole: 3, teile: [{ d: 1 / 3 }, { d: 1 / 3 }, { d: 1 / 3 }] },
+    { code: 'S3',   dauer: .5,  wort: 'Sechzehntel-Triole (3 in der Zeit von 2)', triole: 3, teile: [{ d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }] },
+    { code: 'S6',   dauer: 1,   wort: 'Sechstole (6 in der Zeit von 4)', triole: 6, teile: [{ d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }] },
     { code: 'A',    dauer: .5,  wort: 'Achtel einzeln', teile: [{ d: .5 }] },
 
     { code: 'Gp',   dauer: 4,   wort: 'Ganze Pause',    pausenreihe: true, teile: [{ d: 4, p: true }] },
@@ -81,7 +89,7 @@ function taktPulse(zeichen) { return Math.round(taktSoll(zeichen) / pulsWert(zei
 /* ============================================================
    ZEICHNEN
    ============================================================ */
-const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17 };
+const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17, [1 / 3]: 21, [1 / 6]: 13 };
 const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 5;
 
 function istPunktiert(d) {
@@ -91,8 +99,13 @@ function istPunktiert(d) {
 /* Zeichnet die Teile EINES Bausteins ab der Position x in der uebergebenen
    Tinte. Kapselt genau die Logik aus dem alten rhythmusSvg (Haelse, Balken
    mit Sechzehntel-Stummeln, alle Pausenformen, Punkte) - nur ohne Taktzeichen
-   und Taktstriche, die jetzt eine Ebene hoeher gezeichnet werden. */
-function bausteinTeileZeichnen(baustein, x, tinte) {
+   und Taktstriche, die jetzt eine Ebene hoeher gezeichnet werden.
+   yVersatz hebt die ganze Zeichnung an (negativ = nach oben): Steht das
+   Fuenfliniensystem, sitzt die (hier: einzige) Stimme konventionell nicht auf
+   der Mittellinie (h1), sondern im Raum darueber (c2) - ohne Notenlinien
+   bleibt sie auf der alten Referenzlinie, yVersatz ist dann 0. */
+function bausteinTeileZeichnen(baustein, x, tinte, yVersatz) {
+    const Y = LINIE_Y + (yVersatz || 0), H = HALS_OBEN + (yVersatz || 0);
     const teile = [];
     let inkVon = Infinity, inkBis = -Infinity, inkOben = Infinity, inkUnten = -Infinity;
     const ink = (von, bis, oben, unten) => {
@@ -100,14 +113,14 @@ function bausteinTeileZeichnen(baustein, x, tinte) {
         if (oben !== undefined) { inkOben = Math.min(inkOben, oben); inkUnten = Math.max(inkUnten, unten); }
     };
     const punktSetzen = (dx) => {
-        teile.push(`<circle cx="${dx}" cy="${LINIE_Y - 5}" r="2.9" fill="${tinte}"/>`);
-        ink(dx - 4, dx + 4, LINIE_Y - 9, LINIE_Y - 1);
+        teile.push(`<circle cx="${dx}" cy="${Y - 5}" r="2.9" fill="${tinte}"/>`);
+        ink(dx - 4, dx + 4, Y - 9, Y - 1);
     };
     const gruppe = [];
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
-            teile.push(`<rect x="${a - 1.2}" y="${HALS_OBEN - 1}" width="${b - a + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
+            teile.push(`<rect x="${a - 1.2}" y="${H - 1}" width="${b - a + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
             const stummel = 9;
             for (let i = 0; i < gruppe.length; i++) {
                 if (gruppe[i].d > 0.25) continue;
@@ -118,15 +131,20 @@ function bausteinTeileZeichnen(baustein, x, tinte) {
                 else if (nachbarLinks) continue;
                 else if (i > 0) { von = gruppe[i].hx - stummel; bis = gruppe[i].hx; }
                 else { von = gruppe[i].hx; bis = gruppe[i].hx + stummel; }
-                teile.push(`<rect x="${von - 1.2}" y="${HALS_OBEN + BALKEN_DICKE + 1.5}" ` +
+                teile.push(`<rect x="${von - 1.2}" y="${H + BALKEN_DICKE + 1.5}" ` +
                            `width="${bis - von + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
-                ink(von - 2, bis + 2, HALS_OBEN - 1, LINIE_Y + 7);
+                ink(von - 2, bis + 2, H - 1, Y + 7);
+            }
+            if (baustein.triole) {
+                const mitte = (a + b) / 2, zahlY = H - 6;
+                teile.push(`<text x="${mitte}" y="${zahlY}" font-size="11" font-weight="800" text-anchor="middle" font-family="DM Sans, sans-serif" fill="${tinte}">${baustein.triole}</text>`);
+                ink(mitte - 6, mitte + 6, zahlY - 10, zahlY);
             }
         } else if (gruppe.length === 1 && gruppe[0].d <= 0.75) {
             const hx = gruppe[0].hx;
-            teile.push(`<path d="M${hx} ${HALS_OBEN} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
-            if (gruppe[0].d <= 0.25) teile.push(`<path d="M${hx} ${HALS_OBEN + 9} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
-            ink(hx - 2, hx + 12, HALS_OBEN - 1, LINIE_Y + 7);
+            teile.push(`<path d="M${hx} ${H} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
+            if (gruppe[0].d <= 0.25) teile.push(`<path d="M${hx} ${H + 9} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
+            ink(hx - 2, hx + 12, H - 1, Y + 7);
         }
         gruppe.length = 0;
     };
@@ -135,41 +153,44 @@ function bausteinTeileZeichnen(baustein, x, tinte) {
         x += VORSCHUB[t.d] || 38;
         if (t.p) {
             if (t.d >= 2) {
+                // Ganze/halbe Pause haengen mittig im Platz, den sie fuellen -
+                // nicht an dessen linkem Rand wie eine Note an ihrem Einsatz.
+                const mitteX = (px + x) / 2;
                 const haengt = t.d >= 4;
-                const oben = haengt ? LINIE_Y : LINIE_Y - 8;
-                teile.push(`<rect x="${px - 11}" y="${oben}" width="22" height="8" fill="${tinte}"/>`);
-                teile.push(`<line x1="${px - 18}" y1="${LINIE_Y}" x2="${px + 18}" y2="${LINIE_Y}" stroke="${tinte}" stroke-width="2" opacity=".8"/>`);
-                ink(px - 19, px + 19, LINIE_Y - 10, LINIE_Y + 10);
+                const oben = haengt ? Y : Y - 8;
+                teile.push(`<rect x="${mitteX - 11}" y="${oben}" width="22" height="8" fill="${tinte}"/>`);
+                teile.push(`<line x1="${mitteX - 18}" y1="${Y}" x2="${mitteX + 18}" y2="${Y}" stroke="${tinte}" stroke-width="2" opacity=".8"/>`);
+                ink(mitteX - 19, mitteX + 19, Y - 10, Y + 10);
             } else if (t.d >= 1) {
-                teile.push(`<path d="M${px - 5} ${LINIE_Y - 15} L${px + 4} ${LINIE_Y - 5.5}` +
-                           ` L${px - 4} ${LINIE_Y + 1} L${px + 5} ${LINIE_Y + 10.5}"` +
+                teile.push(`<path d="M${px - 5} ${Y - 15} L${px + 4} ${Y - 5.5}` +
+                           ` L${px - 4} ${Y + 1} L${px + 5} ${Y + 10.5}"` +
                            ` fill="none" stroke="${tinte}" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/>`);
-                teile.push(`<path d="M${px + 5} ${LINIE_Y + 10.5} c -7 -3.5 -11 2 -5.5 7.5"` +
+                teile.push(`<path d="M${px + 5} ${Y + 10.5} c -7 -3.5 -11 2 -5.5 7.5"` +
                            ` fill="none" stroke="${tinte}" stroke-width="3" stroke-linecap="round"/>`);
-                ink(px - 8, px + 8, LINIE_Y - 16, LINIE_Y + 19);
+                ink(px - 8, px + 8, Y - 16, Y + 19);
             } else if (t.d <= 0.25) {
-                teile.push(`<path d="M${px + 5} ${LINIE_Y - 11} L${px - 4} ${LINIE_Y + 12}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
-                           `<circle cx="${px}" cy="${LINIE_Y - 9}" r="3.2" fill="${tinte}"/>` +
-                           `<circle cx="${px - 3.5}" cy="${LINIE_Y}" r="3.2" fill="${tinte}"/>`);
-                ink(px - 7, px + 7, LINIE_Y - 13, LINIE_Y + 13);
+                teile.push(`<path d="M${px + 5} ${Y - 11} L${px - 4} ${Y + 12}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
+                           `<circle cx="${px}" cy="${Y - 9}" r="3.2" fill="${tinte}"/>` +
+                           `<circle cx="${px - 3.5}" cy="${Y}" r="3.2" fill="${tinte}"/>`);
+                ink(px - 7, px + 7, Y - 13, Y + 13);
             } else {
-                teile.push(`<path d="M${px + 4} ${LINIE_Y - 10} L${px - 3} ${LINIE_Y + 10}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
-                           `<circle cx="${px - 1}" cy="${LINIE_Y - 8}" r="3.2" fill="${tinte}"/>`);
-                ink(px - 5, px + 6, LINIE_Y - 12, LINIE_Y + 11);
+                teile.push(`<path d="M${px + 4} ${Y - 10} L${px - 3} ${Y + 10}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
+                           `<circle cx="${px - 1}" cy="${Y - 8}" r="3.2" fill="${tinte}"/>`);
+                ink(px - 5, px + 6, Y - 12, Y + 11);
                 if (istPunktiert(t.d)) punktSetzen(px + 9);
             }
             gruppeAbschliessen();
             return;
         }
         const hohl = t.d >= 2;
-        teile.push(`<ellipse cx="${px}" cy="${LINIE_Y}" rx="7.5" ry="5.4" transform="rotate(-18 ${px} ${LINIE_Y})"` +
+        teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.5" ry="5.4" transform="rotate(-18 ${px} ${Y})"` +
                    (hohl ? ` fill="none" stroke="${tinte}" stroke-width="2.6"/>` : ` fill="${tinte}"/>`));
-        ink(px - 9, px + 9, LINIE_Y - 7, LINIE_Y + 7);
+        ink(px - 9, px + 9, Y - 7, Y + 7);
         if (istPunktiert(t.d)) punktSetzen(px + 12.5);
         if (t.d >= 4) return;
         const hx = px + 6.6;
-        ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), HALS_OBEN - 1, LINIE_Y + 7);
-        teile.push(`<line x1="${hx}" y1="${LINIE_Y - 2}" x2="${hx}" y2="${HALS_OBEN}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="round"/>`);
+        ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), H - 1, Y + 7);
+        teile.push(`<line x1="${hx}" y1="${Y - 2}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="round"/>`);
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();
@@ -207,14 +228,15 @@ function xBeiViertel(marken, v, taktEndeX) {
     return taktEndeX;
 }
 
-/* Ein vereinfachter Violinschluessel - handgezeichnet statt per Unicode-
-   Glyph, damit er unabhaengig von Schriftart/Geraet gleich aussieht. */
+/* Der neutrale Schluessel (Perkussionsschluessel) fuer Instrumente ohne
+   Tonhoehe: zwei dicke senkrechte Balken, mittig auf das System gesetzt.
+   Kein Violinschluessel - der wuerde eine bestimmte Tonhoehe behaupten,
+   die ein Rhythmus-Takt gar nicht hat. */
 function schluesselSvg(x, mitteY, tinte) {
-    const s = 1.55;
-    return `<g transform="translate(${x} ${mitteY}) scale(${s})" fill="none" stroke="${tinte}" stroke-width="1.7" stroke-linecap="round">
-        <path d="M0 -17 C -9 -17 -9 -6 -1 -3 C 9 0 9 10 0 12 C -7 13.5 -9 7 -4 5" />
-        <circle cx="0" cy="12.5" r="1.8" fill="${tinte}" stroke="none"/>
-        <line x1="0" y1="-17" x2="0" y2="7" stroke-width="1.5"/>
+    const halbHoehe = 11, breite = 3, abstand = 5;
+    return `<g>
+        <rect x="${x - abstand / 2 - breite}" y="${mitteY - halbHoehe}" width="${breite}" height="${halbHoehe * 2}" fill="${tinte}"/>
+        <rect x="${x + abstand / 2}" y="${mitteY - halbHoehe}" width="${breite}" height="${halbHoehe * 2}" fill="${tinte}"/>
     </g>`;
 }
 
@@ -271,8 +293,8 @@ function stueckAnzeigeHtml(stueck, optionen) {
         inkVon = Math.min(inkVon, linksAnschlag);
         if (istErstesSystem) {
             if (opt.notenlinien) {
-                teileSvg.push(schluesselSvg(LINKS_RAND + 6, LINIE_Y - 4, tinte));
-                inkOben = Math.min(inkOben, LINIE_Y - 34); inkUnten = Math.max(inkUnten, LINIE_Y + 22);
+                teileSvg.push(schluesselSvg(LINKS_RAND + 7, LINIE_Y, tinte));
+                inkOben = Math.min(inkOben, LINIE_Y - 13); inkUnten = Math.max(inkUnten, LINIE_Y + 13);
             }
             if (opt.wiederholung) {
                 teileSvg.push(`<line x1="${linksAnschlag - 2}" y1="${LINIE_Y - 17}" x2="${linksAnschlag - 2}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
@@ -298,10 +320,14 @@ function stueckAnzeigeHtml(stueck, optionen) {
             const taktStartX = x;
             const marken = [];
             let gelaufen = 0;
+            // Steht das Liniensystem, sitzt die Snare Drum konventionell im
+            // Raum ueber der Mittellinie (c2), nicht auf ihr (h1) - ohne
+            // Notenlinien bleibt die alte Referenzlinie unveraendert.
+            const notenVersatz = opt.notenlinien ? -4 : 0;
             takt.bausteine.forEach((b) => {
                 marken.push({ ab: gelaufen, px: x, dauer: b.dauer });
                 const globalAb = index * taktSoll(stueck.zeichen) + gelaufen;
-                const r = bausteinTeileZeichnen(b, x, tinte);
+                const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz);
                 teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
                 merge(r);
                 x = r.x;
@@ -310,16 +336,32 @@ function stueckAnzeigeHtml(stueck, optionen) {
             const taktEndeX = x;
 
             if (opt.zaehlzeiten) {
-                const n = taktPulse(stueck.zeichen);
+                // Nicht ein fester Raster-Takt, sondern eine Silbe je tatsaechlichem
+                // Einsatz: eine Viertel bekommt nur "1", zwei Achtel "1 und", vier
+                // Sechzehntel "1 e und e" - wie im Heft gesprochen, nicht wie am
+                // Metronom gezaehlt. Einsaetze, die nicht aufs Sechzehntel-Raster
+                // fallen (z.B. innerhalb einer Triole), bleiben ohne Silbe - dafuer
+                // gibt es hier keine saubere deutsche Sprechweise.
                 const pw = pulsWert(stueck.zeichen);
-                for (let p = 0; p < n; p++) {
-                    const vx = xBeiViertel(marken, p * pw, taktEndeX);
-                    zaehlzeitenTexte.push(`<text class="zaehlzeit" x="${vx}" y="${LINIE_Y + 30}" font-size="12" font-weight="700" text-anchor="middle" font-family="DM Sans, sans-serif">${p + 1}</text>`);
-                    if (pw === 1) {
-                        const vx2 = xBeiViertel(marken, p * pw + 0.5, taktEndeX);
-                        zaehlzeitenTexte.push(`<text class="zaehlzeit" x="${vx2}" y="${LINIE_Y + 30}" font-size="12" font-weight="700" text-anchor="middle" font-family="DM Sans, sans-serif" opacity=".65">+</text>`);
-                    }
-                }
+                const SILBEN = ['', 'e', 'und', 'e'];
+                let v = 0;
+                takt.bausteine.forEach(b => {
+                    b.teile.forEach(teil => {
+                        const pulsIndex = Math.floor((v + 1e-6) / pw);
+                        const rest = v - pulsIndex * pw;
+                        const raster = rest / 0.25;
+                        if (Math.abs(raster - Math.round(raster)) < 0.02) {
+                            const stufe = Math.round(raster) % 4;
+                            const silbe = stufe === 0 ? String(pulsIndex + 1) : SILBEN[stufe];
+                            if (silbe) {
+                                const vx = xBeiViertel(marken, v, taktEndeX);
+                                zaehlzeitenTexte.push(`<text class="zaehlzeit" x="${vx}" y="${LINIE_Y + 30}" font-size="12" font-weight="700"` +
+                                    ` text-anchor="middle" font-family="DM Sans, sans-serif"${stufe ? ' opacity=".65"' : ''}>${silbe}</text>`);
+                            }
+                        }
+                        v += teil.d;
+                    });
+                });
                 inkUnten = Math.max(inkUnten, LINIE_Y + 36);
             }
             x = taktEndeX;

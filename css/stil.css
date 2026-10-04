@@ -144,6 +144,16 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .palette-baustein.aus { opacity: .3; filter: grayscale(1); pointer-events: none; }
 .rhy-geist { position: fixed; z-index: 999; pointer-events: none; width: 60px; height: 60px; opacity: .85; }
 
+/* Auswahl-Kaestchen im Uebungsgenerator: anders als die Palette oben nicht
+   ziehbar, sondern an/aus zum Toggeln - angelehnt, aber eigene Zustaende. */
+.gen-baustein {
+    border: 1px solid var(--rand); background: var(--bg-karte); border-radius: 8px;
+    padding: 4px 6px; min-width: 40px; height: 52px; display: flex; align-items: center; justify-content: center;
+    color: var(--text-schwach); opacity: .45; cursor: pointer; transition: opacity .1s, border-color .1s;
+}
+.gen-baustein:hover { opacity: .7; }
+.gen-baustein.an { opacity: 1; color: var(--text); border-color: var(--akzent); background: var(--bg-erhoben); }
+
 /* ============================================================
    ANZEIGE: der grosse, mehrzeilige Notensatz fuer den Beamer.
    ============================================================ */

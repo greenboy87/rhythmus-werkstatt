@@ -60,6 +60,48 @@ function anzeigeNeuZeichnen() {
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
 }
 
+/* ---------- Uebungsgenerator ---------- */
+const genAusgewaehlt = new Set();
+let genAnzahlTakte = 4;
+
+function genTakteZeichnen() {
+    document.getElementById('gen-takte-anzeige').textContent = genAnzahlTakte;
+}
+
+function generatorAufbauen() {
+    const ziel = document.getElementById('gen-palette');
+    ziel.innerHTML = '';
+    RHYTHMUS_BAUSTEINE.forEach(b => {
+        const knopf = document.createElement('button');
+        knopf.type = 'button';
+        knopf.className = 'gen-baustein';
+        knopf.title = b.wort;
+        knopf.innerHTML = bausteinSvg(b);
+        knopf.addEventListener('click', () => {
+            if (genAusgewaehlt.has(b.code)) genAusgewaehlt.delete(b.code);
+            else genAusgewaehlt.add(b.code);
+            knopf.classList.toggle('an', genAusgewaehlt.has(b.code));
+        });
+        ziel.appendChild(knopf);
+    });
+    genTakteZeichnen();
+
+    document.getElementById('gen-takte-minus').addEventListener('click', () => {
+        genAnzahlTakte = Math.max(1, genAnzahlTakte - 1);
+        genTakteZeichnen();
+    });
+    document.getElementById('gen-takte-plus').addEventListener('click', () => {
+        genAnzahlTakte = Math.min(16, genAnzahlTakte + 1);
+        genTakteZeichnen();
+    });
+    document.getElementById('gen-erzeugen-btn').addEventListener('click', () => {
+        const ergebnis = uebungErzeugen([...genAusgewaehlt], genAnzahlTakte, editor.zeichen());
+        if (ergebnis.fehler) { zeigeToast(ergebnis.fehler, 'danger'); return; }
+        editor.setzen(editor.zeichen(), ergebnis.takte);
+        zeigeToast(`Übung erzeugt: ${genAnzahlTakte} ${genAnzahlTakte === 1 ? 'Takt' : 'Takte'}.`, 'success');
+    });
+}
+
 function init() {
     document.getElementById('theme-knopf').addEventListener('click', themeUmschalten);
 
@@ -90,6 +132,10 @@ function init() {
         anzeigeNeuZeichnen();
     });
 
+    document.getElementById('drucken-btn').addEventListener('click', () => window.print());
+
+    generatorAufbauen();
+
     Metronom.bauen(document.getElementById('metronom'), () => editor.zeichen());
 
     document.getElementById('vorklatschen-btn').addEventListener('click', () => {
@@ -98,12 +144,6 @@ function init() {
     document.getElementById('mitklatschen-btn').addEventListener('click', () => {
         Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true);
     });
-
-    // Live-Regler fuer die Metronom-Lautstaerke: wirkt sofort, auch auf
-    // gerade laufendes Vorklatschen/Mitklatschen und auf das freie Metronom.
-    const lautstaerkeRegler = document.getElementById('puls-lautstaerke');
-    metronomLautstaerkeSetzen(lautstaerkeRegler.value / 100);
-    lautstaerkeRegler.addEventListener('input', () => metronomLautstaerkeSetzen(lautstaerkeRegler.value / 100));
 
     let resizeTimer = null;
     window.addEventListener('resize', () => {
