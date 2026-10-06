@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=6">
-<link rel="stylesheet" href="css/druck.css?v=6">
+<link rel="stylesheet" href="css/stil.css?v=7">
+<link rel="stylesheet" href="css/druck.css?v=7">
 </head>
 <body>
 
@@ -37,10 +37,17 @@
 
         <div id="editor-takte" style="margin-bottom:.7rem;"></div>
 
-        <div class="leiste" style="margin-bottom:.8rem;">
-            <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
-            <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
-            <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
+        <div class="leiste" style="margin-bottom:.8rem; justify-content: space-between;">
+            <div class="leiste">
+                <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
+                <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
+                <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
+            </div>
+            <div class="leiste" title="Nur in diesem Browser gespeichert - nicht geteilt, nicht auf anderen Geräten sichtbar">
+                <button type="button" class="btn" id="blatt-speichern-btn"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
+                <select id="blatt-wahl"><option value="">Blatt laden…</option></select>
+                <button type="button" class="btn" id="blatt-loeschen-btn" title="Ausgewähltes Blatt löschen"><i class="fa-solid fa-trash"></i></button>
+            </div>
         </div>
 
         <div class="leiste" id="palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
@@ -94,8 +101,8 @@
         <div class="druck-kopf">
             <h1>🥁 Rhythmus-Werkstatt</h1>
             <div class="druck-felder">
-                <span>Name: _______________________</span>
-                <span>Klasse: ________</span>
+                <span>Name:</span>
+                <span>Klasse:</span>
                 <span>Datum: ________</span>
             </div>
         </div>
@@ -110,11 +117,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=6"></script>
-<script src="js/noten.js?v=6"></script>
-<script src="js/editor.js?v=6"></script>
-<script src="js/audio.js?v=6"></script>
-<script src="js/generator.js?v=6"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/version.js?v=7"></script>
+<script src="js/noten.js?v=7"></script>
+<script src="js/editor.js?v=7"></script>
+<script src="js/audio.js?v=7"></script>
+<script src="js/generator.js?v=7"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

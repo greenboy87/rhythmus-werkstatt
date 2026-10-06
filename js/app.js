@@ -102,6 +102,60 @@ function generatorAufbauen() {
     });
 }
 
+/* ---------- Blaetter speichern (nur in diesem Browser) ---------- */
+const BLAETTER_SCHLUESSEL = 'rw-blaetter';
+
+function blaetterLesen() {
+    try { return JSON.parse(localStorage.getItem(BLAETTER_SCHLUESSEL) || '{}'); }
+    catch (e) { return {}; }
+}
+function blaetterSchreiben(alle) { localStorage.setItem(BLAETTER_SCHLUESSEL, JSON.stringify(alle)); }
+
+function blattAuswahlZeichnen(ausgewaehlterName) {
+    const sel = document.getElementById('blatt-wahl');
+    const namen = Object.keys(blaetterLesen()).sort((a, b) => a.localeCompare(b, 'de'));
+    sel.innerHTML = '<option value="">Blatt laden…</option>' +
+        namen.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n.replace(/</g, '&lt;')}</option>`).join('');
+    if (ausgewaehlterName) sel.value = ausgewaehlterName;
+}
+
+function blaetterAufbauen() {
+    blattAuswahlZeichnen();
+
+    document.getElementById('blatt-speichern-btn').addEventListener('click', () => {
+        const name = prompt('Name für dieses Blatt:');
+        if (!name) return;
+        const alle = blaetterLesen();
+        const ueberschreibt = Object.prototype.hasOwnProperty.call(alle, name);
+        alle[name] = editor.stueck();
+        blaetterSchreiben(alle);
+        blattAuswahlZeichnen(name);
+        zeigeToast(ueberschreibt ? `„${name}" überschrieben.` : `„${name}" gespeichert.`, 'success');
+    });
+
+    document.getElementById('blatt-wahl').addEventListener('change', (e) => {
+        const name = e.target.value;
+        if (!name) return;
+        const blatt = blaetterLesen()[name];
+        if (!blatt) return;
+        document.getElementById('taktart-wahl').value = blatt.zeichen;
+        editor.setzen(blatt.zeichen, blatt.takte);
+        zeigeToast(`„${name}" geladen.`, 'info');
+    });
+
+    document.getElementById('blatt-loeschen-btn').addEventListener('click', () => {
+        const sel = document.getElementById('blatt-wahl');
+        const name = sel.value;
+        if (!name) { zeigeToast('Wähle erst ein gespeichertes Blatt aus.', 'danger'); return; }
+        if (!confirm(`„${name}" wirklich löschen?`)) return;
+        const alle = blaetterLesen();
+        delete alle[name];
+        blaetterSchreiben(alle);
+        blattAuswahlZeichnen();
+        zeigeToast(`„${name}" gelöscht.`, 'info');
+    });
+}
+
 function init() {
     document.getElementById('theme-knopf').addEventListener('click', themeUmschalten);
 
@@ -120,6 +174,7 @@ function init() {
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
     document.getElementById('zurueck-btn').addEventListener('click', () => editor.zurueck());
     document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
+    blaetterAufbauen();
 
     ['opt-notenlinien', 'opt-zaehlzeiten', 'opt-wiederholung'].forEach(id =>
         document.getElementById(id).addEventListener('change', anzeigeNeuZeichnen));

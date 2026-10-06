@@ -187,7 +187,13 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 #anzeige-karte.vollbild #metronom .btn,
 #anzeige-karte:fullscreen #metronom span,
 #anzeige-karte.vollbild #metronom span { font-size: 1.05rem; }
-.anzeige-system { width: 100%; display: block; margin-bottom: .3rem; }
+/* Natuerliche Groesse, nicht auf 100% gestreckt: Jede Zeile hat ihre eigene
+   Breite (je nachdem, wie viele Takte hineinpassten) - mit width:100%
+   wuerde ausgerechnet eine kuerzere letzte Zeile (weniger Takte, weniger
+   Fuellung) staerker aufgeblasen als eine volle Zeile und die Noten saehen
+   von Zeile zu Zeile unterschiedlich gross aus. max-width schuetzt nur vor
+   Ueberlauf, falls die Layout-Rechnung doch einmal knapper war. */
+.anzeige-system { width: auto; max-width: 100%; display: block; margin: 0 auto .3rem; }
 .anzeige-system .kopf,
 .anzeige-system .zaehlzeit { fill: var(--text); }
 .anzeige-system line, .anzeige-system path, .anzeige-system rect, .anzeige-system ellipse, .anzeige-system circle {
