@@ -363,19 +363,29 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 // gibt es hier keine saubere deutsche Sprechweise.
                 const pw = pulsWert(stueck.zeichen);
                 const SILBEN = ['', 'e', 'und', 'e'];
+                const zaehlzeitText = (v, text, blass) =>
+                    `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${LINIE_Y + 30}" font-size="12" font-weight="700"` +
+                    ` text-anchor="middle" font-family="DM Sans, sans-serif" opacity="${blass ? '.4' : '1'}">${text}</text>`;
                 let v = 0;
                 takt.bausteine.forEach(b => {
                     b.teile.forEach(teil => {
                         const pulsIndex = Math.floor((v + 1e-6) / pw);
                         const rest = v - pulsIndex * pw;
                         const raster = rest / 0.25;
-                        if (Math.abs(raster - Math.round(raster)) < 0.02) {
+                        const aufRaster = Math.abs(raster - Math.round(raster)) < 0.02;
+                        if (aufRaster) {
                             const stufe = Math.round(raster) % 4;
                             const silbe = stufe === 0 ? String(pulsIndex + 1) : SILBEN[stufe];
-                            if (silbe) {
-                                const vx = xBeiViertel(marken, v, taktEndeX);
-                                zaehlzeitenTexte.push(`<text class="zaehlzeit" x="${vx}" y="${LINIE_Y + 30}" font-size="12" font-weight="700"` +
-                                    ` text-anchor="middle" font-family="DM Sans, sans-serif"${stufe ? ' opacity=".65"' : ''}>${silbe}</text>`);
+                            if (silbe) zaehlzeitenTexte.push(zaehlzeitText(v, silbe, stufe !== 0));
+                        }
+                        // Liegt eine Note/Pause ueber mehr als einen Puls (Halbe, Ganze),
+                        // bekommen die Pulse, auf die sie nur noch nachklingt, ihre Zahl
+                        // trotzdem - blass, damit man beim Mitzaehlen nicht die Orientierung
+                        // verliert, aber es nicht wie ein neuer Einsatz aussieht.
+                        if (aufRaster) {
+                            for (let folge = v + pw; folge < v + teil.d - 1e-6; folge += pw) {
+                                const folgeIndex = Math.round(folge / pw);
+                                zaehlzeitenTexte.push(zaehlzeitText(folge, String(folgeIndex + 1), true));
                             }
                         }
                         v += teil.d;
@@ -403,7 +413,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
             if (male > 2) {
                 teileSvg.push(`<text x="${duenn + 4}" y="${LINIE_Y - 20}" font-size="12" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${male}×</text>`);
                 inkOben = Math.min(inkOben, LINIE_Y - 32);
-                inkBis = Math.max(inkBis, duenn + 20);
+                inkBis = Math.max(inkBis, duenn + 4 + String(male).length * 9 + 10);
             }
         } else {
             teileSvg.push(`<line x1="${rechts}" y1="${LINIE_Y - 17}" x2="${rechts}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="${istLetztesSystem ? 3 : 2}"/>`);
@@ -421,7 +431,9 @@ function stueckAnzeigeHtml(stueck, optionen) {
         if (!isFinite(inkVon)) { inkVon = linksAnschlag; inkBis = rechts; }
         if (!isFinite(inkOben)) { inkOben = HALS_OBEN; inkUnten = LINIE_Y + 7; }
         const vonX = Math.min(inkVon, linksAnschlag) - 6;
-        const breiteSvg = rechts + 20 - vonX;
+        // Nicht blind "rechts+20" - die "x-mal wiederholen"-Beschriftung am
+        // Wiederholungszeichen reicht teils weiter nach rechts als das.
+        const breiteSvg = Math.max(rechts + 20, inkBis + 10) - vonX;
         const obenGrenze = opt.notenlinien ? LINIE_Y - 30 : LINIE_Y - 18;
         const oben = Math.min(inkOben, obenGrenze) - 4;
         const unten = Math.max(inkUnten, LINIE_Y + 20) + 4;

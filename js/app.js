@@ -47,37 +47,48 @@ function zeigeToast(text, art) {
 let editor = null;
 let anzeigeVerdeckt = false;
 let anzeigeSkalierung = 1;
-let wiederholungen = 1;   // zusaetzliche Durchgaenge, nicht die Gesamtzahl
+let wiederholungen = 1;      // zusaetzliche Durchgaenge, nicht die Gesamtzahl (Anzeige = +1)
+let takteProZeile = 0;       // 0 = automatisch; gilt fuer Bildschirm/Vollbild UND Druck gleichermassen
 
 function anzeigeOptionen() {
     return {
         notenlinien: document.getElementById('opt-notenlinien').checked,
         zaehlzeiten: document.getElementById('opt-zaehlzeiten').checked,
         wiederholung: document.getElementById('opt-wiederholung').checked,
-        wiederholungen: wiederholungen
+        wiederholungen: wiederholungen,
+        takteProZeile: takteProZeile
     };
 }
 
 function anzeigeNeuZeichnen() {
     const host = document.getElementById('anzeige');
-    const optionen = Object.assign(anzeigeOptionen(), { breite: Math.max(320, host.clientWidth || 900), skalierung: anzeigeSkalierung });
+    // Durch die Skalierung geteilt, nicht die rohe Fensterbreite: Sonst packt
+    // die automatische Zeilenaufteilung schon beim Layout so viele Takte hinein,
+    // wie der Platz hergibt - fuer eine Vergroesserung bliebe dann kein Raum
+    // mehr, sie wuerde von max-width:100% sofort wieder zurueckgestutzt.
+    const breite = Math.max(320, (host.clientWidth || 900) / anzeigeSkalierung);
+    const optionen = Object.assign(anzeigeOptionen(), { breite, skalierung: anzeigeSkalierung });
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
+    titelAktualisieren();
     druckNeuZeichnen();
 }
 
-/* ---------- Druck: eigenes Layout (feste Takte/Zeile, Groesse, Titel) ---------- */
-let druckTakteProZeile = 4;
+/* Titel steht ueber den Noten - auf dem Bildschirm (auch im Vollbild fuers
+   Beamer) ebenso wie auf dem Ausdruck, derselbe Text, dieselbe Eingabe. */
+function titelAktualisieren() {
+    const titel = document.getElementById('druck-titel').value.trim();
+    const anzeigeH2 = document.getElementById('anzeige-titel');
+    anzeigeH2.textContent = titel;
+    anzeigeH2.classList.toggle('hidden', !titel);
+    document.getElementById('druck-ueberschrift').textContent = titel ? titel : '🥁 Rhythmus-Werkstatt';
+}
+
+/* ---------- Druck: eigene Groesse, sonst dieselben Einstellungen wie der Bildschirm ---------- */
 let druckSkalierung = 1;
 
 function druckNeuZeichnen() {
-    const titelFeld = document.getElementById('druck-titel');
-    const titel = titelFeld.value.trim();
-    document.getElementById('druck-ueberschrift').textContent = titel ? titel : '🥁 Rhythmus-Werkstatt';
-
-    const optionen = Object.assign(anzeigeOptionen(), {
-        takteProZeile: druckTakteProZeile, skalierung: druckSkalierung, breite: 2000
-    });
+    const optionen = Object.assign(anzeigeOptionen(), { skalierung: druckSkalierung, breite: 2000 });
     document.getElementById('druck-anzeige').innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
 }
 
@@ -164,18 +175,30 @@ function blattAuswahlZeichnen(ausgewaehlterName) {
     if (ausgewaehlterName) sel.value = ausgewaehlterName;
 }
 
+/* Von zwei Stellen genutzt: dem "Speichern" oben bei Rhythmus eintragen
+   (fragt nach einem Namen) und dem "Speichern" neben dem Titel-Feld beim
+   Druck (nimmt den Titel direkt als Namen, ohne nachzufragen). */
+function blattSpeichernAls(name) {
+    if (!name) return;
+    const alle = blaetterLesen();
+    const ueberschreibt = Object.prototype.hasOwnProperty.call(alle, name);
+    alle[name] = editor.stueck();
+    blaetterSchreiben(alle);
+    blattAuswahlZeichnen(name);
+    zeigeToast(ueberschreibt ? `„${name}" überschrieben.` : `„${name}" gespeichert.`, 'success');
+}
+
 function blaetterAufbauen() {
     blattAuswahlZeichnen();
 
     document.getElementById('blatt-speichern-btn').addEventListener('click', () => {
-        const name = prompt('Name für dieses Blatt:');
-        if (!name) return;
-        const alle = blaetterLesen();
-        const ueberschreibt = Object.prototype.hasOwnProperty.call(alle, name);
-        alle[name] = editor.stueck();
-        blaetterSchreiben(alle);
-        blattAuswahlZeichnen(name);
-        zeigeToast(ueberschreibt ? `„${name}" überschrieben.` : `„${name}" gespeichert.`, 'success');
+        blattSpeichernAls(prompt('Name für dieses Blatt:'));
+    });
+
+    document.getElementById('druck-titel-speichern-btn').addEventListener('click', () => {
+        const titel = document.getElementById('druck-titel').value.trim();
+        if (!titel) { zeigeToast('Erst einen Titel eintragen.', 'danger'); return; }
+        blattSpeichernAls(titel);
     });
 
     document.getElementById('blatt-wahl').addEventListener('change', (e) => {
@@ -186,7 +209,7 @@ function blaetterAufbauen() {
         document.getElementById('taktart-wahl').value = blatt.zeichen;
         editor.setzen(blatt.zeichen, blatt.takte);
         const titelFeld = document.getElementById('druck-titel');
-        if (!titelFeld.value.trim()) { titelFeld.value = name; druckNeuZeichnen(); }
+        if (!titelFeld.value.trim()) { titelFeld.value = name; titelAktualisieren(); druckNeuZeichnen(); }
         zeigeToast(`„${name}" geladen.`, 'info');
     });
 
@@ -226,19 +249,46 @@ function init() {
     ['opt-notenlinien', 'opt-zaehlzeiten'].forEach(id =>
         document.getElementById(id).addEventListener('change', anzeigeNeuZeichnen));
 
+    // Anzeige/Bedienung zaehlen die Gesamtzahl der Durchgaenge (2,3,4...),
+    // "wiederholungen" selbst bleibt intern die Zusatz-Zahl (1,2,3...) - die
+    // Audio-Planung in Vorklatschen braucht genau diese Differenz von 1.
+    const wiederholungenZeichnen = () => { document.getElementById('wiederholungen-anzeige').textContent = wiederholungen + 1; };
     document.getElementById('opt-wiederholung').addEventListener('change', (e) => {
         document.getElementById('wiederholungen-feld').classList.toggle('hidden', !e.target.checked);
+        if (e.target.checked) { wiederholungen = 1; wiederholungenZeichnen(); }   // startet immer bei "2x"
         anzeigeNeuZeichnen();
     });
     document.getElementById('wiederholungen-minus').addEventListener('click', () => {
         wiederholungen = Math.max(1, wiederholungen - 1);
-        document.getElementById('wiederholungen-anzeige').textContent = wiederholungen;
+        wiederholungenZeichnen();
         anzeigeNeuZeichnen();
     });
     document.getElementById('wiederholungen-plus').addEventListener('click', () => {
         wiederholungen = Math.min(9, wiederholungen + 1);
-        document.getElementById('wiederholungen-anzeige').textContent = wiederholungen;
+        wiederholungenZeichnen();
         anzeigeNeuZeichnen();
+    });
+
+    // Takte/Zeile veraendert den Zeilenumbruch grundlegend (Anzahl und Hoehe
+    // der Zeilen) - ein sofortiger Sprung waere mitten im Unterricht, mit der
+    // Klasse vor dem Beamer, verwirrend. Deshalb mit kurzer Verzoegerung.
+    let takteProZeileTimer = null;
+    const takteProZeileVerzoegert = () => {
+        clearTimeout(takteProZeileTimer);
+        takteProZeileTimer = setTimeout(anzeigeNeuZeichnen, 450);
+    };
+    const takteProZeileZeichnen = () => {
+        document.getElementById('takte-zeile-anzeige').textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
+    };
+    document.getElementById('takte-zeile-minus').addEventListener('click', () => {
+        takteProZeile = Math.max(0, takteProZeile - 1);
+        takteProZeileZeichnen();
+        takteProZeileVerzoegert();
+    });
+    document.getElementById('takte-zeile-plus').addEventListener('click', () => {
+        takteProZeile = Math.min(8, takteProZeile + 1);
+        takteProZeileZeichnen();
+        takteProZeileVerzoegert();
     });
 
     document.getElementById('anzeige-groesse-minus').addEventListener('click', () => {
@@ -262,17 +312,7 @@ function init() {
 
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
 
-    document.getElementById('druck-titel').addEventListener('input', druckNeuZeichnen);
-    document.getElementById('druck-takte-minus').addEventListener('click', () => {
-        druckTakteProZeile = Math.max(1, druckTakteProZeile - 1);
-        document.getElementById('druck-takte-anzeige').textContent = druckTakteProZeile;
-        druckNeuZeichnen();
-    });
-    document.getElementById('druck-takte-plus').addEventListener('click', () => {
-        druckTakteProZeile = Math.min(8, druckTakteProZeile + 1);
-        document.getElementById('druck-takte-anzeige').textContent = druckTakteProZeile;
-        druckNeuZeichnen();
-    });
+    document.getElementById('druck-titel').addEventListener('input', () => { titelAktualisieren(); druckNeuZeichnen(); });
     document.getElementById('druck-groesse-minus').addEventListener('click', () => {
         druckSkalierung = Math.max(0.6, Math.round((druckSkalierung - 0.1) * 10) / 10);
         document.getElementById('druck-groesse-anzeige').textContent = Math.round(druckSkalierung * 100) + '%';

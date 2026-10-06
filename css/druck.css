@@ -29,7 +29,18 @@
     .druck-kopf h1 { font-size: 1.1rem; margin: 0; }
     .druck-kopf .druck-felder { display: flex; gap: 1.5rem; font-size: .8rem; }
 
-    .anzeige-system { color: #000 !important; margin-bottom: 1.4rem !important; }
-    .anzeige-system .linien-fuenf { color: #000 !important; }
+    /* stil.css setzt "color" direkt auf diese Elemente (nicht nur vererbt) -
+       ein !important auf dem umschliessenden .anzeige-system allein ueberschreibt
+       das nicht, geerbte Werte verlieren gegen eine eigene (auch nicht-wichtige)
+       Regel am Element selbst. Deshalb hier dieselben Selektoren treffen wie
+       in stil.css. Vorher blieb die Notenfarbe im dunklen Theme auf dem hellen
+       --text der Bildschirmansicht stehen - "ausgegraut" auf weissem Papier. */
+    .anzeige-system,
+    .anzeige-system line, .anzeige-system path, .anzeige-system rect,
+    .anzeige-system ellipse, .anzeige-system circle, .anzeige-system text {
+        color: #000 !important;
+    }
+    .anzeige-system { margin-bottom: 1.4rem !important; }
+    .anzeige-system .linien-fuenf { color: #666 !important; }
     [data-ab] { opacity: 1 !important; }   /* "Verdecken" soll auf Papier nie greifen */
 }

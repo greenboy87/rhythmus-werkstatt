@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=9">
-<link rel="stylesheet" href="css/druck.css?v=9">
+<link rel="stylesheet" href="css/stil.css?v=10">
+<link rel="stylesheet" href="css/druck.css?v=10">
 </head>
 <body>
 
@@ -77,6 +77,10 @@
         <div class="leiste" style="justify-content: space-between; margin-bottom:.6rem;">
             <h2 style="font-size:1rem;">Metronom & Anzeige</h2>
             <div class="leiste">
+                <span class="schalter-feld">Takte/Zeile</span>
+                <button type="button" class="btn" id="takte-zeile-minus">−</button>
+                <span id="takte-zeile-anzeige" class="btn" style="min-width:3.2rem; text-align:center" title="0 = automatisch, so viele wie reinpassen">auto</span>
+                <button type="button" class="btn" id="takte-zeile-plus">+</button>
                 <span class="schalter-feld">Größe</span>
                 <button type="button" class="btn" id="anzeige-groesse-minus">−</button>
                 <span id="anzeige-groesse-anzeige" class="btn" style="min-width:3.2rem; text-align:center">100%</span>
@@ -103,9 +107,9 @@
                 <span class="schalter-feld"><input type="checkbox" id="opt-wiederholung"> Wiederholung</span>
                 <span class="leiste hidden" id="wiederholungen-feld" style="gap:.3rem;">
                     <button type="button" class="btn" id="wiederholungen-minus">−</button>
-                    <span id="wiederholungen-anzeige" class="btn" style="min-width:2.2rem; text-align:center">1</span>
-                    <button type="button" class="btn" id="wiederholungen-plus" title="Wie oft zusätzlich wiederholt wird">+</button>
-                    <span class="schalter-feld" style="color:var(--text-schwach);">× wiederholen</span>
+                    <span id="wiederholungen-anzeige" class="btn" style="min-width:2.2rem; text-align:center">2</span>
+                    <button type="button" class="btn" id="wiederholungen-plus" title="Wie oft das Stück insgesamt gespielt wird">+</button>
+                    <span class="schalter-feld" style="color:var(--text-schwach);">× insgesamt</span>
                 </span>
             </div>
             <div class="leiste">
@@ -113,21 +117,21 @@
                 <button type="button" class="btn" id="drucken-btn" title="Öffnet den Druckdialog - dort als PDF sichern für A4"><i class="fa-solid fa-print"></i> Drucken</button>
             </div>
         </div>
+        <h2 id="anzeige-titel" class="hidden" style="text-align:center; margin:0 0 .6rem;"></h2>
         <div id="anzeige"></div>
         <p class="anzeige-hinweis">Verdeckt - hör erst zu, dann klick auf „Zeigen".</p>
 
-        <!-- ---------- Nur fuers Drucken: eigenes Layout, eigenes Tempo ---------- -->
+        <!-- ---------- Nur fuers Drucken: Titel (wirkt auch auf dem Bildschirm/Vollbild), eigene Groesse ---------- -->
         <div class="leiste" style="justify-content: space-between; margin: 1rem 0 .6rem; padding-top:.8rem; border-top:1px solid var(--rand-schwach);">
-            <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem; flex:1; min-width:10rem; white-space:nowrap;" title="Steht als Überschrift über dem Ausdruck">
+            <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem; flex:1; min-width:10rem; white-space:nowrap;" title="Steht als Überschrift über den Noten - auf dem Bildschirm, im Vollbild und auf dem Ausdruck">
                 Titel
                 <input type="text" id="druck-titel" placeholder="Rhythmus-Werkstatt" style="flex:1; min-width:6rem;">
             </label>
+            <button type="button" class="btn" id="druck-titel-speichern-btn" title="Speichert das aktuelle Blatt unter diesem Titel - wie „Speichern" oben bei Rhythmus eintragen">
+                <i class="fa-solid fa-floppy-disk"></i> Speichern
+            </button>
             <div class="leiste">
-                <span class="schalter-feld">Takte/Zeile</span>
-                <button type="button" class="btn" id="druck-takte-minus">−</button>
-                <span id="druck-takte-anzeige" class="btn" style="min-width:2.2rem; text-align:center">4</span>
-                <button type="button" class="btn" id="druck-takte-plus">+</button>
-                <span class="schalter-feld">Größe</span>
+                <span class="schalter-feld">Größe (Druck)</span>
                 <button type="button" class="btn" id="druck-groesse-minus">−</button>
                 <span id="druck-groesse-anzeige" class="btn" style="min-width:3.2rem; text-align:center">100%</span>
                 <button type="button" class="btn" id="druck-groesse-plus">+</button>
@@ -151,11 +155,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=9"></script>
-<script src="js/noten.js?v=9"></script>
-<script src="js/editor.js?v=9"></script>
-<script src="js/audio.js?v=9"></script>
-<script src="js/generator.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="js/version.js?v=10"></script>
+<script src="js/noten.js?v=10"></script>
+<script src="js/editor.js?v=10"></script>
+<script src="js/audio.js?v=10"></script>
+<script src="js/generator.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 </body>
 </html>
