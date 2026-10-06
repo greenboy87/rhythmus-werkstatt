@@ -259,7 +259,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
 
     const LINKS_RAND = 16;
-    const KOPF_BREITE = 70;   // Platz fuer Schluessel + Taktangabe im ersten System
+    const KOPF_BREITE = 48;   // Platz fuer Schluessel + Taktangabe im ersten System
     const RAND_TAKT = 15;
 
     function taktBreite(takt) {
@@ -270,7 +270,18 @@ function stueckAnzeigeHtml(stueck, optionen) {
     // (Druck - Takte sollen sauber untereinander stehen) oder so viele, wie
     // in die verfuegbare Breite passen (Bildschirm), nie mitten im Takt.
     const systeme = [];
+    // Bei fester Taktzahl je Zeile soll Takt 1 jeder Zeile wirklich unter Takt 1
+    // der vorigen stehen, Takt 2 unter Takt 2 usw. - dafuer bekommt jede
+    // "Spalte" (Position innerhalb der Zeile) ihre eigene Breite: das Maximum
+    // aus allen Takten, die je an dieser Position stehen. Schmalere Takte
+    // bekommen dann einfach Luft nach dem letzten Zeichen, bis zum Taktstrich.
+    let spaltenBreite = null;
     if (opt.takteProZeile > 0) {
+        spaltenBreite = new Array(opt.takteProZeile).fill(0);
+        takte.forEach((takt, i) => {
+            const spalte = i % opt.takteProZeile;
+            spaltenBreite[spalte] = Math.max(spaltenBreite[spalte], taktBreite(takt));
+        });
         for (let i = 0; i < takte.length; i += opt.takteProZeile) {
             systeme.push(takte.slice(i, i + opt.takteProZeile).map((takt, j) => ({ takt, index: i + j })));
         }
@@ -291,7 +302,12 @@ function stueckAnzeigeHtml(stueck, optionen) {
     const svgListe = systeme.map((system, systemNr) => {
         const istErstesSystem = systemNr === 0;
         const istLetztesSystem = systemNr === systeme.length - 1;
-        let x = LINKS_RAND + (istErstesSystem ? KOPF_BREITE : 10);
+        // Im Spalten-Modus faengt jede Zeile an derselben Stelle an wie die
+        // erste (Platz fuer Schluessel/Taktangabe bleibt reserviert, auch wenn
+        // dort nichts gezeichnet wird) - sonst stuende Spalte 1 der zweiten
+        // Zeile nicht unter Spalte 1 der ersten.
+        const kopfReserviert = spaltenBreite ? true : istErstesSystem;
+        let x = LINKS_RAND + (kopfReserviert ? KOPF_BREITE : 10);
         const teileSvg = [];
         let inkVon = Infinity, inkBis = -Infinity, inkOben = Infinity, inkUnten = -Infinity;
         const merge = (r) => {
@@ -330,8 +346,10 @@ function stueckAnzeigeHtml(stueck, optionen) {
 
         const zaehlzeitenTexte = [];
         system.forEach(({ takt, index }, posInSystem) => {
-            // Taktstrich vor jedem Takt, ausser ganz am Anfang des ersten Systems
-            if (!(istErstesSystem && posInSystem === 0)) {
+            // Taktstrich vor jedem Takt, ausser ganz am Anfang des ersten Systems -
+            // im Spalten-Modus gilt das fuer den ersten Takt JEDER Zeile, sonst
+            // begaenne Spalte 1 der zweiten Zeile 13px spaeter als die der ersten.
+            if (!((istErstesSystem || spaltenBreite) && posInSystem === 0)) {
                 teileSvg.push(`<line x1="${x}" y1="${LINIE_Y - 17}" x2="${x}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="2"/>`);
                 inkVon = Math.min(inkVon, x - 2); inkBis = Math.max(inkBis, x + 2);
                 x += 13;
@@ -393,7 +411,10 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 });
                 inkUnten = Math.max(inkUnten, LINIE_Y + 36);
             }
-            x = taktEndeX;
+            // Im Spalten-Modus bis zur vollen Spaltenbreite auffuellen (Luft
+            // nach den Noten, vor dem naechsten Taktstrich) - damit Takt 1
+            // jeder Zeile exakt gleich breit ist wie Takt 1 jeder anderen.
+            x = spaltenBreite ? taktStartX + spaltenBreite[index % opt.takteProZeile] - RAND_TAKT : taktEndeX;
         });
         teileSvg.push(...zaehlzeitenTexte);
 
@@ -443,7 +464,10 @@ function stueckAnzeigeHtml(stueck, optionen) {
         // dargestellte Breite (und damit, seitenverhaeltnis-treu, die Hoehe)
         // wandert mit dem Groesse-Regler.
         const zielBreite = Math.round(breiteSvg * opt.skalierung);
-        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px; max-width:100%">${teileSvg.join('')}</svg>`;
+        // Kein max-width:100% hier (auch nicht inline) - bei fester Takte-pro-
+        // Zeile-Zahl haengt die natuerliche Breite nicht von der verfuegbaren
+        // Breite ab, ein Deckel wuerde den Groesse-Regler irgendwann kappen.
+        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px">${teileSvg.join('')}</svg>`;
     });
 
     return svgListe.join('');

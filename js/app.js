@@ -85,11 +85,11 @@ function titelAktualisieren() {
     document.getElementById('druck-ueberschrift').textContent = titel ? titel : '🥁 Rhythmus-Werkstatt';
 }
 
-/* ---------- Druck: eigene Groesse, sonst dieselben Einstellungen wie der Bildschirm ---------- */
-let druckSkalierung = 1;
-
+/* ---------- Druck: dieselben Einstellungen wie der Bildschirm (Groesse,
+   Takte/Zeile, Titel) - ein einziger Satz Regler statt zwei verwirrend
+   aehnlicher. Eigene Druck-Feinabstimmung folgt spaeter. ---------- */
 function druckNeuZeichnen() {
-    const optionen = Object.assign(anzeigeOptionen(), { skalierung: druckSkalierung, breite: 2000 });
+    const optionen = Object.assign(anzeigeOptionen(), { skalierung: anzeigeSkalierung, breite: 2000 });
     document.getElementById('druck-anzeige').innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
 }
 
@@ -280,7 +280,7 @@ function init() {
     let takteProZeileTimer = null;
     const takteProZeileVerzoegert = () => {
         clearTimeout(takteProZeileTimer);
-        takteProZeileTimer = setTimeout(anzeigeNeuZeichnen, 450);
+        takteProZeileTimer = setTimeout(anzeigeNeuZeichnen, 1500);
     };
     const takteProZeileZeichnen = () => {
         document.getElementById('takte-zeile-anzeige').textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
@@ -318,16 +318,6 @@ function init() {
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
 
     document.getElementById('druck-titel').addEventListener('input', () => { titelAktualisieren(); druckNeuZeichnen(); });
-    document.getElementById('druck-groesse-minus').addEventListener('click', () => {
-        druckSkalierung = Math.max(0.6, Math.round((druckSkalierung - 0.1) * 10) / 10);
-        document.getElementById('druck-groesse-anzeige').textContent = Math.round(druckSkalierung * 100) + '%';
-        druckNeuZeichnen();
-    });
-    document.getElementById('druck-groesse-plus').addEventListener('click', () => {
-        druckSkalierung = Math.min(1.8, Math.round((druckSkalierung + 0.1) * 10) / 10);
-        document.getElementById('druck-groesse-anzeige').textContent = Math.round(druckSkalierung * 100) + '%';
-        druckNeuZeichnen();
-    });
 
     const vollbildKarte = document.getElementById('anzeige-karte');
     const vollbildBtn = document.getElementById('vollbild-btn');

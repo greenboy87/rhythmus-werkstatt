@@ -207,9 +207,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
    Breite (je nachdem, wie viele Takte hineinpassten) - mit width:100%
    wuerde ausgerechnet eine kuerzere letzte Zeile (weniger Takte, weniger
    Fuellung) staerker aufgeblasen als eine volle Zeile und die Noten saehen
-   von Zeile zu Zeile unterschiedlich gross aus. max-width schuetzt nur vor
-   Ueberlauf, falls die Layout-Rechnung doch einmal knapper war. */
-.anzeige-system { width: auto; max-width: 100%; display: block; margin: 0 auto .3rem; }
+   von Zeile zu Zeile unterschiedlich gross aus.
+   Bewusst KEIN max-width:100% - bei fester Takte-pro-Zeile-Zahl haengt die
+   natuerliche Breite nicht von der verfuegbaren Breite ab (anders als im
+   "auto"-Modus), ein Deckel haette den Groesse-Regler irgendwann einfach
+   wirkungslos gemacht. #anzeige faengt das stattdessen mit horizontalem
+   Scrollen ab, falls eine Zeile trotz Skalierung breiter wird als die Karte. */
+#anzeige, #druck-anzeige { overflow-x: auto; }
+.anzeige-system { width: auto; display: block; margin: 0 auto .3rem; }
 .anzeige-system .kopf,
 .anzeige-system .zaehlzeit { fill: var(--text); }
 .anzeige-system line, .anzeige-system path, .anzeige-system rect, .anzeige-system ellipse, .anzeige-system circle {
