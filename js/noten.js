@@ -30,6 +30,7 @@ const RHYTHMUS_BAUSTEINE = [
     { code: 'S3',   dauer: .5,  wort: 'Sechzehntel-Triole (3 in der Zeit von 2)', triole: 3, teile: [{ d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }] },
     { code: 'S6',   dauer: 1,   wort: 'Sechstole (6 in der Zeit von 4)', triole: 6, teile: [{ d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }, { d: 1 / 6 }] },
     { code: 'A',    dauer: .5,  wort: 'Achtel einzeln', teile: [{ d: .5 }] },
+    { code: 'SS',   dauer: .5,  wort: 'Zwei Sechzehntel', teile: [{ d: .25 }, { d: .25 }] },
 
     { code: 'Gp',   dauer: 4,   wort: 'Ganze Pause',    pausenreihe: true, teile: [{ d: 4, p: true }] },
     { code: 'Hp',   dauer: 2,   wort: 'Halbe Pause',    pausenreihe: true, teile: [{ d: 2, p: true }] },
@@ -89,7 +90,10 @@ function taktPulse(zeichen) { return Math.round(taktSoll(zeichen) / pulsWert(zei
 /* ============================================================
    ZEICHNEN
    ============================================================ */
-const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17, [1 / 3]: 21, [1 / 6]: 13 };
+// 1/6 (Sechzehntel-Triole, Sechstole) stand bisher bei 13 - knapper als der
+// Notenkopf selbst breit ist (Durchmesser ~15), die Koepfe klebten also
+// ineinander. 17 wie ein normales Sechzehntel laesst wieder Luft.
+const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17, [1 / 3]: 21, [1 / 6]: 17 };
 const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 5;
 
 function istPunktiert(d) {
@@ -461,13 +465,21 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const hoeheSvg = unten - oben;
         // Anzeigegroesse per CSS skaliert, nicht die Zeichnung selbst neu
         // gerechnet - die viewBox bleibt die "echte" Groesse, nur die
-        // dargestellte Breite (und damit, seitenverhaeltnis-treu, die Hoehe)
-        // wandert mit dem Groesse-Regler.
+        // dargestellte Breite UND Hoehe wandern mit dem Groesse-Regler.
+        // Beide zusammen, nicht nur die Breite: SVGs erhalten per Default ihr
+        // Seitenverhaeltnis (preserveAspectRatio), eine SVG mit skalierter
+        // Breite aber unveraenderter Hoehe-Angabe wird deshalb nur auf den
+        // KLEINEREN der beiden Faktoren vergroessert (also gar nicht, wenn
+        // die Hoehe stehen bleibt) - der Ueberschuss verschwindet als reiner
+        // Leerraum rechts, die Noten selbst bleiben gleich gross. Genau das
+        // war der Grund, warum der Regler bisher nur die Zeilenaufteilung
+        // veraendert hat, nicht die Notengroesse.
         const zielBreite = Math.round(breiteSvg * opt.skalierung);
+        const zielHoehe = Math.round(hoeheSvg * opt.skalierung);
         // Kein max-width:100% hier (auch nicht inline) - bei fester Takte-pro-
         // Zeile-Zahl haengt die natuerliche Breite nicht von der verfuegbaren
         // Breite ab, ein Deckel wuerde den Groesse-Regler irgendwann kappen.
-        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px">${teileSvg.join('')}</svg>`;
+        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px; height:${zielHoehe}px">${teileSvg.join('')}</svg>`;
     });
 
     return svgListe.join('');

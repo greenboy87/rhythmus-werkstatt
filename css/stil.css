@@ -198,24 +198,21 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 #anzeige-karte:fullscreen,
 #anzeige-karte.vollbild {
     width: 100vw; height: 100vh; max-width: none;
-    display: flex; flex-direction: column;
+    display: grid; grid-template-rows: auto 1fr;
     padding: 2rem 4rem; background: var(--bg-karte); overflow: auto; border-radius: 0;
 }
-/* Kopfbereich (Ueberschrift, Metronom, Abspielen, Haekchen) bleibt oben in
-   seiner natuerlichen, kompakten Hoehe (Flex-Kinder wachsen von sich aus
-   nicht) - nur #anzeige bekommt den restlichen Platz und zentriert die
-   Noten darin, mit deutlichem Abstand zum Bedienbereich darueber. */
+/* Grid statt Flexbox fuer genau dieses Muster (fester Kopf, Rest zentriert):
+   .vollbild-kopf (alle Bedienelemente, in ihrer natuerlichen Hoehe) bildet
+   die erste Zeile, #anzeige die zweite - 1fr nimmt sich automatisch den
+   kompletten Rest und zentriert die Noten darin, mit deutlichem Abstand
+   zum Kopf darueber. */
 #anzeige-karte:fullscreen #anzeige,
 #anzeige-karte.vollbild #anzeige {
-    flex: 1 1 auto; min-height: 0; margin-top: 2.5rem;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
+    min-height: 0; margin-top: 2.5rem;
 }
 #anzeige-karte:fullscreen .anzeige-system,
 #anzeige-karte.vollbild .anzeige-system { margin-bottom: .8rem; }
-#anzeige-karte:fullscreen #metronom .btn,
-#anzeige-karte.vollbild #metronom .btn,
-#anzeige-karte:fullscreen #metronom span,
-#anzeige-karte.vollbild #metronom span { font-size: 1.05rem; }
 /* Natuerliche Groesse, nicht auf 100% gestreckt: Jede Zeile hat ihre eigene
    Breite (je nachdem, wie viele Takte hineinpassten) - mit width:100%
    wuerde ausgerechnet eine kuerzere letzte Zeile (weniger Takte, weniger
