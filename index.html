@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=10">
-<link rel="stylesheet" href="css/druck.css?v=10">
+<link rel="stylesheet" href="css/stil.css?v=11">
+<link rel="stylesheet" href="css/druck.css?v=11">
 </head>
 <body>
 
@@ -104,6 +104,14 @@
             <div class="leiste">
                 <span class="schalter-feld"><input type="checkbox" id="opt-notenlinien"> Notenlinien</span>
                 <span class="schalter-feld"><input type="checkbox" id="opt-zaehlzeiten"> Zählzeiten</span>
+                <span class="leiste hidden" id="und-plus-feld" style="gap:.4rem;" title="Wie die Zählzeit zwischen den Schlägen geschrieben wird">
+                    <span class="schalter-feld" style="color:var(--text-schwach);">und</span>
+                    <label class="schalter">
+                        <input type="checkbox" id="opt-und-als-plus">
+                        <span class="schalter-schieber"></span>
+                    </label>
+                    <span class="schalter-feld" style="color:var(--text-schwach);">+</span>
+                </span>
                 <span class="schalter-feld"><input type="checkbox" id="opt-wiederholung"> Wiederholung</span>
                 <span class="leiste hidden" id="wiederholungen-feld" style="gap:.3rem;">
                     <button type="button" class="btn" id="wiederholungen-minus">−</button>
@@ -155,11 +163,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=10"></script>
-<script src="js/noten.js?v=10"></script>
-<script src="js/editor.js?v=10"></script>
-<script src="js/audio.js?v=10"></script>
-<script src="js/generator.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
+<script src="js/version.js?v=11"></script>
+<script src="js/noten.js?v=11"></script>
+<script src="js/editor.js?v=11"></script>
+<script src="js/audio.js?v=11"></script>
+<script src="js/generator.js?v=11"></script>
+<script src="js/app.js?v=11"></script>
 </body>
 </html>

@@ -253,7 +253,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, wiederholung: false, wiederholungen: 1, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
@@ -362,7 +362,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 // fallen (z.B. innerhalb einer Triole), bleiben ohne Silbe - dafuer
                 // gibt es hier keine saubere deutsche Sprechweise.
                 const pw = pulsWert(stueck.zeichen);
-                const SILBEN = ['', 'e', 'und', 'e'];
+                const SILBEN = ['', 'e', opt.undAlsPlus ? '+' : 'und', 'e'];
                 const zaehlzeitText = (v, text, blass) =>
                     `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${LINIE_Y + 30}" font-size="12" font-weight="700"` +
                     ` text-anchor="middle" font-family="DM Sans, sans-serif" opacity="${blass ? '.4' : '1'}">${text}</text>`;

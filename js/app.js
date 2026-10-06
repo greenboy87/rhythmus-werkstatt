@@ -54,6 +54,7 @@ function anzeigeOptionen() {
     return {
         notenlinien: document.getElementById('opt-notenlinien').checked,
         zaehlzeiten: document.getElementById('opt-zaehlzeiten').checked,
+        undAlsPlus: document.getElementById('opt-und-als-plus').checked,
         wiederholung: document.getElementById('opt-wiederholung').checked,
         wiederholungen: wiederholungen,
         takteProZeile: takteProZeile
@@ -246,8 +247,12 @@ function init() {
     document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
     blaetterAufbauen();
 
-    ['opt-notenlinien', 'opt-zaehlzeiten'].forEach(id =>
-        document.getElementById(id).addEventListener('change', anzeigeNeuZeichnen));
+    document.getElementById('opt-notenlinien').addEventListener('change', anzeigeNeuZeichnen);
+    document.getElementById('opt-zaehlzeiten').addEventListener('change', (e) => {
+        document.getElementById('und-plus-feld').classList.toggle('hidden', !e.target.checked);
+        anzeigeNeuZeichnen();
+    });
+    document.getElementById('opt-und-als-plus').addEventListener('change', anzeigeNeuZeichnen);
 
     // Anzeige/Bedienung zaehlen die Gesamtzahl der Durchgaenge (2,3,4...),
     // "wiederholungen" selbst bleibt intern die Zusatz-Zahl (1,2,3...) - die

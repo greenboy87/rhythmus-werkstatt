@@ -98,6 +98,21 @@ details.karte[open] summary::before { transform: rotate(90deg); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 .schalter-feld { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--text-gedaempft); font-weight: 600; }
 .schalter-feld input { accent-color: var(--akzent); width: 1.05rem; height: 1.05rem; }
+
+/* Schiebeschalter (z.B. "und" <-> "+" bei den Zaehlzeiten) - kompakter als
+   zwei Radio-Knoepfe, auf einen Blick erkennbar, welche Seite aktiv ist. */
+.schalter { position: relative; display: inline-block; width: 34px; height: 19px; flex: none; }
+.schalter input { position: absolute; opacity: 0; width: 0; height: 0; }
+.schalter-schieber {
+    position: absolute; inset: 0; background: var(--rand); border-radius: 999px;
+    cursor: pointer; transition: background .15s;
+}
+.schalter-schieber::before {
+    content: ''; position: absolute; width: 14px; height: 14px; left: 2.5px; top: 2.5px;
+    background: #fff; border-radius: 50%; transition: transform .15s;
+}
+.schalter input:checked + .schalter-schieber { background: var(--akzent); }
+.schalter input:checked + .schalter-schieber::before { transform: translateX(15px); }
 label.feld { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; color: var(--text-gedaempft); font-weight: 700; }
 select, input[type="text"], input[type="number"] {
     background: var(--bg-erhoben); color: var(--text); border: 1px solid var(--rand);
