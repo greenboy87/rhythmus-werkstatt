@@ -46,18 +46,21 @@ function zeigeToast(text, art) {
 /* ---------- Aufbau ---------- */
 let editor = null;
 let anzeigeVerdeckt = false;
+let anzeigeSkalierung = 1;
+let wiederholungen = 1;   // zusaetzliche Durchgaenge, nicht die Gesamtzahl
 
 function anzeigeOptionen() {
     return {
         notenlinien: document.getElementById('opt-notenlinien').checked,
         zaehlzeiten: document.getElementById('opt-zaehlzeiten').checked,
-        wiederholung: document.getElementById('opt-wiederholung').checked
+        wiederholung: document.getElementById('opt-wiederholung').checked,
+        wiederholungen: wiederholungen
     };
 }
 
 function anzeigeNeuZeichnen() {
     const host = document.getElementById('anzeige');
-    const optionen = Object.assign(anzeigeOptionen(), { breite: Math.max(320, host.clientWidth || 900) });
+    const optionen = Object.assign(anzeigeOptionen(), { breite: Math.max(320, host.clientWidth || 900), skalierung: anzeigeSkalierung });
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
     druckNeuZeichnen();
@@ -220,8 +223,34 @@ function init() {
     document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
     blaetterAufbauen();
 
-    ['opt-notenlinien', 'opt-zaehlzeiten', 'opt-wiederholung'].forEach(id =>
+    ['opt-notenlinien', 'opt-zaehlzeiten'].forEach(id =>
         document.getElementById(id).addEventListener('change', anzeigeNeuZeichnen));
+
+    document.getElementById('opt-wiederholung').addEventListener('change', (e) => {
+        document.getElementById('wiederholungen-feld').classList.toggle('hidden', !e.target.checked);
+        anzeigeNeuZeichnen();
+    });
+    document.getElementById('wiederholungen-minus').addEventListener('click', () => {
+        wiederholungen = Math.max(1, wiederholungen - 1);
+        document.getElementById('wiederholungen-anzeige').textContent = wiederholungen;
+        anzeigeNeuZeichnen();
+    });
+    document.getElementById('wiederholungen-plus').addEventListener('click', () => {
+        wiederholungen = Math.min(9, wiederholungen + 1);
+        document.getElementById('wiederholungen-anzeige').textContent = wiederholungen;
+        anzeigeNeuZeichnen();
+    });
+
+    document.getElementById('anzeige-groesse-minus').addEventListener('click', () => {
+        anzeigeSkalierung = Math.max(0.6, Math.round((anzeigeSkalierung - 0.1) * 10) / 10);
+        document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
+        anzeigeNeuZeichnen();
+    });
+    document.getElementById('anzeige-groesse-plus').addEventListener('click', () => {
+        anzeigeSkalierung = Math.min(2.2, Math.round((anzeigeSkalierung + 0.1) * 10) / 10);
+        document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
+        anzeigeNeuZeichnen();
+    });
 
     document.getElementById('verdecken-btn').addEventListener('click', (e) => {
         anzeigeVerdeckt = !anzeigeVerdeckt;
@@ -275,11 +304,15 @@ function init() {
 
     Metronom.bauen(document.getElementById('metronom'), () => editor.zeichen());
 
-    document.getElementById('vorklatschen-btn').addEventListener('click', () => {
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), false);
+    document.getElementById('abspielen-btn').addEventListener('click', () => {
+        const nurMetronom = document.getElementById('abspielen-modus').value === 'selbstklatschen';
+        const extraDurchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen : 0;
+        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge);
     });
-    document.getElementById('mitklatschen-btn').addEventListener('click', () => {
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), true);
+    Vorklatschen.aufZustandAendern((laeuft) => {
+        document.getElementById('abspielen-btn').innerHTML = laeuft
+            ? '<i class="fa-solid fa-stop"></i> Stopp'
+            : '<i class="fa-solid fa-play"></i> Abspielen';
     });
 
     let resizeTimer = null;

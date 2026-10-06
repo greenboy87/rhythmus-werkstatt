@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=8">
-<link rel="stylesheet" href="css/druck.css?v=8">
+<link rel="stylesheet" href="css/stil.css?v=9">
+<link rel="stylesheet" href="css/druck.css?v=9">
 </head>
 <body>
 
@@ -76,15 +76,24 @@
     <section class="karte anzeige-karte" id="anzeige-karte">
         <div class="leiste" style="justify-content: space-between; margin-bottom:.6rem;">
             <h2 style="font-size:1rem;">Metronom & Anzeige</h2>
-            <button type="button" class="btn" id="vollbild-btn" title="Metronom und Notenbild groß für den Beamer">
-                <i class="fa-solid fa-expand"></i> Vollbild
-            </button>
+            <div class="leiste">
+                <span class="schalter-feld">Größe</span>
+                <button type="button" class="btn" id="anzeige-groesse-minus">−</button>
+                <span id="anzeige-groesse-anzeige" class="btn" style="min-width:3.2rem; text-align:center">100%</span>
+                <button type="button" class="btn" id="anzeige-groesse-plus">+</button>
+                <button type="button" class="btn" id="vollbild-btn" title="Metronom und Notenbild groß für den Beamer">
+                    <i class="fa-solid fa-expand"></i> Vollbild
+                </button>
+            </div>
         </div>
 
         <div id="metronom"></div>
         <div class="leiste" style="margin: .7rem 0;">
-            <button type="button" class="btn btn-primär" id="vorklatschen-btn"><i class="fa-solid fa-hands-clapping"></i> Vorklatschen</button>
-            <button type="button" class="btn" id="mitklatschen-btn"><i class="fa-solid fa-person-walking-arrow-right"></i> Mitklatschen (nur Puls)</button>
+            <button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <select id="abspielen-modus">
+                <option value="vorklatschen">Vorklatschen</option>
+                <option value="selbstklatschen">Selbstklatschen (nur Puls)</option>
+            </select>
         </div>
 
         <div class="leiste" style="justify-content: space-between; margin: 1rem 0 .6rem; padding-top:.8rem; border-top:1px solid var(--rand-schwach);">
@@ -92,6 +101,12 @@
                 <span class="schalter-feld"><input type="checkbox" id="opt-notenlinien"> Notenlinien</span>
                 <span class="schalter-feld"><input type="checkbox" id="opt-zaehlzeiten"> Zählzeiten</span>
                 <span class="schalter-feld"><input type="checkbox" id="opt-wiederholung"> Wiederholung</span>
+                <span class="leiste hidden" id="wiederholungen-feld" style="gap:.3rem;">
+                    <button type="button" class="btn" id="wiederholungen-minus">−</button>
+                    <span id="wiederholungen-anzeige" class="btn" style="min-width:2.2rem; text-align:center">1</span>
+                    <button type="button" class="btn" id="wiederholungen-plus" title="Wie oft zusätzlich wiederholt wird">+</button>
+                    <span class="schalter-feld" style="color:var(--text-schwach);">× wiederholen</span>
+                </span>
             </div>
             <div class="leiste">
                 <button type="button" class="btn" id="verdecken-btn"><i class="fa-solid fa-eye-slash"></i> Verdecken</button>
@@ -136,11 +151,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=8"></script>
-<script src="js/noten.js?v=8"></script>
-<script src="js/editor.js?v=8"></script>
-<script src="js/audio.js?v=8"></script>
-<script src="js/generator.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/version.js?v=9"></script>
+<script src="js/noten.js?v=9"></script>
+<script src="js/editor.js?v=9"></script>
+<script src="js/audio.js?v=9"></script>
+<script src="js/generator.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>

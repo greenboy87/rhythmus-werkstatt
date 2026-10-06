@@ -174,7 +174,7 @@ const Metronom = (function () {
     function vorlaufZeichnen() {
         jedeAnsicht((w, teil) => {
             const anzeige = teil('vorlauf-anzeige');
-            if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? 'kein Vorlauf' : vorlaufTakte + (vorlaufTakte === 1 ? ' Takt' : ' Takte');
+            if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? '0' : vorlaufTakte + (vorlaufTakte === 1 ? ' Takt' : ' Takte');
             const minus = teil('vorlauf-minus'), plus = teil('vorlauf-plus');
             if (minus) minus.disabled = vorlaufTakte <= 0;
             if (plus) plus.disabled = vorlaufTakte >= VORLAUF_MAX;
@@ -269,6 +269,8 @@ const Metronom = (function () {
 const Vorklatschen = (function () {
     let knoten = [], anzeigeFolge = [], anzeigeTakt = null, laeuft = false;
     let letzterHost = null, letztesZeichen = '4/4';
+    let zustandCallback = null;
+    function zustandMelden() { if (zustandCallback) zustandCallback(laeuft); }
 
     function anzeigePlanen(zeit, tat) { anzeigeFolge.push({ zeit, tat }); }
     function anzeigeStarten(ctx) {
@@ -295,20 +297,25 @@ const Vorklatschen = (function () {
         laeuft = false;
         if (letzterHost) stueckMarkieren(letzterHost, letztesZeichen, -1, 0);
         Metronom.pulsZeichnen(-1);
+        zustandMelden();
     }
 
-    /* stueck: {zeichen, takte:[{bausteine}]}. nurMetronom: Mitklatschen -
+    /* stueck: {zeichen, takte:[{bausteine}]}. nurMetronom: Selbstklatschen -
        kein Klatschklang, nur Puls und Mitlese-Markierung. Der Puls selbst
        laeuft in beiden Modi immer durch (nicht nur im Vorlauf) - ob er zu
-       hoeren ist, entscheidet der Lautstaerke-Regler, nicht der Modus. */
-    function starten(stueck, host, nurMetronom) {
+       hoeren ist, entscheidet der Lautstaerke-Regler, nicht der Modus.
+       wiederholungen: wie oft das ganze Stueck ZUSAETZLICH durchlaeuft -
+       0 = einmal, 1 = zweimal (das klassische Wiederholungszeichen), usw. */
+    function starten(stueck, host, nurMetronom, wiederholungen) {
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
+        zustandMelden();
         letzterHost = host; letztesZeichen = stueck.zeichen;
+        const durchgaenge = Math.max(1, (Number(wiederholungen) || 0) + 1);
 
         const bpm = Metronom.bpm();
         const pw = pulsWert(stueck.zeichen);
@@ -328,43 +335,53 @@ const Vorklatschen = (function () {
         }
         t = start + vorlaufSchlaege * schlagDauer;
 
-        stueck.takte.forEach((takt, taktNr) => {
-            const taktStartT = t;
-            let gelaufen = 0;
-            {
-                const n = taktPulse(stueck.zeichen);
-                for (let p = 0; p < n; p++) {
-                    const wann = taktStartT + p * pw * viertel;
-                    anzeigePlanen(wann, () => Metronom.pulsZeichnen(p));
-                    knoten.push(metronomKlick(ctx, wann, p === 0));
+        // Das ganze Stueck so oft hintereinander planen, wie Durchgaenge
+        // verlangt sind - der Zeitzeiger t laeuft dabei einfach weiter, kein
+        // erneuter Vorlauf zwischen den Durchgaengen.
+        for (let durchgang = 0; durchgang < durchgaenge; durchgang++) {
+            stueck.takte.forEach((takt, taktNr) => {
+                const taktStartT = t;
+                let gelaufen = 0;
+                {
+                    const n = taktPulse(stueck.zeichen);
+                    for (let p = 0; p < n; p++) {
+                        const wann = taktStartT + p * pw * viertel;
+                        anzeigePlanen(wann, () => Metronom.pulsZeichnen(p));
+                        knoten.push(metronomKlick(ctx, wann, p === 0));
+                    }
                 }
-            }
-            takt.bausteine.forEach(b => {
-                // Schnappschuss, nicht die laufende Variable: Sonst zeigen bei der
-                // spaeteren Ausfuehrung (alle Marken desselben Takts teilen sich
-                // sonst dieselbe "gelaufen"-Bindung) alle Markierungen eines Takts
-                // auf dessen Endwert - also schon auf den naechsten Takt.
-                const gelaufenBeiStart = gelaufen;
-                anzeigePlanen(t, () => stueckMarkieren(host, stueck.zeichen, taktNr, gelaufenBeiStart));
-                if (!nurMetronom) {
-                    let innerT = t;
-                    b.teile.forEach(teil => { if (!teil.p) knoten.push(klatschKlang(ctx, innerT)); innerT += teil.d * viertel; });
-                }
-                t += b.dauer * viertel;
-                gelaufen += b.dauer;
+                takt.bausteine.forEach(b => {
+                    // Schnappschuss, nicht die laufende Variable: Sonst zeigen bei der
+                    // spaeteren Ausfuehrung (alle Marken desselben Takts teilen sich
+                    // sonst dieselbe "gelaufen"-Bindung) alle Markierungen eines Takts
+                    // auf dessen Endwert - also schon auf den naechsten Takt.
+                    const gelaufenBeiStart = gelaufen;
+                    anzeigePlanen(t, () => stueckMarkieren(host, stueck.zeichen, taktNr, gelaufenBeiStart));
+                    if (!nurMetronom) {
+                        let innerT = t;
+                        b.teile.forEach(teil => { if (!teil.p) knoten.push(klatschKlang(ctx, innerT)); innerT += teil.d * viertel; });
+                    }
+                    t += b.dauer * viertel;
+                    gelaufen += b.dauer;
+                });
             });
-        });
+            if (durchgang < durchgaenge - 1) {
+                const nr = durchgang + 2;
+                anzeigePlanen(t, () => zeigeToast(`Durchgang ${nr} von ${durchgaenge}…`, 'info'));
+            }
+        }
         anzeigePlanen(t + 0.15, () => {
             laeuft = false; knoten = [];
             stueckMarkieren(host, stueck.zeichen, -1, 0);
             Metronom.pulsZeichnen(-1);
+            zustandMelden();
         });
         anzeigeStarten(ctx);
         const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
-        const meldung = vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.`
-                       : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`;
+        const wiederholHinweis = durchgaenge > 1 ? ` (${durchgaenge}× hintereinander)` : '';
+        const meldung = (vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.` : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`) + wiederholHinweis;
         zeigeToast(meldung, 'info');
     }
 
-    return { starten, stoppen, istAn: () => laeuft };
+    return { starten, stoppen, istAn: () => laeuft, aufZustandAendern: (fn) => { zustandCallback = fn; } };
 })();
