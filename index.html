@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=7">
-<link rel="stylesheet" href="css/druck.css?v=7">
+<link rel="stylesheet" href="css/stil.css?v=8">
+<link rel="stylesheet" href="css/druck.css?v=8">
 </head>
 <body>
 
@@ -98,16 +98,35 @@
                 <button type="button" class="btn" id="drucken-btn" title="Öffnet den Druckdialog - dort als PDF sichern für A4"><i class="fa-solid fa-print"></i> Drucken</button>
             </div>
         </div>
+        <div id="anzeige"></div>
+        <p class="anzeige-hinweis">Verdeckt - hör erst zu, dann klick auf „Zeigen".</p>
+
+        <!-- ---------- Nur fuers Drucken: eigenes Layout, eigenes Tempo ---------- -->
+        <div class="leiste" style="justify-content: space-between; margin: 1rem 0 .6rem; padding-top:.8rem; border-top:1px solid var(--rand-schwach);">
+            <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem; flex:1; min-width:10rem; white-space:nowrap;" title="Steht als Überschrift über dem Ausdruck">
+                Titel
+                <input type="text" id="druck-titel" placeholder="Rhythmus-Werkstatt" style="flex:1; min-width:6rem;">
+            </label>
+            <div class="leiste">
+                <span class="schalter-feld">Takte/Zeile</span>
+                <button type="button" class="btn" id="druck-takte-minus">−</button>
+                <span id="druck-takte-anzeige" class="btn" style="min-width:2.2rem; text-align:center">4</span>
+                <button type="button" class="btn" id="druck-takte-plus">+</button>
+                <span class="schalter-feld">Größe</span>
+                <button type="button" class="btn" id="druck-groesse-minus">−</button>
+                <span id="druck-groesse-anzeige" class="btn" style="min-width:3.2rem; text-align:center">100%</span>
+                <button type="button" class="btn" id="druck-groesse-plus">+</button>
+            </div>
+        </div>
         <div class="druck-kopf">
-            <h1>🥁 Rhythmus-Werkstatt</h1>
+            <h1 id="druck-ueberschrift">🥁 Rhythmus-Werkstatt</h1>
             <div class="druck-felder">
                 <span>Name:</span>
                 <span>Klasse:</span>
                 <span>Datum: ________</span>
             </div>
         </div>
-        <div id="anzeige"></div>
-        <p class="anzeige-hinweis">Verdeckt - hör erst zu, dann klick auf „Zeigen".</p>
+        <div id="druck-anzeige" class="nur-druck"></div>
     </section>
 </main>
 
@@ -117,11 +136,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=7"></script>
-<script src="js/noten.js?v=7"></script>
-<script src="js/editor.js?v=7"></script>
-<script src="js/audio.js?v=7"></script>
-<script src="js/generator.js?v=7"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/version.js?v=8"></script>
+<script src="js/noten.js?v=8"></script>
+<script src="js/editor.js?v=8"></script>
+<script src="js/audio.js?v=8"></script>
+<script src="js/generator.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
    vom gerade gewaehlten Theme, sonst druckt das dunkle Layout
    eine fast schwarze Seite.
    ============================================================ */
-.druck-kopf { display: none; }
+.druck-kopf, .nur-druck { display: none; }
 
 @media print {
     @page { size: A4; margin: 16mm; }
@@ -15,17 +15,21 @@
         position: absolute; top: 0; left: 0; width: 100%;
         box-shadow: none; border: none; padding: 0; background: #fff; color: #000;
     }
-    .anzeige-karte .leiste, .anzeige-karte #verdecken-btn, .anzeige-karte h2 { display: none; }
+    /* #anzeige ist die Bildschirm-Ansicht (an die Fensterbreite angepasst,
+       beliebig viele Takte je Zeile) - fuers Papier zeichnet #druck-anzeige
+       eigens mit fester Takte-pro-Zeile-Zahl, Groesse und Titel. */
+    .anzeige-karte .leiste, .anzeige-karte #verdecken-btn, .anzeige-karte h2, #anzeige { display: none; }
     .anzeige-hinweis { display: none !important; }
+    .nur-druck { display: block; }
 
     .druck-kopf {
         display: flex; justify-content: space-between; align-items: baseline;
-        border-bottom: 2px solid #000; padding-bottom: .5rem; margin-bottom: 1.2rem;
+        border-bottom: 2px solid #000; padding-bottom: .5rem; margin-bottom: 2.2rem;
     }
     .druck-kopf h1 { font-size: 1.1rem; margin: 0; }
     .druck-kopf .druck-felder { display: flex; gap: 1.5rem; font-size: .8rem; }
 
-    .anzeige-system { color: #000 !important; }
+    .anzeige-system { color: #000 !important; margin-bottom: 1.4rem !important; }
     .anzeige-system .linien-fuenf { color: #000 !important; }
     [data-ab] { opacity: 1 !important; }   /* "Verdecken" soll auf Papier nie greifen */
 }

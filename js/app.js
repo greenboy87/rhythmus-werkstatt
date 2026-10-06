@@ -47,17 +47,35 @@ function zeigeToast(text, art) {
 let editor = null;
 let anzeigeVerdeckt = false;
 
-function anzeigeNeuZeichnen() {
-    const host = document.getElementById('anzeige');
-    const stueck = editor.stueck();
-    const optionen = {
+function anzeigeOptionen() {
+    return {
         notenlinien: document.getElementById('opt-notenlinien').checked,
         zaehlzeiten: document.getElementById('opt-zaehlzeiten').checked,
-        wiederholung: document.getElementById('opt-wiederholung').checked,
-        breite: Math.max(320, host.clientWidth || 900)
+        wiederholung: document.getElementById('opt-wiederholung').checked
     };
-    host.innerHTML = stueckAnzeigeHtml(stueck, optionen);
+}
+
+function anzeigeNeuZeichnen() {
+    const host = document.getElementById('anzeige');
+    const optionen = Object.assign(anzeigeOptionen(), { breite: Math.max(320, host.clientWidth || 900) });
+    host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
+    druckNeuZeichnen();
+}
+
+/* ---------- Druck: eigenes Layout (feste Takte/Zeile, Groesse, Titel) ---------- */
+let druckTakteProZeile = 4;
+let druckSkalierung = 1;
+
+function druckNeuZeichnen() {
+    const titelFeld = document.getElementById('druck-titel');
+    const titel = titelFeld.value.trim();
+    document.getElementById('druck-ueberschrift').textContent = titel ? titel : '🥁 Rhythmus-Werkstatt';
+
+    const optionen = Object.assign(anzeigeOptionen(), {
+        takteProZeile: druckTakteProZeile, skalierung: druckSkalierung, breite: 2000
+    });
+    document.getElementById('druck-anzeige').innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
 }
 
 /* ---------- Uebungsgenerator ---------- */
@@ -66,6 +84,23 @@ let genAnzahlTakte = 4;
 
 function genTakteZeichnen() {
     document.getElementById('gen-takte-anzeige').textContent = genAnzahlTakte;
+}
+
+/* Steht oben schon ein Rhythmus, wird aus "Übung erzeugen" (ersetzen)
+   "Übung erweitern" (anhängen) - zwei Klicks auf leeres Blatt ergeben so
+   z.B. 2x16 statt nur 16 Takte, ohne "Alles löschen" dazwischen. Erst ein
+   echtes Löschen schaltet zurück auf "erzeugen". */
+function editorIstLeer() {
+    return editor.stueck().takte.every(t => t.bausteine.length === 0);
+}
+function genKnopfAktualisieren() {
+    const knopf = document.getElementById('gen-erzeugen-btn');
+    if (!knopf) return;
+    const erweitern = !editorIstLeer();
+    knopf.innerHTML = erweitern
+        ? '<i class="fa-solid fa-plus"></i> Übung erweitern'
+        : '<i class="fa-solid fa-dice"></i> Übung erzeugen';
+    knopf.title = erweitern ? 'Hängt die neu gewürfelten Takte an die vorhandenen an' : '';
 }
 
 function generatorAufbauen() {
@@ -97,9 +132,16 @@ function generatorAufbauen() {
     document.getElementById('gen-erzeugen-btn').addEventListener('click', () => {
         const ergebnis = uebungErzeugen([...genAusgewaehlt], genAnzahlTakte, editor.zeichen());
         if (ergebnis.fehler) { zeigeToast(ergebnis.fehler, 'danger'); return; }
-        editor.setzen(editor.zeichen(), ergebnis.takte);
-        zeigeToast(`Übung erzeugt: ${genAnzahlTakte} ${genAnzahlTakte === 1 ? 'Takt' : 'Takte'}.`, 'success');
+        if (editorIstLeer()) {
+            editor.setzen(editor.zeichen(), ergebnis.takte);
+            zeigeToast(`Übung erzeugt: ${genAnzahlTakte} ${genAnzahlTakte === 1 ? 'Takt' : 'Takte'}.`, 'success');
+        } else {
+            const bisherige = editor.stueck().takte;
+            editor.setzen(editor.zeichen(), [...bisherige, ...ergebnis.takte]);
+            zeigeToast(`Übung erweitert: +${genAnzahlTakte} - jetzt ${bisherige.length + genAnzahlTakte} Takte.`, 'success');
+        }
     });
+    genKnopfAktualisieren();
 }
 
 /* ---------- Blaetter speichern (nur in diesem Browser) ---------- */
@@ -140,6 +182,8 @@ function blaetterAufbauen() {
         if (!blatt) return;
         document.getElementById('taktart-wahl').value = blatt.zeichen;
         editor.setzen(blatt.zeichen, blatt.takte);
+        const titelFeld = document.getElementById('druck-titel');
+        if (!titelFeld.value.trim()) { titelFeld.value = name; druckNeuZeichnen(); }
         zeigeToast(`„${name}" geladen.`, 'info');
     });
 
@@ -168,7 +212,7 @@ function init() {
     taktartWahl.value = '4/4';
 
     editor = rhythmusEditor(document.getElementById('editor-takte'), document.getElementById('palette'), '4/4');
-    editor.aufAenderung(anzeigeNeuZeichnen);
+    editor.aufAenderung(() => { anzeigeNeuZeichnen(); genKnopfAktualisieren(); });
 
     taktartWahl.addEventListener('change', () => editor.taktartSetzen(taktartWahl.value));
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
@@ -188,6 +232,28 @@ function init() {
     });
 
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
+
+    document.getElementById('druck-titel').addEventListener('input', druckNeuZeichnen);
+    document.getElementById('druck-takte-minus').addEventListener('click', () => {
+        druckTakteProZeile = Math.max(1, druckTakteProZeile - 1);
+        document.getElementById('druck-takte-anzeige').textContent = druckTakteProZeile;
+        druckNeuZeichnen();
+    });
+    document.getElementById('druck-takte-plus').addEventListener('click', () => {
+        druckTakteProZeile = Math.min(8, druckTakteProZeile + 1);
+        document.getElementById('druck-takte-anzeige').textContent = druckTakteProZeile;
+        druckNeuZeichnen();
+    });
+    document.getElementById('druck-groesse-minus').addEventListener('click', () => {
+        druckSkalierung = Math.max(0.6, Math.round((druckSkalierung - 0.1) * 10) / 10);
+        document.getElementById('druck-groesse-anzeige').textContent = Math.round(druckSkalierung * 100) + '%';
+        druckNeuZeichnen();
+    });
+    document.getElementById('druck-groesse-plus').addEventListener('click', () => {
+        druckSkalierung = Math.min(1.8, Math.round((druckSkalierung + 0.1) * 10) / 10);
+        document.getElementById('druck-groesse-anzeige').textContent = Math.round(druckSkalierung * 100) + '%';
+        druckNeuZeichnen();
+    });
 
     const vollbildKarte = document.getElementById('anzeige-karte');
     const vollbildBtn = document.getElementById('vollbild-btn');
@@ -221,6 +287,8 @@ function init() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(anzeigeNeuZeichnen, 150);
     });
+
+    window.addEventListener('beforeprint', druckNeuZeichnen);
 
     anzeigeNeuZeichnen();
     zeigeStand();

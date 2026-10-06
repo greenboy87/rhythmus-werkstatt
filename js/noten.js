@@ -243,11 +243,17 @@ function schluesselSvg(x, mitteY, tinte) {
 /* ============================================================
    Grosse, mehrzeilige Anzeige eines ganzen Stuecks - fuer den
    Beamer. "stueck" = { zeichen, takte: [{ bausteine: [...] }] }.
-   optionen: { notenlinien, zaehlzeiten, wiederholung, breite }
+   optionen: { notenlinien, zaehlzeiten, wiederholung, breite,
+               takteProZeile, skalierung }
+   takteProZeile (Zahl oder 0/undefined): statt so viele Takte pro Zeile
+   zu nehmen, wie in "breite" passen, immer genau so viele - fuer den
+   Druck, wo Takte untereinander stehen sollen statt ineinander zu
+   verlaufen. skalierung (Standard 1) vergroessert/verkleinert jede
+   Zeile gleichmaessig, ohne die Zeichnung neu zu rechnen.
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, wiederholung: false, breite: 900 }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, wiederholung: false, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
@@ -260,20 +266,27 @@ function stueckAnzeigeHtml(stueck, optionen) {
         return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || 38), 0), 0) + RAND_TAKT;
     }
 
-    // Takte auf Systeme (Zeilen) verteilen: so viele, wie in die verfuegbare
-    // Breite passen, nie mitten im Takt umbrechen.
+    // Takte auf Systeme (Zeilen) verteilen: entweder feste Anzahl je Zeile
+    // (Druck - Takte sollen sauber untereinander stehen) oder so viele, wie
+    // in die verfuegbare Breite passen (Bildschirm), nie mitten im Takt.
     const systeme = [];
-    let aktuell = [], breite = 0;
-    takte.forEach((takt, i) => {
-        const kopfPlatz = systeme.length === 0 && aktuell.length === 0 ? KOPF_BREITE : 0;
-        const b = taktBreite(takt);
-        if (aktuell.length && breite + b > opt.breite - LINKS_RAND) {
-            systeme.push(aktuell); aktuell = []; breite = 0;
+    if (opt.takteProZeile > 0) {
+        for (let i = 0; i < takte.length; i += opt.takteProZeile) {
+            systeme.push(takte.slice(i, i + opt.takteProZeile).map((takt, j) => ({ takt, index: i + j })));
         }
-        aktuell.push({ takt, index: i });
-        breite += b + (aktuell.length === 1 && systeme.length === 0 ? kopfPlatz : 0);
-    });
-    if (aktuell.length) systeme.push(aktuell);
+    } else {
+        let aktuell = [], breite = 0;
+        takte.forEach((takt, i) => {
+            const kopfPlatz = systeme.length === 0 && aktuell.length === 0 ? KOPF_BREITE : 0;
+            const b = taktBreite(takt);
+            if (aktuell.length && breite + b > opt.breite - LINKS_RAND) {
+                systeme.push(aktuell); aktuell = []; breite = 0;
+            }
+            aktuell.push({ takt, index: i });
+            breite += b + (aktuell.length === 1 && systeme.length === 0 ? kopfPlatz : 0);
+        });
+        if (aktuell.length) systeme.push(aktuell);
+    }
 
     const svgListe = systeme.map((system, systemNr) => {
         const istErstesSystem = systemNr === 0;
@@ -393,7 +406,12 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const oben = Math.min(inkOben, obenGrenze) - 4;
         const unten = Math.max(inkUnten, LINIE_Y + 20) + 4;
         const hoeheSvg = unten - oben;
-        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="max-width:${Math.round(breiteSvg)}px">${teileSvg.join('')}</svg>`;
+        // Anzeigegroesse per CSS skaliert, nicht die Zeichnung selbst neu
+        // gerechnet - die viewBox bleibt die "echte" Groesse, nur die
+        // dargestellte Breite (und damit, seitenverhaeltnis-treu, die Hoehe)
+        // wandert mit dem Groesse-Regler.
+        const zielBreite = Math.round(breiteSvg * opt.skalierung);
+        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px; max-width:100%">${teileSvg.join('')}</svg>`;
     });
 
     return svgListe.join('');
