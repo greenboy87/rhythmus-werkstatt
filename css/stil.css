@@ -197,19 +197,44 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
    Browser-Standard-Schwarz. */
 #anzeige-karte:fullscreen,
 #anzeige-karte.vollbild {
+    /* position:fixed ist der eigentliche Kern: Ohne das bleibt die Karte,
+       egal wie breit/hoch sie rechnerisch ist, an ihrer normalen Stelle im
+       Seitenfluss stehen - bei einem Scrollstand weiter unten (z.B. weil
+       man vorher im Editor war) landet dann genau "das Bild zu weit unten",
+       weil der sichtbare Fullscreen-Ausschnitt eine Seite zeigt, die selbst
+       noch mitten im normalen Dokumentfluss liegt, statt an den
+       Bildschirmrand gepinnt zu sein. */
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     width: 100vw; height: 100vh; max-width: none;
-    display: grid; grid-template-rows: auto 1fr;
-    padding: 2rem 4rem; background: var(--bg-karte); overflow: auto; border-radius: 0;
+    display: block;
+    padding: 0; margin: 0; background: var(--bg-karte); overflow: auto; border-radius: 0;
 }
-/* Grid statt Flexbox fuer genau dieses Muster (fester Kopf, Rest zentriert):
-   .vollbild-kopf (alle Bedienelemente, in ihrer natuerlichen Hoehe) bildet
-   die erste Zeile, #anzeige die zweite - 1fr nimmt sich automatisch den
-   kompletten Rest und zentriert die Noten darin, mit deutlichem Abstand
-   zum Kopf darueber. */
+/* Der Kopf (Bedienelemente) liegt absolut ueber dem Bild, statt als Grid-
+   Zeile Platz wegzunehmen - sonst zentrieren wir nur noch "die Reststelle
+   unter dem Kopf", und je hoeher der Kopf, desto weiter rutscht die Mitte
+   nach unten. Die Noten sollen aber in der Mitte des ganzen Bildschirms
+   stehen, nicht der Mitte des Rests - deshalb #anzeige absolut auf 50/50%
+   mit transform, unabhaengig von der Kopf-Hoehe. */
+#anzeige-karte:fullscreen .vollbild-kopf,
+#anzeige-karte.vollbild .vollbild-kopf {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 1.6rem 3rem 0; z-index: 1;
+}
 #anzeige-karte:fullscreen #anzeige,
 #anzeige-karte.vollbild #anzeige {
+    /* width (nicht nur max-width) ist absichtlich fest: ausserhalb des
+       normalen Flusses (position:absolute, kein "right") wuerde sich die
+       Breite sonst nach dem Inhalt richten - und genau diese Breite liest
+       anzeigeNeuZeichnen() VOR dem Zeichnen aus, um "Takte/Zeile: auto" zu
+       berechnen. Ohne feste Breite waere das beim ersten Zeichnen 0. */
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 94vw; margin: 0; max-height: 92vh; overflow: auto;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
-    min-height: 0; margin-top: 2.5rem;
+}
+#anzeige-karte:fullscreen .anzeige-hinweis,
+#anzeige-karte.vollbild .anzeige-hinweis {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    margin: 0; font-size: 1.3rem; white-space: nowrap;
 }
 #anzeige-karte:fullscreen .anzeige-system,
 #anzeige-karte.vollbild .anzeige-system { margin-bottom: .8rem; }
@@ -237,7 +262,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .anzeige-hinweis {
     display: none; color: var(--text-gedaempft); font-weight: 700; font-size: .85rem; margin-top: -.4rem;
 }
-[data-ab].jetzt > * { fill: var(--warnung) !important; stroke: var(--warnung) !important; }
+/* kopf-hohl (halbe/ganze Note) bleibt hohl - sonst sieht sie markiert
+   wie eine ausgefuellte Viertelnote aus, nur die Umrandung faerbt mit. */
+[data-ab].jetzt > *:not(.kopf-hohl) { fill: var(--warnung) !important; stroke: var(--warnung) !important; }
+[data-ab].jetzt > .kopf-hohl { stroke: var(--warnung) !important; }
 
 /* ---------- Metronom ---------- */
 .metronom-puls { display: flex; gap: 5px; }

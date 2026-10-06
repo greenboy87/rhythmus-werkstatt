@@ -303,7 +303,7 @@ function init() {
         anzeigeNeuZeichnen();
     });
     document.getElementById('anzeige-groesse-plus').addEventListener('click', () => {
-        anzeigeSkalierung = Math.min(2.2, Math.round((anzeigeSkalierung + 0.1) * 10) / 10);
+        anzeigeSkalierung = Math.min(3.0, Math.round((anzeigeSkalierung + 0.1) * 10) / 10);
         document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
         anzeigeNeuZeichnen();
     });

@@ -188,7 +188,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz) {
         }
         const hohl = t.d >= 2;
         teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.5" ry="5.4" transform="rotate(-18 ${px} ${Y})"` +
-                   (hohl ? ` fill="none" stroke="${tinte}" stroke-width="2.6"/>` : ` fill="${tinte}"/>`));
+                   (hohl ? ` class="kopf-hohl" fill="none" stroke="${tinte}" stroke-width="2.6"/>` : ` fill="${tinte}"/>`));
         ink(px - 9, px + 9, Y - 7, Y + 7);
         if (istPunktiert(t.d)) punktSetzen(px + 12.5);
         if (t.d >= 4) return;

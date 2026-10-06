@@ -10,6 +10,23 @@
 let audioCtx = null, audioEntsperrt = false;
 let metronomGainNode = null, metronomLautstaerke = 0.6;
 
+/* Haenger-Erkennung (siehe musik-quiz/CLAUDE.md "Tonprobleme"): Ein
+   AudioContext kann 'running' melden und trotzdem ins Leere rendern, wenn
+   eine andere App oder ein Geraetewechsel (Bluetooth, AirPlay, Beamer per
+   HDMI) ihm die Ausgabe wegnimmt - genau das Bild "Ton stuerzt ab zufaellig,
+   geht erst nach Browser-Neustart wieder". Verraet sich daran, dass
+   currentTime nicht mehr weiterlaeuft, obwohl Wanduhrzeit vergeht. */
+let audioCtxZeitmarke = 0, audioCtxWanduhr = 0, audioGeraeteWechsel = false;
+function audioContextHaengt() {
+    if (!audioCtx || audioCtx.state !== 'running' || !audioCtxWanduhr) return false;
+    const wandDelta = Date.now() - audioCtxWanduhr;
+    const ctxDelta = audioCtx.currentTime - audioCtxZeitmarke;
+    return wandDelta > 500 && ctxDelta < 0.05;
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', () => { audioGeraeteWechsel = true; });
+}
+
 /* Ein dauerhafter Gain-Knoten, durch den jeder Metronom-Klick laeuft (egal ob
    Start, Vorlauf oder durchlaufender Puls). Der Lautstaerke-Regler setzt
    dessen Wert direkt und sofort - anders als eine Lautstaerke, die in jeden
@@ -43,15 +60,24 @@ function entsperreAudio(ctx) {
     } catch (e) { /* dann eben beim naechsten Versuch */ }
 }
 
+function baueAudioContextNeu(Ctor) {
+    // Vorher schliessen, sonst sammeln sich tote Contexts bis zum Browser-Limit.
+    if (audioCtx) { try { audioCtx.close(); } catch (e) { /* schon zu */ } }
+    audioCtx = new Ctor();
+    audioCtxZeitmarke = 0; audioCtxWanduhr = 0; audioGeraeteWechsel = false;
+    audioEntsperrt = false;
+    entsperreAudio(audioCtx);
+    return audioCtx;
+}
+
 function ensureAudioContext() {
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
-    if (!audioCtx || audioCtx.state === 'closed' || audioCtx.state === 'interrupted') {
-        if (audioCtx) { try { audioCtx.close(); } catch (e) { /* schon zu */ } }
-        audioCtx = new Ctor();
-        audioEntsperrt = false;
-        entsperreAudio(audioCtx);
-        return audioCtx;
+    if (!audioCtx || audioCtx.state === 'closed') return baueAudioContextNeu(Ctor);
+    // 'interrupted' kennt nur WebKit; resume() holt ihn daraus nicht verlaesslich
+    // zurueck. Ein Geraetewechsel und ein stehengebliebener Context ebenso wenig.
+    if (audioCtx.state === 'interrupted' || audioGeraeteWechsel || audioContextHaengt()) {
+        return baueAudioContextNeu(Ctor);
     }
     if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => { /* ohne Geste abgelehnt */ });
     return audioCtx;
@@ -69,6 +95,9 @@ function tonBereit(nochmal) {
         return null;
     }
     entsperreAudio(ctx);
+    // Marken fuer die Haenger-Erkennung mitfuehren.
+    audioCtxZeitmarke = ctx.currentTime;
+    audioCtxWanduhr = Date.now();
     return ctx;
 }
 
@@ -195,6 +224,7 @@ const Metronom = (function () {
         uhr = setInterval(() => {
             if (!laeuft) return;
             if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - Metronom gestoppt.', 'danger'); return; }
+            audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
             while (naechste < ctx.currentTime + 0.15) {
                 const s = schlag, wann = naechste;
                 metronomKlick(ctx, wann, s === 0);
@@ -277,6 +307,11 @@ const Vorklatschen = (function () {
         anzeigeFolge.sort((a, b) => a.zeit - b.zeit);
         if (anzeigeTakt) clearInterval(anzeigeTakt);
         anzeigeTakt = setInterval(() => {
+            // Faellt die Ausgabe waehrend des Vorklatschens weg (Geraetewechsel,
+            // andere App), tickte es sonst stumm bis zum geplanten Ende durch,
+            // ohne dass irgendwer davon erfaehrt - lieber anhalten und es sagen.
+            if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - abgebrochen.', 'danger'); return; }
+            audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
             const jetzt = ctx.currentTime;
             while (anzeigeFolge.length && anzeigeFolge[0].zeit <= jetzt) {
                 try { anzeigeFolge.shift().tat(); } catch (e) { /* Anzeige bricht nie den Ablauf ab */ }
