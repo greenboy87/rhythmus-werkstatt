@@ -132,6 +132,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     border: 1px solid var(--rand); border-radius: 10px; overflow: hidden;
     background: var(--bg-erhoben); position: relative;
 }
+/* Ueberlang (zu viel eingetragen) - zu wenig sieht man schon an den leeren
+   Kaestchen, aber ein zu voller Takt wirkte vorher wie ein ganz normaler.
+   Bewusst nur ein ganz leichter Rotton, kein Alarm-Rot. */
+.editor-takt.ueberlang { background: rgba(244, 63, 94, .1); border-color: rgba(244, 63, 94, .45); }
 .editor-takt .takt-nr {
     position: absolute; top: 2px; left: 5px; font-size: .62rem; font-weight: 800;
     color: var(--text-schwach);
@@ -194,8 +198,17 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 #anzeige-karte:fullscreen,
 #anzeige-karte.vollbild {
     width: 100vw; height: 100vh; max-width: none;
-    display: flex; flex-direction: column; justify-content: center;
+    display: flex; flex-direction: column;
     padding: 2rem 4rem; background: var(--bg-karte); overflow: auto; border-radius: 0;
+}
+/* Kopfbereich (Ueberschrift, Metronom, Abspielen, Haekchen) bleibt oben in
+   seiner natuerlichen, kompakten Hoehe (Flex-Kinder wachsen von sich aus
+   nicht) - nur #anzeige bekommt den restlichen Platz und zentriert die
+   Noten darin, mit deutlichem Abstand zum Bedienbereich darueber. */
+#anzeige-karte:fullscreen #anzeige,
+#anzeige-karte.vollbild #anzeige {
+    flex: 1 1 auto; min-height: 0; margin-top: 2.5rem;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
 }
 #anzeige-karte:fullscreen .anzeige-system,
 #anzeige-karte.vollbild .anzeige-system { margin-bottom: .8rem; }

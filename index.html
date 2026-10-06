@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=12">
-<link rel="stylesheet" href="css/druck.css?v=12">
+<link rel="stylesheet" href="css/stil.css?v=13">
+<link rel="stylesheet" href="css/druck.css?v=13">
 </head>
 <body>
 
@@ -42,6 +42,13 @@
                 <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
                 <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
                 <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
+                <span class="leiste" style="gap:.4rem; margin-left:.4rem;" title="An: ein Baustein, der nicht mehr in den Takt passt, beginnt von selbst einen neuen. Aus: man kann einen Takt bewusst überfüllen, z.B. damit die Klasse die Taktstriche selbst einzeichnet.">
+                    <label class="schalter">
+                        <input type="checkbox" id="opt-auto-takt">
+                        <span class="schalter-schieber"></span>
+                    </label>
+                    <span class="schalter-feld">Takt automatisch anlegen</span>
+                </span>
             </div>
             <div class="leiste" title="Nur in diesem Browser gespeichert - nicht geteilt, nicht auf anderen Geräten sichtbar">
                 <button type="button" class="btn" id="blatt-speichern-btn"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
@@ -154,11 +161,11 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=12"></script>
-<script src="js/noten.js?v=12"></script>
-<script src="js/editor.js?v=12"></script>
-<script src="js/audio.js?v=12"></script>
-<script src="js/generator.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
+<script src="js/version.js?v=13"></script>
+<script src="js/noten.js?v=13"></script>
+<script src="js/editor.js?v=13"></script>
+<script src="js/audio.js?v=13"></script>
+<script src="js/generator.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>

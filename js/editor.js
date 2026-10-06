@@ -13,6 +13,11 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
     let zeichen = zeichenStart || '4/4';
     let takte = [{ bausteine: [] }];
     let onAenderung = null;
+    // Aus: antippen haengt auch dann ans Taktende an, wenn der Takt dadurch
+    // ueberlang wird - gewollt fuer Uebungen, bei denen die Klasse die
+    // Taktstriche selbst einzeichnen soll. An: passt ein Baustein nicht mehr
+    // in den angefangenen Takt, beginnt automatisch ein neuer.
+    let autoNeuerTakt = false;
 
     wurzel.innerHTML = '<div class="editor-takte"></div>';
     const anzeige = wurzel.querySelector('.editor-takte');
@@ -20,14 +25,22 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
     function soll() { return taktSoll(zeichen); }
     function dauer(t) { return rhythmusDauer(t.bausteine); }
 
-    function naechsteFreieStelle() {
+    function naechsteFreieStelle(baustein) {
+        if (autoNeuerTakt && baustein) {
+            for (let i = 0; i < takte.length; i++) {
+                const rest = soll() - dauer(takte[i]);
+                if (rest > 0.001 && baustein.dauer <= rest + 0.001) return { taktNr: i, index: takte[i].bausteine.length };
+            }
+            takte.push({ bausteine: [] });
+            return { taktNr: takte.length - 1, index: 0 };
+        }
         for (let i = 0; i < takte.length; i++) {
             if (dauer(takte[i]) < soll() - 0.001) return { taktNr: i, index: takte[i].bausteine.length };
         }
         return { taktNr: takte.length - 1, index: takte[takte.length - 1].bausteine.length };
     }
     function einfuegenAmEnde(baustein) {
-        const stelle = naechsteFreieStelle();
+        const stelle = naechsteFreieStelle(baustein);
         takte[stelle.taktNr].bausteine.splice(stelle.index, 0, baustein);
         zeichnen();
     }
@@ -141,7 +154,10 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
         anzeige.innerHTML = '';
         takte.forEach((takt, taktNr) => {
             const box = document.createElement('div');
-            box.className = 'editor-takt';
+            // Nicht nur "zu viel" - auch "zu wenig" ist beim Abspielen schon als
+            // leere Kaestchen zu sehen, aber "zu viel" sah bisher aus wie ein
+            // ganz normaler voller Takt. Deshalb hier zusaetzlich markieren.
+            box.className = 'editor-takt' + (dauer(takt) > soll() + 0.001 ? ' ueberlang' : '');
             const nr = document.createElement('span');
             nr.className = 'takt-nr'; nr.textContent = taktNr + 1;
             box.appendChild(nr);
@@ -184,6 +200,7 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
         leeren, zurueck, taktHinzufuegen, taktartSetzen,
         zeichen: () => zeichen,
         anzahlTakte: () => takte.length,
-        aufAenderung: (fn) => { onAenderung = fn; }
+        aufAenderung: (fn) => { onAenderung = fn; },
+        autoNeuerTaktSetzen: (an) => { autoNeuerTakt = !!an; }
     };
 }

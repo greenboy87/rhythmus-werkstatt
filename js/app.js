@@ -245,6 +245,7 @@ function init() {
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
     document.getElementById('zurueck-btn').addEventListener('click', () => editor.zurueck());
     document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
+    document.getElementById('opt-auto-takt').addEventListener('change', (e) => editor.autoNeuerTaktSetzen(e.target.checked));
     blaetterAufbauen();
 
     document.getElementById('opt-notenlinien').addEventListener('change', anzeigeNeuZeichnen);
