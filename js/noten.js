@@ -257,7 +257,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
@@ -306,11 +306,15 @@ function stueckAnzeigeHtml(stueck, optionen) {
     const svgListe = systeme.map((system, systemNr) => {
         const istErstesSystem = systemNr === 0;
         const istLetztesSystem = systemNr === systeme.length - 1;
+        // "Als Uebung": jede Zeile ist ein eigenstaendiges kleines Stueck,
+        // bekommt also wie ein richtiges System ihren eigenen Schluessel und
+        // ihre eigene Taktangabe - nicht nur die allererste Zeile.
+        const zeigtVollenKopf = opt.alsUebung || istErstesSystem;
         // Im Spalten-Modus faengt jede Zeile an derselben Stelle an wie die
         // erste (Platz fuer Schluessel/Taktangabe bleibt reserviert, auch wenn
         // dort nichts gezeichnet wird) - sonst stuende Spalte 1 der zweiten
         // Zeile nicht unter Spalte 1 der ersten.
-        const kopfReserviert = spaltenBreite ? true : istErstesSystem;
+        const kopfReserviert = spaltenBreite ? true : zeigtVollenKopf;
         let x = LINKS_RAND + (kopfReserviert ? KOPF_BREITE : 10);
         const teileSvg = [];
         let inkVon = Infinity, inkBis = -Infinity, inkOben = Infinity, inkUnten = -Infinity;
@@ -324,12 +328,12 @@ function stueckAnzeigeHtml(stueck, optionen) {
         // sonst schneidet der Zuschnitt am Ende genau diesen Kopf wieder weg.
         const linksAnschlag = LINKS_RAND - 4;
         inkVon = Math.min(inkVon, linksAnschlag);
-        if (istErstesSystem) {
+        if (zeigtVollenKopf) {
             if (opt.notenlinien) {
                 teileSvg.push(schluesselSvg(LINKS_RAND + 7, LINIE_Y, tinte));
                 inkOben = Math.min(inkOben, LINIE_Y - 13); inkUnten = Math.max(inkUnten, LINIE_Y + 13);
             }
-            if (opt.wiederholung) {
+            if (istErstesSystem && opt.wiederholung) {
                 // Ein Wiederholungszeichen ist zweistrichig: duenn, dann dick,
                 // erst danach die Punkte - vorher stand hier nur ein einzelner
                 // dicker Strich, das sah nicht nach dem bekannten Zeichen aus.
@@ -339,6 +343,14 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
                 teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
                 inkVon = Math.min(inkVon, duenn - 3);
+            } else if (opt.alsUebung) {
+                // Jede Zeile ist ein eigenes kleines Stueck - genauso zweistrichig
+                // wie ein echtes Wiederholungszeichen, nur ohne die Punkte, die
+                // "hier geht's zurueck" bedeuten wuerden (tut es ja nicht).
+                const duenn = linksAnschlag - 5, dick = linksAnschlag;
+                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+                inkVon = Math.min(inkVon, duenn - 3);
             }
             const [oben, unten] = String(stueck.zeichen || '4/4').split('/');
             const tx = LINKS_RAND + KOPF_BREITE - 20;
@@ -346,6 +358,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
                           ` text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${oben}</text>`);
             teileSvg.push(`<text class="kopf" x="${tx}" y="${LINIE_Y + 10}" font-size="19" font-weight="900"` +
                           ` text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${unten || ''}</text>`);
+            if (opt.alsUebung) {
+                // Uebungsnummer oben links ueber der Zeile.
+                const nx = LINKS_RAND - 2, ny = LINIE_Y - (opt.notenlinien ? 34 : 26);
+                teileSvg.push(`<text x="${nx}" y="${ny}" font-size="13" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${systemNr + 1}.</text>`);
+                inkOben = Math.min(inkOben, ny - 11);
+                inkVon = Math.min(inkVon, nx - 2);
+            }
         }
 
         const zaehlzeitenTexte = [];
@@ -440,6 +459,14 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 inkOben = Math.min(inkOben, LINIE_Y - 32);
                 inkBis = Math.max(inkBis, duenn + 4 + String(male).length * 9 + 10);
             }
+        } else if (opt.alsUebung) {
+            // Schlussstrich-Paar (duenn, dann dick) statt des einfachen Strichs -
+            // jede Zeile endet wie ein eigenes kleines Stueck, nicht nur eine
+            // Zwischenstation im groesseren Ganzen.
+            const duenn = rechts, dick = rechts + 5;
+            teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+            teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+            inkBis = Math.max(inkBis, dick + 3);
         } else {
             teileSvg.push(`<line x1="${rechts}" y1="${LINIE_Y - 17}" x2="${rechts}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="${istLetztesSystem ? 3 : 2}"/>`);
         }

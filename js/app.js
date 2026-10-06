@@ -57,6 +57,7 @@ function anzeigeOptionen() {
         undAlsPlus: document.getElementById('opt-und-als-plus').checked,
         wiederholung: document.getElementById('opt-wiederholung').checked,
         wiederholungen: wiederholungen,
+        alsUebung: document.getElementById('opt-als-uebung').checked,
         takteProZeile: takteProZeile
     };
 }
@@ -254,6 +255,7 @@ function init() {
         anzeigeNeuZeichnen();
     });
     document.getElementById('opt-und-als-plus').addEventListener('change', anzeigeNeuZeichnen);
+    document.getElementById('opt-als-uebung').addEventListener('change', anzeigeNeuZeichnen);
 
     // Anzeige/Bedienung zaehlen die Gesamtzahl der Durchgaenge (2,3,4...),
     // "wiederholungen" selbst bleibt intern die Zusatz-Zahl (1,2,3...) - die
@@ -349,6 +351,13 @@ function init() {
         document.getElementById('abspielen-btn').innerHTML = laeuft
             ? '<i class="fa-solid fa-stop"></i> Stopp'
             : '<i class="fa-solid fa-play"></i> Abspielen';
+    });
+
+    const klangWahl = document.getElementById('klatsch-sound-wahl');
+    klangWahl.addEventListener('change', () => klatschSoundSetzen(klangWahl.value));
+    document.getElementById('klatsch-sound-probe').addEventListener('click', () => {
+        const probe = () => { const ctx = tonBereit(probe); if (ctx) klatschSoundSpielen(ctx, ctx.currentTime + 0.05); };
+        probe();
     });
 
     let resizeTimer = null;

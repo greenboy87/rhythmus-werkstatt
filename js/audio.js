@@ -120,6 +120,69 @@ function klatschKlang(ctx, zeit) {
     return quelle;
 }
 
+/* Holzblock: ein stark gedaempftes Rauschen durch ein schmales (hohes Q)
+   Bandpass-Filter - der Resonanzpeak gibt ihm die "hohle" Holz-Klangfarbe,
+   die ein reines Klatschen (breitbandig, kein Peak) nicht hat. */
+function holzblockKlang(ctx, zeit) {
+    const laenge = Math.floor(ctx.sampleRate * 0.045);
+    const puffer = ctx.createBuffer(1, laenge, ctx.sampleRate);
+    const daten = puffer.getChannelData(0);
+    for (let i = 0; i < laenge; i++) daten[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / laenge, 8);
+    const quelle = ctx.createBufferSource();
+    quelle.buffer = puffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 1400; filter.Q.value = 9;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(1, zeit);
+    quelle.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    quelle.start(zeit);
+    return quelle;
+}
+
+/* Klick: noch kuerzer und hochpassgefiltert statt Bandpass - duenn und
+   trocken, wie ein Stick-Klick, deutlich heller als Klatschen und Holzblock. */
+function klickKlang(ctx, zeit) {
+    const laenge = Math.floor(ctx.sampleRate * 0.025);
+    const puffer = ctx.createBuffer(1, laenge, ctx.sampleRate);
+    const daten = puffer.getChannelData(0);
+    for (let i = 0; i < laenge; i++) daten[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / laenge, 2);
+    const quelle = ctx.createBufferSource();
+    quelle.buffer = puffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass'; filter.frequency.value = 3500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.8, zeit);
+    quelle.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    quelle.start(zeit);
+    return quelle;
+}
+
+/* Conga: anders als die drei Rausch-Klaenge ein echter Ton mit schnellem
+   Tonhoehenabfall (220 -> 90 Hz) - tief und "rund", eindeutig von den
+   geraeuschhaften Klaengen zu unterscheiden. */
+function trommelKlang(ctx, zeit) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(220, zeit);
+    o.frequency.exponentialRampToValueAtTime(90, zeit + 0.08);
+    g.gain.setValueAtTime(0.0001, zeit);
+    g.gain.exponentialRampToValueAtTime(0.9, zeit + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, zeit + 0.14);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(zeit); o.stop(zeit + 0.16);
+    return o;
+}
+
+const KLATSCH_KLAENGE = {
+    klatschen: klatschKlang,
+    holzblock: holzblockKlang,
+    klick: klickKlang,
+    trommel: trommelKlang
+};
+let klatschSound = 'klatschen';
+function klatschSoundSetzen(code) { if (KLATSCH_KLAENGE[code]) klatschSound = code; }
+function klatschSoundSpielen(ctx, zeit) { return KLATSCH_KLAENGE[klatschSound](ctx, zeit); }
+
 function metronomKlick(ctx, zeit, betont) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'square';
@@ -394,7 +457,7 @@ const Vorklatschen = (function () {
                     anzeigePlanen(t, () => stueckMarkieren(host, stueck.zeichen, taktNr, gelaufenBeiStart));
                     if (!nurMetronom) {
                         let innerT = t;
-                        b.teile.forEach(teil => { if (!teil.p) knoten.push(klatschKlang(ctx, innerT)); innerT += teil.d * viertel; });
+                        b.teile.forEach(teil => { if (!teil.p) knoten.push(klatschSoundSpielen(ctx, innerT)); innerT += teil.d * viertel; });
                     }
                     t += b.dauer * viertel;
                     gelaufen += b.dauer;
