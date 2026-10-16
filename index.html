@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=16">
-<link rel="stylesheet" href="css/druck.css?v=16">
+<link rel="stylesheet" href="css/stil.css?v=17">
+<link rel="stylesheet" href="css/druck.css?v=17">
 </head>
 <body>
 
@@ -54,6 +54,7 @@
                 <button type="button" class="btn" id="blatt-speichern-btn"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
                 <select id="blatt-wahl"><option value="">Blatt laden…</option></select>
                 <button type="button" class="btn" id="blatt-loeschen-btn" title="Ausgewähltes Blatt löschen"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn" id="link-kopieren-btn" title="Link mit Rhythmus, Titel und Einstellungen in die Zwischenablage - wer ihn öffnet, hat genau diesen Stand im Editor"><i class="fa-solid fa-link"></i> Link kopieren</button>
             </div>
         </div>
 
@@ -109,6 +110,11 @@
         <div id="metronom"></div>
         <div class="leiste" style="margin: .7rem 0;">
             <button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <button type="button" class="btn" id="herunterladen-btn" title="Als Audiodatei speichern - klingt genau wie Abspielen (Modus, Klang, Tempo, Vorlauf, Wiederholungen, Metronom-Lautstärke)"><i class="fa-solid fa-download"></i> Herunterladen</button>
+            <select id="herunterladen-format" title="Dateiformat">
+                <option value="mp3">MP3</option>
+                <option value="wav">WAV</option>
+            </select>
             <select id="abspielen-modus">
                 <option value="vorklatschen">Vorklatschen</option>
                 <option value="selbstklatschen">Selbstklatschen (nur Puls)</option>
@@ -174,11 +180,14 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=16"></script>
-<script src="js/noten.js?v=16"></script>
-<script src="js/editor.js?v=16"></script>
-<script src="js/audio.js?v=16"></script>
-<script src="js/generator.js?v=16"></script>
-<script src="js/app.js?v=16"></script>
+<script src="js/version.js?v=17"></script>
+<script src="js/noten.js?v=17"></script>
+<script src="js/editor.js?v=17"></script>
+<script src="js/audio.js?v=17"></script>
+<script src="js/generator.js?v=17"></script>
+<script src="js/link.js?v=17"></script>
+<script src="js/vendor/lame.min.js?v=17"></script>
+<script src="js/export.js?v=17"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>

@@ -265,6 +265,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
     const LINKS_RAND = 16;
     const KOPF_BREITE = 48;   // Platz fuer Schluessel + Taktangabe im ersten System
     const RAND_TAKT = 15;
+    // Mit Notenlinien steht das Anfangs-Wiederholungszeichen wie im Notensatz
+    // ueblich NACH Schluessel und Taktangabe, direkt vor der ersten Note - am
+    // Zeilenanfang laege es genau auf dem Perkussionsschluessel. Die erste Note
+    // rueckt dafuer um diese Breite nach rechts. Ohne Notenlinien gibt es
+    // keinen Schluessel, das Zeichen bleibt dann ganz vorn.
+    const WDH_NACH_KOPF = opt.notenlinien && opt.wiederholung;
+    const WDH_BREITE = WDH_NACH_KOPF ? 30 : 0;
 
     function taktBreite(takt) {
         return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || 38), 0), 0) + RAND_TAKT;
@@ -292,7 +299,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
     } else {
         let aktuell = [], breite = 0;
         takte.forEach((takt, i) => {
-            const kopfPlatz = systeme.length === 0 && aktuell.length === 0 ? KOPF_BREITE : 0;
+            const kopfPlatz = systeme.length === 0 && aktuell.length === 0 ? KOPF_BREITE + WDH_BREITE : 0;
             const b = taktBreite(takt);
             if (aktuell.length && breite + b > opt.breite - LINKS_RAND) {
                 systeme.push(aktuell); aktuell = []; breite = 0;
@@ -317,6 +324,20 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const kopfReserviert = spaltenBreite ? true : zeigtVollenKopf;
         let x = LINKS_RAND + (kopfReserviert ? KOPF_BREITE : 10);
         const teileSvg = [];
+        // Platz fuers Wiederholungszeichen hinter dem Kopf: in der ersten Zeile
+        // ohnehin, im Spalten-Modus in JEDER Zeile (sonst stuende Spalte 1 der
+        // ersten Zeile um diese Breite weiter rechts als in allen anderen).
+        const wdhHierZeichnen = WDH_NACH_KOPF && istErstesSystem;
+        if (wdhHierZeichnen || (WDH_NACH_KOPF && spaltenBreite)) {
+            if (wdhHierZeichnen) {
+                const duenn = x - 4, dick = x + 1;
+                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+                teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y - 4}" r="2.2" fill="${tinte}"/>`);
+                teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y + 4}" r="2.2" fill="${tinte}"/>`);
+            }
+            x += WDH_BREITE;
+        }
         let inkVon = Infinity, inkBis = -Infinity, inkOben = Infinity, inkUnten = -Infinity;
         const merge = (r) => {
             if (!isFinite(r.inkVon)) return;
@@ -333,7 +354,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(schluesselSvg(LINKS_RAND + 7, LINIE_Y, tinte));
                 inkOben = Math.min(inkOben, LINIE_Y - 13); inkUnten = Math.max(inkUnten, LINIE_Y + 13);
             }
-            if (istErstesSystem && opt.wiederholung) {
+            if (istErstesSystem && opt.wiederholung && !WDH_NACH_KOPF) {
                 // Ein Wiederholungszeichen ist zweistrichig: duenn, dann dick,
                 // erst danach die Punkte - vorher stand hier nur ein einzelner
                 // dicker Strich, das sah nicht nach dem bekannten Zeichen aus.

@@ -228,6 +228,112 @@ function blaetterAufbauen() {
     });
 }
 
+/* ---------- Gemeinsamer Stand fuer Link und Audio-Export ---------- */
+
+/* Die aktuellen Abspiel-Einstellungen - Standardwerte fuer rhythmusAudio. */
+function seitenEinstellungen() {
+    return {
+        bpm: Metronom.bpm(),
+        vorlaufTakte: Metronom.vorlaufTakte(),
+        durchgaenge: document.getElementById('opt-wiederholung').checked ? wiederholungen + 1 : 1,
+        klang: document.getElementById('klatsch-sound-wahl').value,
+        metronom: Metronom.lautstaerke(),
+        nurMetronom: document.getElementById('abspielen-modus').value === 'selbstklatschen'
+    };
+}
+
+/* Der komplette Stand als Objekt im Format von linkLesen/linkBauen. */
+function linkStand() {
+    const opt = anzeigeOptionen();
+    const stueck = editor.stueck();
+    return {
+        zeichen: stueck.zeichen,
+        takte: stueck.takte.map(t => t.bausteine.map(b => b.code)),
+        titel: document.getElementById('druck-titel').value.trim(),
+        bpm: Metronom.bpm(),
+        klang: document.getElementById('klatsch-sound-wahl').value,
+        vorlauf: Metronom.vorlaufTakte(),
+        metronom: Math.round(Metronom.lautstaerke() * 100),
+        notenlinien: opt.notenlinien,
+        zaehlzeiten: opt.zaehlzeiten,
+        undAlsPlus: opt.undAlsPlus,
+        durchgaenge: opt.wiederholung ? wiederholungen + 1 : 1,
+        alsUebung: opt.alsUebung,
+        takteProZeile: opt.takteProZeile
+    };
+}
+
+/* Uebernimmt einen Rhythmus-Link (#t=...&r=...) in Editor und Einstellungen.
+   Gespeicherte Blaetter im localStorage bleiben dabei unberuehrt. */
+function linkUebernehmen(hash) {
+    const x = linkLesen(hash);
+    if (!x) return false;
+    document.getElementById('taktart-wahl').value = x.zeichen;
+    document.getElementById('druck-titel').value = x.titel;
+    Metronom.tempoSetzen(x.bpm);
+    Metronom.vorlaufSetzen(x.vorlauf);
+    Metronom.lautstaerkeSetzen(x.metronom / 100);
+    const klangWahl = document.getElementById('klatsch-sound-wahl');
+    klangWahl.value = x.klang;
+    klatschSoundSetzen(x.klang);
+
+    document.getElementById('opt-notenlinien').checked = x.notenlinien;
+    document.getElementById('opt-zaehlzeiten').checked = x.zaehlzeiten;
+    document.getElementById('und-plus-feld').classList.toggle('hidden', !x.zaehlzeiten);
+    document.getElementById('opt-und-als-plus').checked = x.undAlsPlus;
+    document.getElementById('opt-wiederholung').checked = x.durchgaenge > 1;
+    document.getElementById('wiederholungen-feld').classList.toggle('hidden', x.durchgaenge <= 1);
+    wiederholungen = Math.max(1, x.durchgaenge - 1);
+    document.getElementById('wiederholungen-anzeige').textContent = wiederholungen + 1;
+    document.getElementById('opt-als-uebung').checked = x.alsUebung;
+    takteProZeile = x.takteProZeile;
+    document.getElementById('takte-zeile-anzeige').textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
+
+    // Setzt den Editor und zeichnet ueber aufAenderung alles neu (Anzeige,
+    // Titel, Druck). Takte, die nicht aufgehen, kommen trotzdem hinein - der
+    // Editor markiert sie ohnehin.
+    editor.setzen(x.zeichen, x.takte.map(codes => ({ bausteine: codes.map(c => RHYTHMUS_NACH_CODE[c]) })));
+    x.unbekannt.forEach(u => zeigeToast(`Unbekannter Baustein „${u.code}" in Takt ${u.takt} – übersprungen`, 'danger'));
+    return true;
+}
+
+function linkKopieren() {
+    const url = location.origin + location.pathname + '#' + linkBauen(linkStand());
+    const fallback = () => {
+        const feld = document.createElement('textarea');
+        feld.value = url;
+        feld.setAttribute('readonly', '');
+        feld.style.position = 'fixed'; feld.style.top = '0'; feld.style.opacity = '0';
+        document.body.appendChild(feld);
+        feld.select(); feld.setSelectionRange(0, url.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { /* gibt's nicht mehr */ }
+        feld.remove();
+        if (ok) zeigeToast('Link kopiert.', 'success');
+        else prompt('Link zum Kopieren:', url);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => zeigeToast('Link kopiert.', 'success'), fallback);
+    } else fallback();
+}
+
+async function audioHerunterladen() {
+    const knopf = document.getElementById('herunterladen-btn');
+    const stueck = editor.stueck();
+    if (stueck.takte.every(t => !t.bausteine.length)) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
+    const format = document.getElementById('herunterladen-format').value;
+    knopf.disabled = true;
+    zeigeToast('Erzeuge Audio…', 'info');
+    try {
+        const blob = await rhythmusAudio(stueck, { format });
+        blobHerunterladen(blob, exportDateiname(document.getElementById('druck-titel').value, stueck.zeichen, Metronom.bpm(), format));
+    } catch (e) {
+        zeigeToast('Audio konnte nicht erzeugt werden: ' + e.message, 'danger');
+    } finally {
+        knopf.disabled = false;
+    }
+}
+
 function init() {
     document.getElementById('theme-knopf').addEventListener('click', themeUmschalten);
 
@@ -368,7 +474,11 @@ function init() {
 
     window.addEventListener('beforeprint', druckNeuZeichnen);
 
-    anzeigeNeuZeichnen();
+    document.getElementById('link-kopieren-btn').addEventListener('click', linkKopieren);
+    document.getElementById('herunterladen-btn').addEventListener('click', audioHerunterladen);
+    window.addEventListener('hashchange', () => linkUebernehmen(location.hash));
+
+    if (!linkUebernehmen(location.hash)) anzeigeNeuZeichnen();
     zeigeStand();
 }
 

@@ -53,8 +53,69 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Jeder Metronom-Klick läuft durch einen einzigen dauerhaften Gain-Knoten
   (`metronomZiel`), damit der Lautstaerke-Regler live wirkt statt nur beim
   naechsten Start.
+  `rhythmusZeitplan(stueck, {bpm, vorlaufTakte, durchgaenge, nurMetronom})`
+  ist die **gemeinsame Grundlage von Live-Abspielen und Audio-Export**:
+  DOM-frei, liefert `{ereignisse: [{zeit, art: 'klick'|'klatsch', betont,
+  puls}], markierungen, wechsel, dauer}` (Zeiten in Sekunden ab 0).
+  `Vorklatschen.starten` plant genau diese Ereignisse auf die Audiouhr,
+  `rhythmusAudio` rendert sie offline - Änderungen am Timing also nur dort,
+  sonst laufen Live und Datei auseinander. `metronomKlick` nimmt optional
+  einen eigenen Ziel-Knoten (Export), sonst den Live-Knoten `metronomZiel`.
 - `js/generator.js` - würfelt Übungen aus den ausgewählten Bausteinen.
-- `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI.
+- `js/link.js` - Rhythmus als Link, DOM-frei: `linkLesen(hash)` -> Objekt
+  (oder `null` ohne `r=`), `linkBauen(objekt)` -> Hash ohne `#`.
+  `linkLesen(linkBauen(x))` ergibt wieder `x`. Format (alles im Hash, damit
+  GitHub Pages nichts sieht):
+  `#t=4/4&r=V-AA-Vp-SSSS_H-H&titel=Übung%201&bpm=90&o=lz&k=holzblock&v=1&m=60`
+  - `t` Taktart aus `TAKTARTEN` (sonst/fehlt: 4/4)
+  - `r` Pflicht: Bausteine mit `-`, Takte mit `_` getrennt; beim Lesen auch
+    `|` bzw. `%7C` als Takttrenner, Leerzeichen werden ignoriert.
+    Unbekannte Kürzel werden übersprungen und per Toast gemeldet,
+    nicht aufgehende Takte trotzdem übernommen.
+  - `titel` Titel-Feld (URL-kodiert)
+  - `bpm` Tempo 40-200 (sonst ignoriert, Standard 90)
+  - `o` Schalter als Buchstaben: `l` Notenlinien, `z` Zählzeiten,
+    `p` "+" statt "und", `w` Wiederholung (`w3` = 3× insgesamt, `w` = 2×),
+    `u` Als Übung, `k4` = 4 Takte/Zeile (ohne `k` = auto)
+  - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel` (Standard klatschen)
+  - `v` Vorlauf-Takte 0-4 (Standard 1)
+  - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)
+  Fehlende Parameter bedeuten den Standardwert - ein Link beschreibt immer
+  den kompletten Stand; "Link kopieren" lässt Standardwerte weg. Wird beim
+  Laden und bei `hashchange` übernommen; gespeicherte Blätter im
+  localStorage bleiben unberührt.
+- `js/export.js` - `rhythmusAudio(stueck, optionen) -> Promise<Blob>`:
+  rendert den Zeitplan mit denselben Klangfunktionen in einem
+  `OfflineAudioContext` (44,1 kHz mono, 0,5 s Ausklang, Spitze auf -1 dBFS).
+  `stueck` wie `editor.stueck()` (ohne Angabe: der Editor-Inhalt).
+  Optionen, Standard = aktuelle Einstellungen der Seite
+  (`seitenEinstellungen()` in app.js): `format` `'mp3'|'wav'` (Standard mp3),
+  `bpm`, `vorlaufTakte`, `durchgaenge`, `klang`, `metronom` (0-1, 0 = ohne),
+  `nurMetronom`. Dauer = (Vorlauf + Takte × Durchgänge) × Schläge × 60/bpm
+  + 0,5 s. Gleiche Eingabe = byte-identische Datei: Das Rauschen der Klänge
+  kommt beim Export aus einem festen Zufallsgenerator, und jeder Schlag wird
+  einzeln (überlappungsfrei, in derselben Lage zum 128-Sample-Block) gerendert
+  und in JS zusammengemischt - mehrere gleichzeitige Quellen in einem
+  Kontext summiert Chrome nicht immer gleich. WAV wird selbst kodiert
+  (16 bit PCM), MP3 mit `js/vendor/lame.min.js` (lamejs 1.2.1, LGPL,
+  128 kbit/s; liegt im Repo, damit es ohne Internet im Schulnetz geht).
+  MP3 hat wie jedes MP3 ca. 25 ms Encoder-Vorlauf am Anfang; für exaktes
+  Timing WAV nehmen.
+  Automatisiert (z.B. Playwright), ohne Echtzeit-Abspielen:
+  ```js
+  await page.goto('https://greenboy87.github.io/rhythmus-werkstatt/#t=4/4&r=V-AA-Vp-SSSS_H-H&titel=Übung%201&bpm=90');
+  const b64 = await page.evaluate(async () => {
+      const blob = await rhythmusAudio(null, { format: 'mp3' });   // null = Editor-Inhalt aus dem Link
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+  });
+  fs.writeFileSync('Uebung-1_4-4_90bpm.mp3', Buffer.from(b64, 'base64'));
+  ```
+- `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
+  Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
+  Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
+  `exportDateiname`, Download per Blob-URL + `<a download>`).
 - `css/druck.css` - A4-Druckausgabe nur der Anzeige-Karte, siehe
   `@media print`. Der `<link>` auf diese Datei darf **kein**
   `media="print"`-Attribut haben, sonst gilt auch die Regel, die die
