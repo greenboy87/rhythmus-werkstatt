@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=17">
-<link rel="stylesheet" href="css/druck.css?v=17">
+<link rel="stylesheet" href="css/stil.css?v=18">
+<link rel="stylesheet" href="css/druck.css?v=18">
 </head>
 <body>
 
@@ -40,6 +40,7 @@
         <div class="leiste" style="margin-bottom:.8rem; justify-content: space-between;">
             <div class="leiste">
                 <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
+                <button type="button" class="btn" id="takt-loeschen-btn" title="Löscht den letzten Takt samt Inhalt"><i class="fa-solid fa-minus"></i> Letzten Takt</button>
                 <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
                 <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
                 <span class="leiste" style="gap:.4rem; margin-left:.4rem;" title="An: ein Baustein, der nicht mehr in den Takt passt, beginnt von selbst einen neuen. Aus: man kann einen Takt bewusst überfüllen, z.B. damit die Klasse die Taktstriche selbst einzeichnet.">
@@ -48,6 +49,12 @@
                         <span class="schalter-schieber"></span>
                     </label>
                     <span class="schalter-feld">Takt automatisch anlegen</span>
+                </span>
+                <span class="leiste" style="gap:.3rem; margin-left:.4rem;" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
+                    <span class="schalter-feld">Takte/Zeile</span>
+                    <button type="button" class="btn takte-zeile-minus">−</button>
+                    <span class="btn takte-zeile-anzeige" style="min-width:3.2rem; text-align:center">auto</span>
+                    <button type="button" class="btn takte-zeile-plus">+</button>
                 </span>
             </div>
             <div class="leiste" title="Nur in diesem Browser gespeichert - nicht geteilt, nicht auf anderen Geräten sichtbar">
@@ -98,9 +105,9 @@
                 <i class="fa-solid fa-floppy-disk"></i>
             </button>
             <span class="schalter-feld">Takte/Zeile</span>
-            <button type="button" class="btn" id="takte-zeile-minus">−</button>
-            <span id="takte-zeile-anzeige" class="btn" style="min-width:3.2rem; text-align:center" title="0 = automatisch, so viele wie reinpassen">auto</span>
-            <button type="button" class="btn" id="takte-zeile-plus">+</button>
+            <button type="button" class="btn takte-zeile-minus">−</button>
+            <span class="btn takte-zeile-anzeige" style="min-width:3.2rem; text-align:center" title="0 = automatisch, so viele wie reinpassen">auto</span>
+            <button type="button" class="btn takte-zeile-plus">+</button>
             <span class="schalter-feld">Größe</span>
             <button type="button" class="btn" id="anzeige-groesse-minus">−</button>
             <span id="anzeige-groesse-anzeige" class="btn" style="min-width:3.2rem; text-align:center">100%</span>
@@ -180,14 +187,14 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=17"></script>
-<script src="js/noten.js?v=17"></script>
-<script src="js/editor.js?v=17"></script>
-<script src="js/audio.js?v=17"></script>
-<script src="js/generator.js?v=17"></script>
-<script src="js/link.js?v=17"></script>
-<script src="js/vendor/lame.min.js?v=17"></script>
-<script src="js/export.js?v=17"></script>
-<script src="js/app.js?v=17"></script>
+<script src="js/version.js?v=18"></script>
+<script src="js/noten.js?v=18"></script>
+<script src="js/editor.js?v=18"></script>
+<script src="js/audio.js?v=18"></script>
+<script src="js/generator.js?v=18"></script>
+<script src="js/link.js?v=18"></script>
+<script src="js/vendor/lame.min.js?v=18"></script>
+<script src="js/export.js?v=18"></script>
+<script src="js/app.js?v=18"></script>
 </body>
 </html>

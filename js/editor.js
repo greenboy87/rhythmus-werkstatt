@@ -18,6 +18,10 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
     // Taktstriche selbst einzeichnen soll. An: passt ein Baustein nicht mehr
     // in den angefangenen Takt, beginnt automatisch ein neuer.
     let autoNeuerTakt = false;
+    // 0 = so viele Takte nebeneinander, wie reinpassen; sonst fester Umbruch
+    // nach jedem n-ten Takt - wie in der Anzeige, damit Eingabe und Notenbild
+    // dieselbe Zeilenaufteilung haben.
+    let takteProZeile = 0;
 
     wurzel.innerHTML = '<div class="editor-takte"></div>';
     const anzeige = wurzel.querySelector('.editor-takte');
@@ -60,6 +64,12 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
     }
     function leeren() { takte.forEach(t => t.bausteine = []); zeichnen(); }
     function taktHinzufuegen() { takte.push({ bausteine: [] }); zeichnen(); }
+    // Letzten Takt samt Inhalt weg; ist nur noch einer da, wird er geleert.
+    function letztenTaktLoeschen() {
+        if (takte.length > 1) takte.pop();
+        else takte[0].bausteine = [];
+        zeichnen();
+    }
     function taktEntfernenBei(nr) {
         if (takte.length <= 1) return;
         takte.splice(nr, 1);
@@ -184,6 +194,11 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
             box.appendChild(entf);
 
             anzeige.appendChild(box);
+            if (takteProZeile > 0 && (taktNr + 1) % takteProZeile === 0 && taktNr < takte.length - 1) {
+                const umbruch = document.createElement('div');
+                umbruch.className = 'editor-umbruch';
+                anzeige.appendChild(umbruch);
+            }
         });
         if (typeof onAenderung === 'function') onAenderung();
     }
@@ -197,7 +212,8 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
             takte = (neueTakte && neueTakte.length) ? neueTakte.map(t => ({ bausteine: t.bausteine.slice() })) : [{ bausteine: [] }];
             zeichnen();
         },
-        leeren, zurueck, taktHinzufuegen, taktartSetzen,
+        leeren, zurueck, taktHinzufuegen, letztenTaktLoeschen, taktartSetzen,
+        takteProZeileSetzen: (n) => { takteProZeile = n; zeichnen(); },
         zeichen: () => zeichen,
         anzahlTakte: () => takte.length,
         aufAenderung: (fn) => { onAenderung = fn; },

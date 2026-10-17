@@ -270,7 +270,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
     // Zeilenanfang laege es genau auf dem Perkussionsschluessel. Die erste Note
     // rueckt dafuer um diese Breite nach rechts. Ohne Notenlinien gibt es
     // keinen Schluessel, das Zeichen bleibt dann ganz vorn.
-    const WDH_NACH_KOPF = opt.notenlinien && opt.wiederholung;
+    // "Als Uebung" + Wiederholung: jede Zeile wird fuer sich wiederholt, also
+    // nur ein Schluss-Wiederholungszeichen am Ende jeder Zeile - kein
+    // Anfangszeichen (das Ende allein heisst "ab Zeilenanfang nochmal").
+    const WDH_ANFANG = opt.wiederholung && !opt.alsUebung;
+    const WDH_NACH_KOPF = opt.notenlinien && WDH_ANFANG;
     const WDH_BREITE = WDH_NACH_KOPF ? 30 : 0;
 
     function taktBreite(takt) {
@@ -354,7 +358,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(schluesselSvg(LINKS_RAND + 7, LINIE_Y, tinte));
                 inkOben = Math.min(inkOben, LINIE_Y - 13); inkUnten = Math.max(inkUnten, LINIE_Y + 13);
             }
-            if (istErstesSystem && opt.wiederholung && !WDH_NACH_KOPF) {
+            if (istErstesSystem && WDH_ANFANG && !WDH_NACH_KOPF) {
                 // Ein Wiederholungszeichen ist zweistrichig: duenn, dann dick,
                 // erst danach die Punkte - vorher stand hier nur ein einzelner
                 // dicker Strich, das sah nicht nach dem bekannten Zeichen aus.
@@ -463,7 +467,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
         teileSvg.push(...zaehlzeitenTexte);
 
         const rechts = x + 6;
-        if (istLetztesSystem && opt.wiederholung) {
+        if ((istLetztesSystem || opt.alsUebung) && opt.wiederholung) {
             // Spiegelbildlich zum Anfang: Punkte, dann dick, dann duenn - ersetzt
             // den normalen Taktschluss-Strich, statt zusaetzlich daneben zu stehen.
             const dick = rechts, duenn = rechts + 5;

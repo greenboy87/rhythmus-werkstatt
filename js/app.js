@@ -62,6 +62,15 @@ function anzeigeOptionen() {
     };
 }
 
+/* Beide Takte/Zeile-Regler beschriften; der Editor bricht sofort mit um
+   (dort stoert kein Sprung), die Anzeige zeichnet der Aufrufer neu. */
+function takteProZeileAnzeigen() {
+    document.querySelectorAll('.takte-zeile-anzeige').forEach(el => {
+        el.textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
+    });
+    if (editor) editor.takteProZeileSetzen(takteProZeile);
+}
+
 function anzeigeNeuZeichnen() {
     const host = document.getElementById('anzeige');
     // Durch die Skalierung geteilt, nicht die rohe Fensterbreite: Sonst packt
@@ -287,7 +296,7 @@ function linkUebernehmen(hash) {
     document.getElementById('wiederholungen-anzeige').textContent = wiederholungen + 1;
     document.getElementById('opt-als-uebung').checked = x.alsUebung;
     takteProZeile = x.takteProZeile;
-    document.getElementById('takte-zeile-anzeige').textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
+    takteProZeileAnzeigen();
 
     // Setzt den Editor und zeichnet ueber aufAenderung alles neu (Anzeige,
     // Titel, Druck). Takte, die nicht aufgehen, kommen trotzdem hinein - der
@@ -350,6 +359,7 @@ function init() {
 
     taktartWahl.addEventListener('change', () => editor.taktartSetzen(taktartWahl.value));
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
+    document.getElementById('takt-loeschen-btn').addEventListener('click', () => editor.letztenTaktLoeschen());
     document.getElementById('zurueck-btn').addEventListener('click', () => editor.zurueck());
     document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
     document.getElementById('opt-auto-takt').addEventListener('change', (e) => editor.autoNeuerTaktSetzen(e.target.checked));
@@ -391,19 +401,17 @@ function init() {
         clearTimeout(takteProZeileTimer);
         takteProZeileTimer = setTimeout(anzeigeNeuZeichnen, 1500);
     };
-    const takteProZeileZeichnen = () => {
-        document.getElementById('takte-zeile-anzeige').textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
-    };
-    document.getElementById('takte-zeile-minus').addEventListener('click', () => {
+    // Zwei Regler (Eingabe unten, Anzeige oben), ein Wert.
+    document.querySelectorAll('.takte-zeile-minus').forEach(k => k.addEventListener('click', () => {
         takteProZeile = Math.max(0, takteProZeile - 1);
-        takteProZeileZeichnen();
+        takteProZeileAnzeigen();
         takteProZeileVerzoegert();
-    });
-    document.getElementById('takte-zeile-plus').addEventListener('click', () => {
+    }));
+    document.querySelectorAll('.takte-zeile-plus').forEach(k => k.addEventListener('click', () => {
         takteProZeile = Math.min(8, takteProZeile + 1);
-        takteProZeileZeichnen();
+        takteProZeileAnzeigen();
         takteProZeileVerzoegert();
-    });
+    }));
 
     document.getElementById('anzeige-groesse-minus').addEventListener('click', () => {
         anzeigeSkalierung = Math.max(0.6, Math.round((anzeigeSkalierung - 0.1) * 10) / 10);
@@ -434,12 +442,19 @@ function init() {
         if (document.fullscreenElement) document.exitFullscreen();
         else vollbildKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
     });
+    // Hoehe des Bedien-Kopfs als CSS-Variable: Im Vollbild haelt #anzeige
+    // oben (und symmetrisch unten) genau so viel Abstand - sonst schiebt
+    // eine grosse Skalierung die Noten unter die Bedienelemente.
+    const vollbildKopf = vollbildKarte.querySelector('.vollbild-kopf');
+    const kopfHoeheMerken = () => vollbildKarte.style.setProperty('--kopf-hoehe', vollbildKopf.offsetHeight + 'px');
+    if (window.ResizeObserver) new ResizeObserver(kopfHoeheMerken).observe(vollbildKopf);
     document.addEventListener('fullscreenchange', () => {
         const an = document.fullscreenElement === vollbildKarte;
         vollbildKarte.classList.toggle('vollbild', an);
         vollbildBtn.innerHTML = an
             ? '<i class="fa-solid fa-compress"></i> Verlassen'
             : '<i class="fa-solid fa-expand"></i> Vollbild';
+        kopfHoeheMerken();
         // Die verfuegbare Breite aendert sich stark - Systeme neu aufteilen.
         setTimeout(anzeigeNeuZeichnen, 50);
     });
