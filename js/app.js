@@ -95,12 +95,34 @@ function titelAktualisieren() {
     document.getElementById('druck-ueberschrift').textContent = titel ? titel : '🥁 Rhythmus-Werkstatt';
 }
 
-/* ---------- Druck: dieselben Einstellungen wie der Bildschirm (Groesse,
-   Takte/Zeile, Titel) - ein einziger Satz Regler statt zwei verwirrend
-   aehnlicher. Eigene Druck-Feinabstimmung folgt spaeter. ---------- */
+/* ---------- Druck: dieselben Schalter wie der Bildschirm (Takte/Zeile,
+   Linien, Zaehlzeiten, Titel ...), aber NICHT die Bildschirm-Groesse - die
+   ist fuer den Beamer gedacht und hat auf A4 alles ueber den Rand geschoben.
+   Gezeichnet wird fuer die A4-Breite, danach so verkleinert, dass jede Zeile
+   in die Breite und alle Zeilen zusammen auf eine Seite passen. ---------- */
+const DRUCK_BREITE = 670;    // A4 (210 mm) minus 2 × 16 mm Rand, in CSS-px
+const DRUCK_HOEHE = 900;     // 297 mm minus Raender, Kopfzeile und Luft
+const DRUCK_ZEILENABSTAND = 22;
 function druckNeuZeichnen() {
-    const optionen = Object.assign(anzeigeOptionen(), { skalierung: anzeigeSkalierung, breite: 2000 });
-    document.getElementById('druck-anzeige').innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
+    const optionen = Object.assign(anzeigeOptionen(), { skalierung: 1, breite: DRUCK_BREITE });
+    const host = document.getElementById('druck-anzeige');
+    host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
+    const svgs = [...host.querySelectorAll('.anzeige-system')];
+    if (!svgs.length) return;
+    const masse = svgs.map(s => {
+        const b = Number(s.getAttribute('width')) || 1, h = Number(s.getAttribute('height')) || 1;
+        const f = Math.min(1, DRUCK_BREITE / b);
+        return { b: b * f, h: h * f };
+    });
+    // Die Abstaende zwischen den Zeilen bleiben fest (CSS), nur die Noten
+    // selbst werden kleiner - also nur die Resthoehe auf die Zeilen verteilen.
+    const notenHoehe = masse.reduce((sum, m) => sum + m.h, 0);
+    const platz = Math.max(DRUCK_HOEHE * 0.3, DRUCK_HOEHE - svgs.length * DRUCK_ZEILENABSTAND);
+    const g = Math.min(1, platz / notenHoehe);
+    svgs.forEach((s, i) => {
+        s.style.width = Math.floor(masse[i].b * g) + 'px';
+        s.style.height = Math.floor(masse[i].h * g) + 'px';
+    });
 }
 
 /* ---------- Uebungsgenerator ---------- */
@@ -247,8 +269,20 @@ function seitenEinstellungen() {
         durchgaenge: document.getElementById('opt-wiederholung').checked ? wiederholungen + 1 : 1,
         klang: document.getElementById('klatsch-sound-wahl').value,
         metronom: Metronom.lautstaerke(),
-        nurMetronom: document.getElementById('abspielen-modus').value === 'selbstklatschen'
+        nurMetronom: document.getElementById('abspielen-modus').value === 'selbstklatschen',
+        zeilen: uebungsZeilen()
     };
+}
+
+/* "Als Uebung" + Wiederholung: jede Zeile wird fuer sich wiederholt. Die
+   Zeilenaufteilung kommt aus dem gerade gezeichneten Notenbild (data-takte
+   je Zeile) - im "auto"-Modus haengt sie von der Breite ab, so klingt es
+   immer genau so, wie es dasteht. Sonst null = ganzes Stueck am Stueck. */
+function uebungsZeilen() {
+    if (!document.getElementById('opt-als-uebung').checked) return null;
+    if (!document.getElementById('opt-wiederholung').checked) return null;
+    const zeilen = [...document.querySelectorAll('#anzeige .anzeige-system')].map(s => Number(s.dataset.takte) || 0);
+    return zeilen.length ? zeilen : null;
 }
 
 /* Der komplette Stand als Objekt im Format von linkLesen/linkBauen. */
@@ -466,7 +500,7 @@ function init() {
     document.getElementById('abspielen-btn').addEventListener('click', () => {
         const nurMetronom = document.getElementById('abspielen-modus').value === 'selbstklatschen';
         const extraDurchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen : 0;
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge);
+        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen());
     });
     Vorklatschen.aufZustandAendern((laeuft) => {
         document.getElementById('abspielen-btn').innerHTML = laeuft

@@ -364,12 +364,13 @@ const Metronom = (function () {
    (rhythmusAudio in js/export.js). DOM-frei und ohne Audiokontext;
    Zeiten in Sekunden ab Beginn (0 = erster Vorlauf-Klick bzw. erster
    Schlag). So koennen Live und Datei nie auseinanderlaufen.
-   optionen: { bpm, vorlaufTakte, durchgaenge (1 = einmal), nurMetronom }
+   optionen: { bpm, vorlaufTakte, durchgaenge (1 = einmal), nurMetronom,
+              zeilen (optional: Takte je Zeile - dann jede Zeile einzeln wiederholt) }
    Rueckgabe: {
      ereignisse:   [{ zeit, art: 'klick'|'klatsch', betont, puls }]
                    (puls = Schlag im Takt, 0-basiert, nur bei Klicks),
      markierungen: [{ zeit, taktNr, ab }]  - Mitlese-Markierung je Baustein,
-     wechsel:      [{ zeit, nr }]          - Beginn von Durchgang nr (2, 3, ...),
+     wechsel:      [{ zeit, nr, zeile }]   - Beginn von Durchgang nr (2, 3, ...), zeile bei opt.zeilen,
      dauer         - Ende des letzten Takts im letzten Durchgang }
    ============================================================ */
 function rhythmusZeitplan(stueck, optionen) {
@@ -392,31 +393,48 @@ function rhythmusZeitplan(stueck, optionen) {
     }
     let t = vorlaufSchlaege * schlagDauer;
 
-    // Das ganze Stueck so oft hintereinander planen, wie Durchgaenge
-    // verlangt sind - der Zeitzeiger t laeuft dabei einfach weiter, kein
-    // erneuter Vorlauf zwischen den Durchgaengen.
-    for (let durchgang = 0; durchgang < durchgaenge; durchgang++) {
-        if (durchgang > 0) wechsel.push({ zeit: t, nr: durchgang + 1 });
-        stueck.takte.forEach((takt, taktNr) => {
-            const taktStartT = t;
-            for (let p = 0; p < proTakt; p++) {
-                ereignisse.push({ zeit: taktStartT + p * pw * viertel, art: 'klick', betont: p === 0, puls: p });
-            }
-            let gelaufen = 0;
-            takt.bausteine.forEach(b => {
-                markierungen.push({ zeit: t, taktNr, ab: gelaufen });
-                if (!nurMetronom) {
-                    let innerT = t;
-                    b.teile.forEach(teil => {
-                        if (!teil.p) ereignisse.push({ zeit: innerT, art: 'klatsch', betont: false });
-                        innerT += teil.d * viertel;
-                    });
-                }
-                t += b.dauer * viertel;
-                gelaufen += b.dauer;
-            });
-        });
+    // Abschnitte, die je fuer sich "durchgaenge"-mal laufen: normalerweise
+    // das ganze Stueck am Stueck. Mit opt.zeilen (Takte je Zeile, z.B.
+    // [2,2,1] bei "Als Uebung") wird stattdessen jede Zeile einzeln
+    // wiederholt - genau wie die Wiederholungszeichen am Zeilenende es
+    // zeigen. Passt die Summe nicht zur Taktzahl, gilt das ganze Stueck.
+    const zeilen = Array.isArray(opt.zeilen) && opt.zeilen.length > 1 &&
+        opt.zeilen.reduce((s, n) => s + n, 0) === stueck.takte.length ? opt.zeilen : null;
+    const abschnitte = [];
+    if (zeilen) {
+        let von = 0;
+        zeilen.forEach(n => { abschnitte.push({ von, bis: von + n }); von += n; });
+    } else {
+        abschnitte.push({ von: 0, bis: stueck.takte.length });
     }
+
+    // Der Zeitzeiger t laeuft einfach weiter, kein erneuter Vorlauf
+    // zwischen den Durchgaengen oder Zeilen.
+    abschnitte.forEach((abschnitt, abschnittNr) => {
+        for (let durchgang = 0; durchgang < durchgaenge; durchgang++) {
+            if (durchgang > 0) wechsel.push({ zeit: t, nr: durchgang + 1, zeile: zeilen ? abschnittNr + 1 : null });
+            for (let taktNr = abschnitt.von; taktNr < abschnitt.bis; taktNr++) {
+                const takt = stueck.takte[taktNr];
+                const taktStartT = t;
+                for (let p = 0; p < proTakt; p++) {
+                    ereignisse.push({ zeit: taktStartT + p * pw * viertel, art: 'klick', betont: p === 0, puls: p });
+                }
+                let gelaufen = 0;
+                takt.bausteine.forEach(b => {
+                    markierungen.push({ zeit: t, taktNr, ab: gelaufen });
+                    if (!nurMetronom) {
+                        let innerT = t;
+                        b.teile.forEach(teil => {
+                            if (!teil.p) ereignisse.push({ zeit: innerT, art: 'klatsch', betont: false });
+                            innerT += teil.d * viertel;
+                        });
+                    }
+                    t += b.dauer * viertel;
+                    gelaufen += b.dauer;
+                });
+            }
+        }
+    });
     return { ereignisse, markierungen, wechsel, dauer: t };
 }
 
@@ -472,10 +490,10 @@ const Vorklatschen = (function () {
        hoeren ist, entscheidet der Lautstaerke-Regler, nicht der Modus.
        wiederholungen: wie oft das ganze Stueck ZUSAETZLICH durchlaeuft -
        0 = einmal, 1 = zweimal (das klassische Wiederholungszeichen), usw. */
-    function starten(stueck, host, nurMetronom, wiederholungen) {
+    function starten(stueck, host, nurMetronom, wiederholungen, zeilen) {
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
@@ -484,7 +502,7 @@ const Vorklatschen = (function () {
         const durchgaenge = Math.max(1, (Number(wiederholungen) || 0) + 1);
 
         const vorlaufTakte = Math.max(0, Metronom.vorlaufTakte());
-        const plan = rhythmusZeitplan(stueck, { bpm: Metronom.bpm(), vorlaufTakte, durchgaenge, nurMetronom });
+        const plan = rhythmusZeitplan(stueck, { bpm: Metronom.bpm(), vorlaufTakte, durchgaenge, nurMetronom, zeilen });
         const start = ctx.currentTime + 0.25;
 
         plan.ereignisse.forEach(e => {
@@ -500,7 +518,7 @@ const Vorklatschen = (function () {
             anzeigePlanen(start + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr, m.ab));
         });
         plan.wechsel.forEach(w => {
-            anzeigePlanen(start + w.zeit, () => zeigeToast(`Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));
+            anzeigePlanen(start + w.zeit, () => zeigeToast(w.zeile ? `Übung ${w.zeile}: Durchgang ${w.nr} von ${durchgaenge}…` : `Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));
         });
         anzeigePlanen(start + plan.dauer + 0.15, () => {
             laeuft = false; knoten = [];
@@ -510,7 +528,7 @@ const Vorklatschen = (function () {
         });
         anzeigeStarten(ctx);
         const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
-        const wiederholHinweis = durchgaenge > 1 ? ` (${durchgaenge}× hintereinander)` : '';
+        const wiederholHinweis = durchgaenge > 1 ? (zeilen && zeilen.length > 1 ? ` (jede Zeile ${durchgaenge}×)` : ` (${durchgaenge}× hintereinander)`) : '';
         const meldung = (vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.` : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`) + wiederholHinweis;
         zeigeToast(meldung, 'info');
     }

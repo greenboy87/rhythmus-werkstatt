@@ -9,11 +9,17 @@
 @media print {
     @page { size: A4; margin: 16mm; }
 
+    /* Alles ausser der Anzeige-Karte ganz raus (nicht nur unsichtbar) -
+       sonst haengt der unsichtbare Rest der Seite eine leere zweite Seite
+       an, und im dunklen Theme scheint darunter der dunkle Hintergrund durch. */
+    html, body { background: #fff !important; min-height: 0; padding: 0; }
+    .kopfzeile, footer, #toast-bereich, main > :not(#anzeige-karte) { display: none !important; }
+    main { padding: 0; }
     body * { visibility: hidden; }
     .anzeige-karte, .anzeige-karte * { visibility: visible; }
     .anzeige-karte {
         position: absolute; top: 0; left: 0; width: 100%;
-        box-shadow: none; border: none; padding: 0; background: #fff; color: #000;
+        box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; color: #000;
     }
     /* #anzeige ist die Bildschirm-Ansicht (an die Fensterbreite angepasst,
        beliebig viele Takte je Zeile) - fuers Papier zeichnet #druck-anzeige
@@ -40,7 +46,9 @@
     .anzeige-system ellipse, .anzeige-system circle, .anzeige-system text {
         color: #000 !important;
     }
-    .anzeige-system { margin-bottom: 1.4rem !important; }
+    /* Abstand passt zu DRUCK_ZEILENABSTAND in app.js (Einpassen auf eine Seite). */
+    .anzeige-system { margin-bottom: 22px !important; max-width: 100%; }
+    #druck-anzeige { overflow: visible; }
     .anzeige-system .linien-fuenf { color: #666 !important; }
     [data-ab] { opacity: 1 !important; }   /* "Verdecken" soll auf Papier nie greifen */
 }

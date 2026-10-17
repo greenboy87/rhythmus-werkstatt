@@ -89,7 +89,7 @@ async function rhythmusAudio(stueck, optionen) {
     const metronom = Math.max(0, Math.min(1, Number(opt.metronom) || 0));
 
     const plan = rhythmusZeitplan(stueck, {
-        bpm: opt.bpm, vorlaufTakte: opt.vorlaufTakte, durchgaenge: opt.durchgaenge, nurMetronom: opt.nurMetronom
+        bpm: opt.bpm, vorlaufTakte: opt.vorlaufTakte, durchgaenge: opt.durchgaenge, nurMetronom: opt.nurMetronom, zeilen: opt.zeilen
     });
     const laenge = Math.ceil((plan.dauer + EXPORT_AUSKLANG) * EXPORT_RATE);
     const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;

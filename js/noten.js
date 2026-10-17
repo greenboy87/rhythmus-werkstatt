@@ -531,7 +531,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
         // Kein max-width:100% hier (auch nicht inline) - bei fester Takte-pro-
         // Zeile-Zahl haengt die natuerliche Breite nicht von der verfuegbaren
         // Breite ab, ein Deckel wuerde den Groesse-Regler irgendwann kappen.
-        return `<svg class="anzeige-system" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px; height:${zielHoehe}px">${teileSvg.join('')}</svg>`;
+        return `<svg class="anzeige-system" data-takte="${system.length}" viewBox="${vonX} ${oben} ${breiteSvg} ${hoeheSvg}" width="${Math.round(breiteSvg)}" height="${Math.round(hoeheSvg)}" style="width:${zielBreite}px; height:${zielHoehe}px">${teileSvg.join('')}</svg>`;
     });
 
     return svgListe.join('');
