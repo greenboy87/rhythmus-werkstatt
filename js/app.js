@@ -360,6 +360,48 @@ function linkKopieren() {
     } else fallback();
 }
 
+/* Uebung als HTML-Datei: Beim Oeffnen springt sie sofort in die
+   Rhythmus-Werkstatt, mit genau diesem Stand (derselbe Link wie bei
+   "Link kopieren"). Ohne Internet bleibt die Datei stehen und zeigt
+   wenigstens Titel und Notenbild - deshalb steckt das auch mit drin. */
+const WERKSTATT_URL = 'https://greenboy87.github.io/rhythmus-werkstatt/';
+function htmlSpeichern() {
+    const stueck = editor.stueck();
+    if (stueck.takte.every(t => !t.bausteine.length)) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
+    // Lokal (localhost/Datei) zeigt der Link auf die oeffentliche Seite -
+    // sonst funktioniert die Datei nur auf diesem einen Rechner.
+    const basis = /^https?:$/.test(location.protocol) && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+        ? location.origin + location.pathname : WERKSTATT_URL;
+    const ziel = basis + '#' + linkBauen(linkStand());
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const titel = document.getElementById('druck-titel').value.trim() || 'Rhythmus';
+    const noten = document.getElementById('druck-anzeige').innerHTML;
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(titel)} – Rhythmus-Werkstatt</title>
+<script>if (navigator.onLine !== false) location.replace(${JSON.stringify(ziel)});<\/script>
+<style>
+body { font-family: system-ui, sans-serif; background: #fff; color: #111; margin: 2rem; text-align: center; }
+a.knopf { display: inline-block; margin: 1rem 0 2rem; padding: .6rem 1rem; border-radius: 10px; background: #7c3aed; color: #fff; text-decoration: none; font-weight: 700; }
+.anzeige-system { display: block; margin: 0 auto 22px; max-width: 100%; height: auto; color: #111; }
+.anzeige-system .linien-fuenf { color: #666; }
+</style>
+</head>
+<body>
+<h1>${esc(titel)}</h1>
+<a class="knopf" href="${esc(ziel)}">In der Rhythmus-Werkstatt öffnen</a>
+<div>${noten}</div>
+</body>
+</html>
+`;
+    const name = exportDateiname(titel, stueck.zeichen, Metronom.bpm(), 'mp3').replace(/\.mp3$/, '.html');
+    blobHerunterladen(new Blob([html], { type: 'text/html' }), name);
+    zeigeToast('Gespeichert - Datei öffnen lädt die Übung direkt in die Werkstatt.', 'success');
+}
+
 async function audioHerunterladen() {
     const knopf = document.getElementById('herunterladen-btn');
     const stueck = editor.stueck();
@@ -524,6 +566,7 @@ function init() {
     window.addEventListener('beforeprint', druckNeuZeichnen);
 
     document.getElementById('link-kopieren-btn').addEventListener('click', linkKopieren);
+    document.getElementById('html-speichern-btn').addEventListener('click', htmlSpeichern);
     document.getElementById('herunterladen-btn').addEventListener('click', audioHerunterladen);
     window.addEventListener('hashchange', () => linkUebernehmen(location.hash));
 

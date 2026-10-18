@@ -107,8 +107,11 @@ function istPunktiert(d) {
    yVersatz hebt die ganze Zeichnung an (negativ = nach oben): Steht das
    Fuenfliniensystem, sitzt die (hier: einzige) Stimme konventionell nicht auf
    der Mittellinie (h1), sondern im Raum darueber (c2) - ohne Notenlinien
-   bleibt sie auf der alten Referenzlinie, yVersatz ist dann 0. */
-function bausteinTeileZeichnen(baustein, x, tinte, yVersatz) {
+   bleibt sie auf der alten Referenzlinie, yVersatz ist dann 0.
+   proViertel (optional): Abstand zeitgetreu statt nach Notenwert-Tabelle -
+   jeder Teil bekommt dauer × proViertel Pixel. Dann steht ein Einsatz auf
+   "2 und" in jeder Zeile an derselben Stelle (Uebungen untereinander). */
+function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     const Y = LINIE_Y + (yVersatz || 0), H = HALS_OBEN + (yVersatz || 0);
     const teile = [];
     let inkVon = Infinity, inkBis = -Infinity, inkOben = Infinity, inkUnten = -Infinity;
@@ -154,7 +157,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz) {
     };
     baustein.teile.forEach(t => {
         const px = x;
-        x += VORSCHUB[t.d] || 38;
+        x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || 38);
         if (t.p) {
             if (t.d >= 2) {
                 // Ganze/halbe Pause haengen mittig im Platz, den sie fuellen -
@@ -277,7 +280,22 @@ function stueckAnzeigeHtml(stueck, optionen) {
     const WDH_NACH_KOPF = opt.notenlinien && WDH_ANFANG;
     const WDH_BREITE = WDH_NACH_KOPF ? 30 : 0;
 
+    // Zeitgetreue Abstaende, sobald Zeilen untereinander verglichen werden
+    // (Als Uebung oder feste Takte/Zeile): Ein Sechzehntel ist dann ueberall
+    // gleich breit, ein Achtel doppelt so breit usw. - so stehen gleiche
+    // Zaehlzeiten in allen Zeilen genau untereinander. Der Massstab richtet
+    // sich nach dem engsten Notenwert im ganzen Stueck, damit auch der noch
+    // so viel Platz hat wie sonst (VORSCHUB), und gilt fuer alle Zeilen gleich.
+    let proViertel = 0;
+    if (opt.alsUebung || opt.takteProZeile > 0) {
+        proViertel = VORSCHUB[1];
+        takte.forEach(t => t.bausteine.forEach(b => b.teile.forEach(teil => {
+            if (teil.d > 0) proViertel = Math.max(proViertel, (VORSCHUB[teil.d] || 38) / teil.d);
+        })));
+    }
+
     function taktBreite(takt) {
+        if (proViertel) return takt.bausteine.reduce((s, b) => s + b.dauer, 0) * proViertel + RAND_TAKT;
         return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || 38), 0), 0) + RAND_TAKT;
     }
 
@@ -412,7 +430,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
             takt.bausteine.forEach((b) => {
                 marken.push({ ab: gelaufen, px: x, dauer: b.dauer });
                 const globalAb = index * taktSoll(stueck.zeichen) + gelaufen;
-                const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz);
+                const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz, proViertel);
                 teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
                 merge(r);
                 x = r.x;
