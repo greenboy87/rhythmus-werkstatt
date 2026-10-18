@@ -182,6 +182,11 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     Fläche (`rect.bw-band[data-ebene]`, Grenze zweite Linie); alles andere
     im SVG hat `pointer-events: none`. Knopf „Bassdrum ⇄ Snare“ tauscht
     im gewählten Platz (`bwTauschen`).
+  - Tastatur (`bwTaste`, nur bei sichtbarem Beat-Reiter, nicht in
+    Textfeldern/Auswahllisten): Leertaste Abspielen/Stopp, ←/→ Platz,
+    ↑/↓ Ebene, X Bassdrum ⇄ Snare, ⌫/Entf Platz leeren; Bausteine in
+    `BEAT_FORMEN`-Reihenfolge auf `BW_TASTEN` (A S D F G H J K L Ö, die
+    „Mehr“-Bausteine Q W E R T Z) - Buchstabe steht am Baustein.
   - Farbe nur mit Knopf „Farbe an“ (`beat.farbe`, Klasse `bw-bunt` auf
     `#reiter-beat`), Standard schwarz-weiß.
   - Notenhälse mit geradem Ende (`stroke-linecap="butt"`), auch in

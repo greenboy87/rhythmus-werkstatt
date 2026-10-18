@@ -666,6 +666,56 @@ function bwTauschen() {
     bwVorhoeren(abgeleitet(eb, platz));
     bwAenderung();
 }
+/* Baustein in den gewaehlten Platz setzen, danach zum naechsten Platz. */
+function bwBausteinSetzen(code) {
+    const eb = bwAktiv.ebene;
+    const slot = { code, inst: stiftInst(eb, code) };
+    bwSetzen(eb, bwAktiv.platz, slot);
+    bwZuletzt[eb] = slot;
+    bwVorhoeren(abgeleitet(eb, bwAktiv.platz));
+    if (bwAktiv.platz < bwPlaetze() - 1) bwAktiv.platz++;
+    bwAenderung();
+}
+
+/* ---------- Tastatur (nur im Beat-Reiter) ----------
+   Bausteine in der Reihenfolge von BEAT_FORMEN: die zehn immer sichtbaren
+   auf der mittleren Buchstabenreihe (A S D F G H J K L Ö), die sechs
+   "Mehr"-Bausteine darueber (Q W E R T Z) - die gehen auch, wenn sie
+   gerade eingeklappt sind. */
+const BW_TASTEN = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'q', 'w', 'e', 'r', 't', 'z'];
+function bwTasteFuer(code) { return BW_TASTEN[BEAT_FORMEN.findIndex(f => f.code === code)] || ''; }
+function bwTaste(e) {
+    if (document.getElementById('reiter-beat').classList.contains('hidden')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const ziel = e.target;
+    if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
+    const taste = e.key.toLowerCase();
+    let fertig = true;
+    if (e.key === ' ') {
+        // Sonst loest die Leertaste zusaetzlich den zuletzt angeklickten Knopf aus
+        if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+        BeatSpieler.umschalten();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const neu = bwAktiv.platz + (e.key === 'ArrowLeft' ? -1 : 1);
+        bwAktiv.platz = Math.max(0, Math.min(bwPlaetze() - 1, neu));
+        bwZeichnen();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        const ebenen = bwEbenen();
+        const i = ebenen.indexOf(bwAktiv.ebene) + (e.key === 'ArrowUp' ? -1 : 1);
+        if (i >= 0 && i < ebenen.length) { bwAktiv.ebene = ebenen[i]; bwZeichnen(); }
+    } else if (taste === 'x') {
+        bwTauschen();
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        bwSetzen(bwAktiv.ebene, bwAktiv.platz, null);
+        bwAenderung();
+    } else if (BW_TASTEN.includes(taste)) {
+        bwBausteinSetzen(BEAT_FORMEN[BW_TASTEN.indexOf(taste)].code);
+    } else {
+        fertig = false;
+    }
+    if (fertig) e.preventDefault();
+}
+
 const BW_EBENEN_NAME = { oben: 'Ebene 1 · Hi-Hat / Becken', unten: 'Ebene 2 · Bassdrum & Snare', easy: 'Easy · Becken + Bassdrum/Snare' };
 function bwPaletteZeichnen() {
     const eb = bwAktiv.ebene;
@@ -690,7 +740,11 @@ function bwPaletteZeichnen() {
     document.getElementById('bw-stifte').innerHTML = stifte;
     document.getElementById('bw-palette').innerHTML = BEAT_FORMEN
         .filter(f => beat.mehr || !f.mehr)
-        .map(f => `<button type="button" class="palette-baustein bw-baustein" data-code="${f.code}" title="${f.wort}">${bwPlatzSvg({ code: f.code, inst: stiftInst(eb, f.code) }, eb, false)}</button>`)
+        .map(f => {
+            const taste = bwTasteFuer(f.code).toUpperCase();
+            return `<button type="button" class="palette-baustein bw-baustein" data-code="${f.code}" title="${f.wort} – Taste ${taste}">` +
+                `${bwPlatzSvg({ code: f.code, inst: stiftInst(eb, f.code) }, eb, false)}<span class="bw-taste">${taste}</span></button>`;
+        })
         .join('');
     document.getElementById('bw-mehr').innerHTML = beat.mehr
         ? '<i class="fa-solid fa-minus"></i> Weniger Bausteine'
@@ -877,15 +931,9 @@ function bwEinrichten() {
     });
     document.getElementById('bw-palette').addEventListener('click', (e) => {
         const b = e.target.closest('[data-code]');
-        if (!b) return;
-        const eb = bwAktiv.ebene;
-        const slot = { code: b.dataset.code, inst: stiftInst(eb, b.dataset.code) };
-        bwSetzen(eb, bwAktiv.platz, slot);
-        bwZuletzt[eb] = slot;
-        bwVorhoeren(abgeleitet(eb, bwAktiv.platz));
-        if (bwAktiv.platz < bwPlaetze() - 1) bwAktiv.platz++;
-        bwAenderung();
+        if (b) bwBausteinSetzen(b.dataset.code);
     });
+    document.addEventListener('keydown', bwTaste);
     document.getElementById('bw-mehr').addEventListener('click', () => { beat.mehr = !beat.mehr; bwAenderung(); });
     document.getElementById('bw-auffuellen').addEventListener('click', () => {
         const eb = bwAktiv.ebene;
