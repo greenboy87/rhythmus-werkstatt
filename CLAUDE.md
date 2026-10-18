@@ -145,7 +145,7 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   über das kleine × je Baustein) und im Notenbild (`.noten-feld`, liegt über
   den Takt-Flächen des Loop-Bereichs). Der Zeitplan markiert betonte Noten
   (`akzent: true`), jeder Klang nimmt eine Stärke (`klangStaerke`: normal
-  0,7, Akzent 1,3 - live und im Export gleich). Alle Klänge sind so
+  0,45, Akzent 1,3 = gut 9 dB Unterschied - live und im Export gleich). Alle Klänge sind so
   eingepegelt, dass auch ein Akzent live unter 1,0 bleibt.
 - Klang `snare` (Snare Drum): Fell als zwei kurze Dreieckstöne mit
   Tonhöhenabfall + gefiltertes Rauschen für den Teppich.

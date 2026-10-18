@@ -102,11 +102,12 @@ function tonBereit(nochmal) {
 }
 
 /* Akzente: Jeder Klang nimmt eine Staerke mit - 'akzent' (deutlich lauter)
-   oder normal. Normal liegt etwas unter dem frueheren Pegel, damit ein
-   Akzent hoerbar herausragt (gut +5 dB), ohne dass er uebersteuert:
+   oder normal. Normal liegt deutlich unter dem Akzent (gut 9 dB, also knapp
+   dreimal so laut) - +5 dB waren im Test zu wenig Unterschied. Der Akzent
+   selbst bleibt so laut wie moeglich, ohne dass er uebersteuert:
    Jeder Klang ist so eingepegelt, dass auch ein Akzent live unter 1,0
    (Vollaussteuerung) bleibt - gemessen mit einem OfflineAudioContext. */
-const KLANG_NORMAL = 0.7, KLANG_AKZENT = 1.3;
+const KLANG_NORMAL = 0.45, KLANG_AKZENT = 1.3;
 function klangStaerke(staerke) { return staerke === 'akzent' ? KLANG_AKZENT : KLANG_NORMAL; }
 
 /* Ein Klatschen: kurzes Rauschen mit scharfem Einsatz. Ein Sinuston klaenge
