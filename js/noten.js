@@ -215,8 +215,12 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
    faellt auch seine Hand weg (Achtel + 2 Sechzehntel = R R L). Das Raster
    bestimmt jeder Viertelschlag fuer sich: das groebste, auf dem alle seine
    Einsaetze liegen (Viertel, Achtel, Triole, Sechzehntel, Sechstole ...).
-   Daraus folgt: Schlag- und Taktanfang immer R, Viertel immer R, zwei Achtel
-   auf der Zaehlzeit R L, Achtelpause + Achtel = L.
+   Daraus folgt: Schlag- und Taktanfang immer R, zwei Achtel auf der
+   Zaehlzeit R L, Achtelpause + Achtel = L.
+   Ausnahme Viertel: Stehen Viertel direkt hintereinander (Schlaege, die nur
+   aus einem Einsatz auf der Zaehlzeit bestehen, ohne Luecke dazwischen),
+   wechseln sie die Hand - R L R L. Jede solche Folge beginnt wieder mit R,
+   also auch nach einer Pause oder einer Halben.
    Bewusst immer die Viertel als Einheit, auch in /8-Takten (deren Puls dort
    das Achtel ist) - sonst waere in 6/8 jedes Achtel ein eigener Schlag und
    damit R R R R R R.
@@ -240,6 +244,16 @@ function handsatzBerechnen(einsaetze) {
             const platz = g ? Math.round(rel[k] / g) : k;
             hand[i] = platz % 2 === 0 ? 'R' : 'L';
         });
+    });
+    // Viertel-Folgen abwechselnd: R L R L
+    const istViertel = (schlag) => {
+        const liste = schlaege.get(schlag);
+        return liste && liste.length === 1 && passt(einsaetze[liste[0]].v - schlag, 1);
+    };
+    [...schlaege.keys()].sort((a, b) => a - b).forEach(schlag => {
+        if (!istViertel(schlag) || !istViertel(schlag - 1)) return;
+        const vorher = hand[schlaege.get(schlag - 1)[0]];
+        hand[schlaege.get(schlag)[0]] = vorher === 'R' ? 'L' : 'R';
     });
     return hand;
 }
