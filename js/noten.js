@@ -95,6 +95,10 @@ function taktPulse(zeichen) { return Math.round(taktSoll(zeichen) / pulsWert(zei
 // ineinander. 17 wie ein normales Sechzehntel laesst wieder Luft.
 const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17, [1 / 3]: 21, [1 / 6]: 17 };
 const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 5;
+// Zaehlzeiten stehen ueber den Noten (oberhalb von Haelsen, Balken und
+// Triolenziffern), der Handsatz darunter - fuer alle Zeilen auf derselben
+// Hoehe, damit sie bei "Als Uebung" genau untereinander stehen.
+const ZAEHL_Y = HALS_OBEN - 22, HANDSATZ_Y = LINIE_Y + 30;
 
 function istPunktiert(d) {
     return Math.abs(d - 0.75) < 0.001 || Math.abs(d - 1.5) < 0.001 || Math.abs(d - 3) < 0.001;
@@ -487,7 +491,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 const pw = pulsWert(stueck.zeichen);
                 const SILBEN = ['', 'e', opt.undAlsPlus ? '+' : 'und', 'e'];
                 const zaehlzeitText = (v, text, blass) =>
-                    `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${LINIE_Y + 30}" font-size="12" font-weight="700"` +
+                    `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${ZAEHL_Y}" font-size="12" font-weight="700"` +
                     ` text-anchor="middle" font-family="DM Sans, sans-serif" opacity="${blass ? '.4' : '1'}">${text}</text>`;
                 let v = 0;
                 takt.bausteine.forEach(b => {
@@ -514,11 +518,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
                         v += teil.d;
                     });
                 });
-                inkUnten = Math.max(inkUnten, LINIE_Y + 36);
+                inkOben = Math.min(inkOben, ZAEHL_Y - 12);
             }
             if (opt.handsatz) {
-                // Unter den Zaehlzeiten, falls die da sind - sonst an deren Platz.
-                const hy = LINIE_Y + (opt.zaehlzeiten ? 47 : 30);
+                // Immer unter den Noten (die Zaehlzeiten stehen darueber).
+                const hy = HANDSATZ_Y;
                 handsatzBerechnen(taktEinsaetze).forEach((h, i) => {
                     if (!h) return;
                     zaehlzeitenTexte.push(`<text class="handsatz" x="${taktEinsaetze[i].px}" y="${hy}" font-size="12" font-weight="800"` +

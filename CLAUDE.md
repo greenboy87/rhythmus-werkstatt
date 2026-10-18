@@ -76,7 +76,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - `bpm` Tempo 40-200 (sonst ignoriert, Standard 90)
   - `o` Schalter als Buchstaben: `l` Notenlinien, `z` Zählzeiten,
     `p` "+" statt "und", `w` Wiederholung (`w3` = 3× insgesamt, `w` = 2×),
-    `u` Als Übung, `h` Handsatz (R/L), `k4` = 4 Takte/Zeile (ohne `k` = auto)
+    `u` Als Übung, `h` Handsatz (R/L), `e` Loop (endlos abspielen),
+    `k4` = 4 Takte/Zeile (ohne `k` = auto)
   - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel` (Standard klatschen)
   - `v` Vorlauf-Takte 0-4 (Standard 1)
   - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)
@@ -115,6 +116,24 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   });
   fs.writeFileSync('Uebung-1_4-4_90bpm.mp3', Buffer.from(b64, 'base64'));
   ```
+- `js/pdf.js` - `notenPdf() -> Promise<Blob>`: das Druckblatt (Kopfzeile +
+  `#druck-anzeige`, schon von `druckNeuZeichnen` auf eine Seite eingepasst)
+  als einseitiges A4-PDF, ohne Bibliothek: jede Notenzeile wird als SVG-Bild
+  auf eine 300-dpi-Leinwand gezeichnet, das Ganze als JPEG in eine selbst
+  geschriebene PDF-Datei gelegt. Ausserhalb der Seite gilt kein Stylesheet,
+  deshalb setzt `systemAlsBild` die Druckfarben aus `druck.css` direkt.
+  Knopf „Als PDF“ neben „Drucken“.
+- Ansichten über den Suchteil der URL (nicht im Hash, das Link-Format bleibt
+  unberührt): `?ansicht=uebung` = schlanke Übungsansicht zum Einbetten
+  (Klasse `ansicht-uebung` auf `<html>`, alles mit `.nicht-in-uebung`
+  verschwindet, immer dunkel), meldet eingebettet ihre Höhe per
+  `postMessage({typ:'rw-hoehe', hoehe})`. `?ansicht=pdf` baut nur das PDF
+  und schickt es an die einbettende Seite: `{typ:'rw-pdf', pdf: ArrayBuffer,
+  name}` bzw. `{typ:'rw-pdf', fehler}`. Genutzt von Beat Vault
+  (Aufgaben unter „Aktuell“: Übung aufklappen, „Als Noten öffnen“).
+- Zählzeiten stehen über den Noten (`ZAEHL_Y`), der Handsatz darunter
+  (`HANDSATZ_Y`) - fest für alle Zeilen, damit sie bei „Als Übung“
+  untereinander stehen.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über

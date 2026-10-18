@@ -489,47 +489,71 @@ const Vorklatschen = (function () {
        laeuft in beiden Modi immer durch (nicht nur im Vorlauf) - ob er zu
        hoeren ist, entscheidet der Lautstaerke-Regler, nicht der Modus.
        wiederholungen: wie oft das ganze Stueck ZUSAETZLICH durchlaeuft -
-       0 = einmal, 1 = zweimal (das klassische Wiederholungszeichen), usw. */
-    function starten(stueck, host, nurMetronom, wiederholungen, zeilen) {
+       0 = einmal, 1 = zweimal (das klassische Wiederholungszeichen), usw.
+       endlos (optional): Funktion -> true = Loop. Dann beginnt nach dem
+       letzten Durchgang nahtlos der naechste (ohne neuen Vorlauf), bis Stopp
+       gedrueckt wird. Wird vor jedem Ende neu gefragt - der Loop-Schalter
+       wirkt also auch mitten im Abspielen. */
+    function starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos) {
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
         zustandMelden();
         letzterHost = host; letztesZeichen = stueck.zeichen;
         const durchgaenge = Math.max(1, (Number(wiederholungen) || 0) + 1);
+        const loop = typeof endlos === 'function' ? endlos : () => false;
+        const bpm = Metronom.bpm();
+
+        // Plant einen kompletten Ablauf (Vorlauf + alle Durchgaenge) ab "ab"
+        // auf die Audiouhr und liefert dessen Ende.
+        function ablaufPlanen(ab, vorlaufTakte) {
+            const plan = rhythmusZeitplan(stueck, { bpm, vorlaufTakte, durchgaenge, nurMetronom, zeilen });
+            plan.ereignisse.forEach(e => {
+                const wann = ab + e.zeit;
+                if (e.art === 'klick') {
+                    knoten.push(metronomKlick(ctx, wann, e.betont));
+                    anzeigePlanen(wann, () => Metronom.pulsZeichnen(e.puls));
+                } else {
+                    knoten.push(klatschSoundSpielen(ctx, wann));
+                }
+            });
+            plan.markierungen.forEach(m => {
+                anzeigePlanen(ab + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr, m.ab));
+            });
+            plan.wechsel.forEach(w => {
+                anzeigePlanen(ab + w.zeit, () => zeigeToast(w.zeile ? `Übung ${w.zeile}: Durchgang ${w.nr} von ${durchgaenge}…` : `Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));
+            });
+            return ab + plan.dauer;
+        }
+        // Kurz vor dem Ende: im Loop den naechsten Ablauf nahtlos anhaengen,
+        // sonst nach dem Ende aufraeumen.
+        function endePlanen(ende) {
+            let gehtWeiter = false;
+            anzeigePlanen(ende - 0.6, () => {
+                if (!laeuft || !loop()) return;
+                gehtWeiter = true;
+                endePlanen(ablaufPlanen(ende, 0));
+                anzeigeFolge.sort((a, b) => a.zeit - b.zeit);
+            });
+            anzeigePlanen(ende + 0.15, () => {
+                if (gehtWeiter) return;
+                laeuft = false; knoten = [];
+                stueckMarkieren(host, stueck.zeichen, -1, 0);
+                Metronom.pulsZeichnen(-1);
+                zustandMelden();
+            });
+        }
 
         const vorlaufTakte = Math.max(0, Metronom.vorlaufTakte());
-        const plan = rhythmusZeitplan(stueck, { bpm: Metronom.bpm(), vorlaufTakte, durchgaenge, nurMetronom, zeilen });
-        const start = ctx.currentTime + 0.25;
-
-        plan.ereignisse.forEach(e => {
-            const wann = start + e.zeit;
-            if (e.art === 'klick') {
-                knoten.push(metronomKlick(ctx, wann, e.betont));
-                anzeigePlanen(wann, () => Metronom.pulsZeichnen(e.puls));
-            } else {
-                knoten.push(klatschSoundSpielen(ctx, wann));
-            }
-        });
-        plan.markierungen.forEach(m => {
-            anzeigePlanen(start + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr, m.ab));
-        });
-        plan.wechsel.forEach(w => {
-            anzeigePlanen(start + w.zeit, () => zeigeToast(w.zeile ? `Übung ${w.zeile}: Durchgang ${w.nr} von ${durchgaenge}…` : `Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));
-        });
-        anzeigePlanen(start + plan.dauer + 0.15, () => {
-            laeuft = false; knoten = [];
-            stueckMarkieren(host, stueck.zeichen, -1, 0);
-            Metronom.pulsZeichnen(-1);
-            zustandMelden();
-        });
+        endePlanen(ablaufPlanen(ctx.currentTime + 0.25, vorlaufTakte));
         anzeigeStarten(ctx);
         const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
         const wiederholHinweis = durchgaenge > 1 ? (zeilen && zeilen.length > 1 ? ` (jede Zeile ${durchgaenge}×)` : ` (${durchgaenge}× hintereinander)`) : '';
-        const meldung = (vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.` : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`) + wiederholHinweis;
+        const loopHinweis = loop() ? ' Loop: läuft, bis du Stopp drückst.' : '';
+        const meldung = (vorlaufTakte === 0 ? `Kein Vorlauf - ${ziel} sofort.` : `${vorlaufTakte === 1 ? 'Ein Takt' : vorlaufTakte + ' Takte'} Vorlauf - danach ${ziel}.`) + wiederholHinweis + loopHinweis;
         zeigeToast(meldung, 'info');
     }
 

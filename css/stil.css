@@ -304,3 +304,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     main { padding: .7rem; }
     .editor-platz { min-width: 28px; min-height: 48px; }
 }
+
+/* ---------- Übungsansicht (?ansicht=uebung): eingebettet, z.B. in Beat Vault ----------
+   Nur Notenbild, Abspielen, Tempo und Metronom - ohne Editor, Speichern,
+   Export und Druck. Gleiches Notenbild, gleicher Klang wie die volle Seite. */
+.ansicht-uebung .nicht-in-uebung { display: none !important; }
+.ansicht-uebung body { min-height: 0; padding-bottom: 0; background: transparent; }
+.ansicht-uebung main { padding: 0; max-width: none; }
+.ansicht-uebung .anzeige-karte { margin: 0; }

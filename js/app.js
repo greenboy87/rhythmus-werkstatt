@@ -2,8 +2,19 @@
    APP: verdrahtet Editor, Anzeige und Metronom mit der Seite.
    ============================================================ */
 
+/* ---------- Ansicht ----------
+   ?ansicht=uebung  schlanke Übungsansicht zum Einbetten (z.B. in Beat Vault)
+   ?ansicht=pdf     baut nur das PDF und schickt es per postMessage an die
+                    einbettende Seite ({typ:'rw-pdf', pdf: ArrayBuffer, name})
+   Steht im Suchteil, nicht im Hash - so bleibt das Link-Format unberuehrt. */
+const ANSICHT = new URLSearchParams(location.search).get('ansicht') || '';
+const EINGEBETTET = window.parent !== window;
+if (ANSICHT === 'uebung' || ANSICHT === 'pdf') document.documentElement.classList.add('ansicht-uebung');
+
 /* ---------- Theme ---------- */
 (function () {
+    // Eingebettet immer dunkel - passt zu Beat Vault, egal was das Geraet eingestellt hat
+    if (ANSICHT === 'uebung') return;
     const gespeichert = localStorage.getItem('rw-theme');
     const hell = gespeichert ? gespeichert === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
     if (hell) document.documentElement.setAttribute('data-theme', 'light');
@@ -314,6 +325,7 @@ function linkStand() {
         zaehlzeiten: opt.zaehlzeiten,
         undAlsPlus: opt.undAlsPlus,
         handsatz: opt.handsatz,
+        loop: document.getElementById('opt-loop').checked,
         durchgaenge: opt.wiederholung ? wiederholungen + 1 : 1,
         alsUebung: opt.alsUebung,
         takteProZeile: opt.takteProZeile,
@@ -340,6 +352,7 @@ function linkUebernehmen(hash) {
     document.getElementById('und-plus-feld').classList.toggle('hidden', !x.zaehlzeiten);
     document.getElementById('opt-und-als-plus').checked = x.undAlsPlus;
     document.getElementById('opt-handsatz').checked = x.handsatz;
+    document.getElementById('opt-loop').checked = x.loop;
     document.getElementById('opt-wiederholung').checked = x.durchgaenge > 1;
     document.getElementById('wiederholungen-feld').classList.toggle('hidden', x.durchgaenge <= 1);
     wiederholungen = Math.max(1, x.durchgaenge - 1);
@@ -528,6 +541,7 @@ function init() {
     });
 
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
+    document.getElementById('pdf-btn').addEventListener('click', pdfHerunterladen);
 
     document.getElementById('druck-titel').addEventListener('input', () => { titelAktualisieren(); druckNeuZeichnen(); });
 
@@ -561,7 +575,8 @@ function init() {
     document.getElementById('abspielen-btn').addEventListener('click', () => {
         const nurMetronom = document.getElementById('abspielen-modus').value === 'selbstklatschen';
         const extraDurchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen : 0;
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen());
+        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen(),
+            () => document.getElementById('opt-loop').checked);
     });
     Vorklatschen.aufZustandAendern((laeuft) => {
         document.getElementById('abspielen-btn').innerHTML = laeuft
@@ -591,6 +606,26 @@ function init() {
 
     if (!linkUebernehmen(location.hash)) anzeigeNeuZeichnen();
     zeigeStand();
+    if (EINGEBETTET) einbettungMelden();
+}
+
+/* Eingebettet: der einbettenden Seite die Hoehe melden (damit sie den
+   Rahmen ohne Scrollbalken passend macht) bzw. das fertige PDF schicken. */
+function einbettungMelden() {
+    const an = (nachricht, transfer) => window.parent.postMessage(nachricht, '*', transfer);
+    if (ANSICHT === 'pdf') {
+        notenPdf()
+            .then(blob => blob.arrayBuffer())
+            .then(pdf => an({ typ: 'rw-pdf', pdf, name: pdfDateiname() }, [pdf]))
+            .catch(e => an({ typ: 'rw-pdf', fehler: e.message }));
+        return;
+    }
+    if (ANSICHT !== 'uebung' || !window.ResizeObserver) return;
+    let zuletzt = 0;
+    new ResizeObserver(() => {
+        const hoehe = Math.ceil(document.querySelector('main').getBoundingClientRect().height);
+        if (hoehe !== zuletzt) { zuletzt = hoehe; an({ typ: 'rw-hoehe', hoehe }); }
+    }).observe(document.querySelector('main'));
 }
 
 document.addEventListener('DOMContentLoaded', init);
