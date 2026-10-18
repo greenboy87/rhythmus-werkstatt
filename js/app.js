@@ -60,6 +60,7 @@ let anzeigeVerdeckt = false;
 let anzeigeSkalierung = 1;
 let wiederholungen = 1;      // zusaetzliche Durchgaenge, nicht die Gesamtzahl (Anzeige = +1)
 let takteProZeile = 0;       // 0 = automatisch; gilt fuer Bildschirm/Vollbild UND Druck gleichermassen
+let loopAuswahl = null;      // {von, bis} Taktnummern (einschliesslich) - nur dieser Teil wird abgespielt
 
 function anzeigeOptionen() {
     return {
@@ -90,11 +91,53 @@ function anzeigeNeuZeichnen() {
     // wie der Platz hergibt - fuer eine Vergroesserung bliebe dann kein Raum
     // mehr, sie wuerde von max-width:100% sofort wieder zurueckgestutzt.
     const breite = Math.max(320, (host.clientWidth || 900) / anzeigeSkalierung);
-    const optionen = Object.assign(anzeigeOptionen(), { breite, skalierung: anzeigeSkalierung });
+    // Passt die Auswahl nicht mehr zum Stueck (Takte geloescht), faellt sie weg.
+    if (loopAuswahl && loopAuswahl.bis >= editor.stueck().takte.length) loopAuswahl = null;
+    const optionen = Object.assign(anzeigeOptionen(), { breite, skalierung: anzeigeSkalierung, auswahl: loopAuswahl });
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
+    loopAuswahlAnzeigen();
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
     titelAktualisieren();
     druckNeuZeichnen();
+}
+
+/* ---------- Loop-Bereich: einzelne Takte oder eine ganze Uebung ----------
+   Takt antippen: ohne Auswahl wird er allein gewaehlt, ausserhalb einer
+   Auswahl erweitert er den Bereich bis zu ihm, innerhalb hebt er sie auf.
+   Die Nummer einer Uebung ("4.") waehlt deren ganze Zeile (nochmal = aus).
+   Mit Auswahl spielt "Abspielen" nur diesen Teil - und der Loop geht an. */
+function loopAuswahlSetzen(neu) {
+    loopAuswahl = neu;
+    if (neu) document.getElementById('opt-loop').checked = true;
+    anzeigeNeuZeichnen();
+}
+function anzeigeAngetippt(e) {
+    const nr = e.target.closest('.uebung-nr');
+    if (nr) {
+        const von = Number(nr.dataset.von), bis = Number(nr.dataset.bis);
+        const gleich = loopAuswahl && loopAuswahl.von === von && loopAuswahl.bis === bis;
+        loopAuswahlSetzen(gleich ? null : { von, bis });
+        return;
+    }
+    const feld = e.target.closest('.takt-feld');
+    if (!feld) return;
+    const i = Number(feld.dataset.takt);
+    if (!loopAuswahl) loopAuswahlSetzen({ von: i, bis: i });
+    else if (i >= loopAuswahl.von && i <= loopAuswahl.bis) loopAuswahlSetzen(null);
+    else loopAuswahlSetzen({ von: Math.min(i, loopAuswahl.von), bis: Math.max(i, loopAuswahl.bis) });
+}
+function loopAuswahlAnzeigen() {
+    const info = document.getElementById('loop-auswahl-info');
+    info.classList.toggle('hidden', !loopAuswahl);
+    document.getElementById('loop-tipp').classList.toggle('hidden', !!loopAuswahl);
+    if (!loopAuswahl) return;
+    const { von, bis } = loopAuswahl;
+    // Ist es genau eine Uebung, heisst sie auch so
+    const nr = [...document.querySelectorAll('#anzeige .uebung-nr')]
+        .find(n => Number(n.dataset.von) === von && Number(n.dataset.bis) === bis);
+    document.getElementById('loop-auswahl-text').textContent = nr
+        ? `Übung ${nr.textContent.replace('.', '')}`
+        : (von === bis ? `Takt ${von + 1}` : `Takt ${von + 1}–${bis + 1}`);
 }
 
 /* Titel steht ueber den Noten - auf dem Bildschirm (auch im Vollbild fuers
@@ -541,6 +584,8 @@ function init() {
     });
 
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
+    document.getElementById('anzeige').addEventListener('click', anzeigeAngetippt);
+    document.getElementById('loop-auswahl-weg').addEventListener('click', () => loopAuswahlSetzen(null));
     document.getElementById('pdf-btn').addEventListener('click', pdfHerunterladen);
 
     document.getElementById('druck-titel').addEventListener('input', () => { titelAktualisieren(); druckNeuZeichnen(); });
@@ -575,8 +620,16 @@ function init() {
     document.getElementById('abspielen-btn').addEventListener('click', () => {
         const nurMetronom = document.getElementById('abspielen-modus').value === 'selbstklatschen';
         const extraDurchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen : 0;
-        Vorklatschen.starten(editor.stueck(), document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen(),
-            () => document.getElementById('opt-loop').checked);
+        const stueck = editor.stueck();
+        const endlos = () => document.getElementById('opt-loop').checked;
+        if (loopAuswahl) {
+            // Nur der Loop-Bereich - als eigenes kleines Stueck, die Markierung
+            // beim Mitlesen landet trotzdem an der richtigen Stelle.
+            const teil = Object.assign({}, stueck, { takte: stueck.takte.slice(loopAuswahl.von, loopAuswahl.bis + 1) });
+            Vorklatschen.starten(teil, document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, null, endlos, loopAuswahl.von);
+        } else {
+            Vorklatschen.starten(stueck, document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen(), endlos);
+        }
     });
     Vorklatschen.aufZustandAendern((laeuft) => {
         document.getElementById('abspielen-btn').innerHTML = laeuft

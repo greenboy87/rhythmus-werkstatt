@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=25">
-<link rel="stylesheet" href="css/druck.css?v=25">
+<link rel="stylesheet" href="css/stil.css?v=26">
+<link rel="stylesheet" href="css/druck.css?v=26">
 </head>
 <body>
 
@@ -204,6 +204,11 @@
                 <button type="button" class="btn nicht-in-uebung" id="drucken-btn" title="Öffnet den Druckdialog"><i class="fa-solid fa-print"></i> Drucken</button>
             </div>
         </div>
+        <div class="leiste hidden" id="loop-auswahl-info" style="margin-bottom:.5rem;">
+            <span><i class="fa-solid fa-repeat"></i> <b id="loop-auswahl-text"></b> – nur dieser Teil wird abgespielt</span>
+            <button type="button" class="btn" id="loop-auswahl-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
+        </div>
+        <p class="anzeige-tipp" id="loop-tipp">Tipp: Takt antippen = nur diesen Takt loopen, weitere Takte antippen erweitert den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.</p>
         <h2 id="anzeige-titel" class="hidden" style="text-align:center; margin:0 0 .6rem;"></h2>
         </div>
         <div id="anzeige"></div>
@@ -227,15 +232,15 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=25"></script>
-<script src="js/noten.js?v=25"></script>
-<script src="js/editor.js?v=25"></script>
-<script src="js/audio.js?v=25"></script>
-<script src="js/generator.js?v=25"></script>
-<script src="js/link.js?v=25"></script>
-<script src="js/vendor/lame.min.js?v=25"></script>
-<script src="js/export.js?v=25"></script>
-<script src="js/pdf.js?v=25"></script>
-<script src="js/app.js?v=25"></script>
+<script src="js/version.js?v=26"></script>
+<script src="js/noten.js?v=26"></script>
+<script src="js/editor.js?v=26"></script>
+<script src="js/audio.js?v=26"></script>
+<script src="js/generator.js?v=26"></script>
+<script src="js/link.js?v=26"></script>
+<script src="js/vendor/lame.min.js?v=26"></script>
+<script src="js/export.js?v=26"></script>
+<script src="js/pdf.js?v=26"></script>
+<script src="js/app.js?v=26"></script>
 </body>
 </html>

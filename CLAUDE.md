@@ -134,6 +134,15 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
 - Zählzeiten stehen über den Noten (`ZAEHL_Y`), der Handsatz darunter
   (`HANDSATZ_Y`) - fest für alle Zeilen, damit sie bei „Als Übung“
   untereinander stehen.
+- Loop-Bereich (`loopAuswahl` in app.js, `{von, bis}` Taktnummern): Takt
+  in der Anzeige antippen waehlt ihn, weitere Takte erweitern, Tippen in den
+  Bereich hebt ihn auf; die Uebungsnummer (`.uebung-nr`, bei „Als Übung“)
+  waehlt die ganze Zeile. `stueckAnzeigeHtml` zeichnet dafuer je Takt eine
+  unsichtbare Tippflaeche (`.takt-feld[data-takt]`) und hinterlegt die
+  Auswahl (`.takt-auswahl`, nur Bildschirm, nicht Druck/PDF). Mit Auswahl
+  spielt „Abspielen“ nur diesen Ausschnitt (`Vorklatschen.starten(...,
+  taktVersatz)` haelt die Mitlese-Markierung an der richtigen Stelle) und
+  schaltet den Loop ein. Nicht im Link gespeichert.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über

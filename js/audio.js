@@ -493,11 +493,15 @@ const Vorklatschen = (function () {
        endlos (optional): Funktion -> true = Loop. Dann beginnt nach dem
        letzten Durchgang nahtlos der naechste (ohne neuen Vorlauf), bis Stopp
        gedrueckt wird. Wird vor jedem Ende neu gefragt - der Loop-Schalter
-       wirkt also auch mitten im Abspielen. */
-    function starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos) {
+       wirkt also auch mitten im Abspielen.
+       taktVersatz (optional): stueck ist nur ein Ausschnitt (Loop-Bereich),
+       der bei diesem Takt des angezeigten Stuecks beginnt - fuer die
+       Mitlese-Markierung. */
+    function starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz) {
+        const versatz = Number(taktVersatz) || 0;
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos));
+        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz));
         if (!ctx) return;
         Metronom.stoppen();
         laeuft = true;
@@ -521,7 +525,7 @@ const Vorklatschen = (function () {
                 }
             });
             plan.markierungen.forEach(m => {
-                anzeigePlanen(ab + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr, m.ab));
+                anzeigePlanen(ab + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr + versatz, m.ab));
             });
             plan.wechsel.forEach(w => {
                 anzeigePlanen(ab + w.zeit, () => zeigeToast(w.zeile ? `Übung ${w.zeile}: Durchgang ${w.nr} von ${durchgaenge}…` : `Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));

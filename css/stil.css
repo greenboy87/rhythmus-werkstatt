@@ -312,3 +312,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .ansicht-uebung body { min-height: 0; padding-bottom: 0; background: transparent; }
 .ansicht-uebung main { padding: 0; max-width: none; }
 .ansicht-uebung .anzeige-karte { margin: 0; }
+
+/* ---------- Loop-Bereich: angetippte Takte bzw. Übung ---------- */
+.anzeige-system .takt-feld, .anzeige-system .uebung-nr { cursor: pointer; }
+.anzeige-system .takt-auswahl { fill: var(--akzent); opacity: .22; stroke: none; }
+#loop-auswahl-info { font-size: .85rem; color: var(--text-gedaempft); }
+#loop-auswahl-info b { color: var(--akzent); }
+.anzeige-tipp { font-size: .75rem; color: var(--text-schwach); margin: 0 0 .4rem; text-align: center; }
+@media print { .anzeige-tipp, #loop-auswahl-info { display: none !important; } }

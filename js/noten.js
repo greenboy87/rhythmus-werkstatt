@@ -300,7 +300,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
@@ -444,13 +444,16 @@ function stueckAnzeigeHtml(stueck, optionen) {
             if (opt.alsUebung) {
                 // Uebungsnummer oben links ueber der Zeile.
                 const nx = LINKS_RAND - 2, ny = LINIE_Y - (opt.notenlinien ? 34 : 26);
-                teileSvg.push(`<text x="${nx}" y="${ny}" font-size="13" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${systemNr + 1}.</text>`);
+                // Antippen der Nummer waehlt die ganze Uebung als Loop-Bereich
+                const vonTakt = system[0].index, bisTakt = system[system.length - 1].index;
+                teileSvg.push(`<text class="uebung-nr" data-von="${vonTakt}" data-bis="${bisTakt}" x="${nx}" y="${ny}" font-size="13" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${systemNr + 1}.</text>`);
                 inkOben = Math.min(inkOben, ny - 11);
                 inkVon = Math.min(inkVon, nx - 2);
             }
         }
 
         const zaehlzeitenTexte = [];
+        const taktFelder = [];   // Flaeche je Takt: zum Antippen (Loop-Bereich) und Markieren
         system.forEach(({ takt, index }, posInSystem) => {
             // Taktstrich vor jedem Takt, ausser ganz am Anfang des ersten Systems -
             // im Spalten-Modus gilt das fuer den ersten Takt JEDER Zeile, sonst
@@ -534,8 +537,20 @@ function stueckAnzeigeHtml(stueck, optionen) {
             // nach den Noten, vor dem naechsten Taktstrich) - damit Takt 1
             // jeder Zeile exakt gleich breit ist wie Takt 1 jeder anderen.
             x = spaltenBreite ? taktStartX + spaltenBreite[index % opt.takteProZeile] - RAND_TAKT : taktEndeX;
+            taktFelder.push({ index, von: taktStartX - 10, bis: x + 5 });
         });
         teileSvg.push(...zaehlzeitenTexte);
+        // Loop-Bereich farbig hinterlegen (hinter den Noten), dazu unsichtbare
+        // Tippflaechen je Takt obendrauf. Nur auf dem Bildschirm - der Druck
+        // bekommt keine Auswahl mit.
+        const feldOben = LINIE_Y - 34, feldHoehe = 72;
+        const aus = opt.auswahl;
+        taktFelder.forEach(f => {
+            if (aus && f.index >= aus.von && f.index <= aus.bis) {
+                teileSvg.unshift(`<rect class="takt-auswahl" x="${f.von}" y="${feldOben}" width="${f.bis - f.von}" height="${feldHoehe}" rx="6"/>`);
+            }
+            teileSvg.push(`<rect class="takt-feld" data-takt="${f.index}" x="${f.von}" y="${feldOben}" width="${f.bis - f.von}" height="${feldHoehe}" fill="transparent"/>`);
+        });
 
         const rechts = x + 6;
         if ((istLetztesSystem || opt.alsUebung) && opt.wiederholung) {
