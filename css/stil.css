@@ -386,16 +386,17 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 }
 .bw-kopieren:hover { color: var(--akzent); background: var(--rand-schwach); }
 .bw-reihe { display: grid; grid-template-columns: repeat(4, minmax(52px, 84px)); }
-.bw-reihe + .bw-reihe { border-top: 1px solid var(--rand); }
-.bw-reihe-oben { background: color-mix(in srgb, var(--becken) 6%, transparent); }
-.bw-reihe-unten { background: color-mix(in srgb, var(--bass) 6%, transparent); }
 .bw-platz { position: relative; cursor: pointer; border-right: 1px dashed var(--rand-schwach); color: var(--text); }
 .bw-platz:last-child { border-right: none; }
 .bw-platz svg { display: block; width: 100%; height: auto; }
-.bw-platz.leer { background: color-mix(in srgb, var(--rand-schwach) 55%, transparent); }
-.bw-platz.aktiv { outline: 2.5px solid var(--akzent); outline-offset: -2.5px; background: color-mix(in srgb, var(--akzent) 14%, transparent); }
+/* Im Platz sind nur die Ebenen-Flaechen und die Noten-Felder antippbar -
+   so entscheidet die getroffene Flaeche, welche Ebene gemeint ist. */
+.bw-platz svg * { pointer-events: none; }
+.bw-platz svg .bw-band, .bw-platz svg .noten-feld { pointer-events: all; cursor: pointer; }
+.bw-band { fill: transparent; }
+.bw-band.leer { fill: color-mix(in srgb, var(--rand-schwach) 55%, transparent); }
+.bw-band.aktiv { fill: color-mix(in srgb, var(--akzent) 16%, transparent); stroke: var(--akzent); stroke-width: 2.5; }
 .bw-platz.jetzt { background: color-mix(in srgb, var(--warnung) 30%, transparent); }
-.bw-platz .noten-feld { cursor: pointer; }
 .bw-platz .noten-feld:hover { fill: color-mix(in srgb, var(--akzent) 20%, transparent); }
 .bw-schlag-nr { position: absolute; top: 2px; left: 4px; font-size: .6rem; font-weight: 800; color: var(--text-schwach); pointer-events: none; }
 .bw-weg {
@@ -403,14 +404,18 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     border: none; border-radius: 50%; background: transparent; color: var(--text-schwach);
     font-size: .8rem; line-height: 16px; opacity: .55;
 }
+.bw-weg.bw-weg-unten { top: auto; bottom: 1px; }
 .bw-weg:hover { opacity: 1; color: var(--gefahr); background: var(--rand-schwach); }
-.bw-linie { opacity: .18; }
+.bw-linie { opacity: .3; }
 .bw-platz .bw-auto { opacity: .45; }
 
-/* Noten immer farbig im Editor/Palette, in der Anzeige per Schalter */
-.bw-platz ellipse.bw-bass, .bw-baustein ellipse.bw-bass, .bw-farbig ellipse.bw-bass { fill: var(--bass); }
-.bw-platz ellipse.bw-snare, .bw-baustein ellipse.bw-snare, .bw-farbig ellipse.bw-snare { fill: var(--snare); }
-.bw-platz path.bw-becken, .bw-baustein path.bw-becken, .bw-farbig path.bw-becken { stroke: var(--becken); }
+/* Farbe nur mit „Farbe an“ (Klasse bw-bunt auf #reiter-beat) - sonst
+   alles in Textfarbe wie gedruckte Noten. */
+.bw-bunt ellipse.bw-bass { fill: var(--bass); }
+.bw-bunt ellipse.bw-snare { fill: var(--snare); }
+.bw-bunt path.bw-becken { stroke: var(--becken); }
+#reiter-beat:not(.bw-bunt) .bw-punkt { display: none; }
+#reiter-beat:not(.bw-bunt) .bw-hinweis-bb { color: var(--text); }
 
 /* Werkzeug: Stifte + Bausteine fuer die gewaehlte Reihe */
 .bw-werkzeug { display: flex; flex-direction: column; gap: .6rem; padding-top: .7rem; border-top: 1px solid var(--rand-schwach); }

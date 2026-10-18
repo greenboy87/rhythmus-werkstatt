@@ -137,7 +137,7 @@ const BEAT_TAKTE_MAX = 8;
 const beat = {
     modus: 'profi', takte: 2, backbeat: true, bpm: 90,
     oben: [], unten: [], easy: [],
-    zaehlzeiten: true, farbig: true, metronom: false,
+    zaehlzeiten: true, farbe: false, metronom: false,
     stumm: { becken: false, bass: false, snare: false },
     stift: { becken: 'hh', trommel: 'b', dazu: '' },
     mehr: false
@@ -162,7 +162,7 @@ function beatLaden() {
         if (x.modus === 'easy' || x.modus === 'profi') beat.modus = x.modus;
         beat.takte = Math.max(1, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         beat.bpm = Math.max(40, Math.min(200, Math.round(Number(x.bpm) || 90)));
-        ['backbeat', 'zaehlzeiten', 'farbig', 'metronom', 'mehr'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
+        ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
         ['oben', 'unten', 'easy'].forEach(eb => {
             beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * 4).map(platzGueltig) : [];
         });
@@ -310,7 +310,7 @@ function bwStimme(slot, x0, richtung, pauseY) {
                 }
             });
             const von = auf ? n.unten : n.oben;
-            teile.push(`<line x1="${n.hx}" y1="${von}" x2="${n.hx}" y2="${spitze}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>`);
+            teile.push(`<line x1="${n.hx}" y1="${von}" x2="${n.hx}" y2="${spitze}" stroke="currentColor" stroke-width="2.2" stroke-linecap="butt"/>`);
             if (n.inst.includes('ho')) {
                 const oy = auf ? spitze - 8 : n.oben - 12;
                 teile.push(`<circle cx="${n.px}" cy="${oy}" r="3.3" fill="none" stroke="currentColor" stroke-width="1.6"/>`);
@@ -603,6 +603,32 @@ function bwAenderung() {
     bwZeichnen();
 }
 
+/* Ein Platz im Editor: alle Ebenen zusammen auf einem Fuenf-Linien-System,
+   so wie im Notenbild. Welche Ebene gemeint ist, sagt die Flaeche, in die
+   man tippt: bei zwei Ebenen oben (Becken) bzw. ab der zweiten Linie
+   abwaerts (Bassdrum/Snare). Noten haben eigene Tippflaechen. */
+const BW_ZELLE = { profi: [-48, 112], easy: [-48, 86] };
+const BW_GRENZE = 8;   // y der zweiten Linie: Trennung oben/unten
+function bwZelleSvg(platz) {
+    const [y0, h] = BW_ZELLE[beat.modus];
+    const ebenen = bwEbenen();
+    const baender = [], noten = [], felder = [];
+    ebenen.forEach(eb => {
+        const von = eb === 'unten' ? BW_GRENZE : y0;
+        const bis = eb === 'oben' ? BW_GRENZE : y0 + h;
+        const leer = !bwDaten(eb)[platz];
+        const aktiv = bwAktiv.ebene === eb && bwAktiv.platz === platz;
+        baender.push(`<rect class="bw-band${leer ? ' leer' : ''}${aktiv ? ' aktiv' : ''}" data-ebene="${eb}" x="1.5" y="${von + 1.5}" width="${BW_SCHLAG - 3}" height="${bis - von - 3}" rx="4"/>`);
+        const slot = abgeleitet(eb, platz);
+        if (!slot) return;
+        const r = bwStimme(slot, 0, eb === 'unten' ? 'ab' : 'auf', BW_PAUSE_Y[eb]);
+        noten.push(...r.teile);
+        r.treffer.forEach(f => felder.push(`<rect class="noten-feld" data-ebene="${eb}" data-k="${f.k}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
+    });
+    const linien = BW_LINIEN.map(y => `<line x1="0" y1="${y}" x2="${BW_SCHLAG}" y2="${y}" class="bw-linie" stroke="currentColor" stroke-width="1"/>`).join('');
+    return `<svg viewBox="0 ${y0} ${BW_SCHLAG} ${h}" width="${BW_SCHLAG}" height="${h}" class="bw-platz-svg">${baender.join('')}${linien}${noten.join('')}${felder.join('')}</svg>`;
+}
+
 function bwEditorZeichnen() {
     const host = document.getElementById('bw-editor');
     const ebenen = bwEbenen();
@@ -611,27 +637,35 @@ function bwEditorZeichnen() {
     let html = '';
     for (let t = 0; t < beat.takte; t++) {
         html += `<div class="bw-takt"><div class="bw-takt-kopf"><span>Takt ${t + 1}</span>` +
-            `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>`;
-        ebenen.forEach(eb => {
-            html += `<div class="bw-reihe bw-reihe-${eb}">`;
-            for (let s = 0; s < 4; s++) {
-                const platz = t * 4 + s;
-                const roh = bwDaten(eb)[platz];
-                const slot = abgeleitet(eb, platz);
-                const aktiv = bwAktiv.ebene === eb && bwAktiv.platz === platz;
-                html += `<div class="bw-platz${roh ? '' : ' leer'}${aktiv ? ' aktiv' : ''}" data-ebene="${eb}" data-platz="${platz}" data-spiel="${platz}"` +
-                    ` title="${roh ? BEAT_FORM[roh.code].wort + ' – Note antippen: Instrument wechseln' : 'Leer – antippen, dann unten einen Baustein wählen'}">` +
-                    `<span class="bw-schlag-nr">${s + 1}</span>${bwPlatzSvg(slot, eb, true)}` +
-                    (roh ? '<button type="button" class="bw-weg" title="Baustein entfernen" aria-label="Baustein entfernen">×</button>' : '') +
-                    '</div>';
-            }
-            html += '</div>';
-        });
-        html += '</div>';
+            `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
+            '<div class="bw-reihe">';
+        for (let s = 0; s < 4; s++) {
+            const platz = t * 4 + s;
+            const weg = ebenen.filter(eb => bwDaten(eb)[platz]).map(eb =>
+                `<button type="button" class="bw-weg bw-weg-${eb}" data-ebene="${eb}" title="${eb === 'oben' ? 'Becken' : eb === 'unten' ? 'Bassdrum/Snare' : 'Baustein'} entfernen" aria-label="Baustein entfernen">×</button>`).join('');
+            html += `<div class="bw-platz" data-platz="${platz}" data-spiel="${platz}"` +
+                ` title="Antippen: Platz wählen${ebenen.length > 1 ? ' (oben Becken, unten Bassdrum/Snare)' : ''} – Note antippen: Instrument wechseln">` +
+                `<span class="bw-schlag-nr">${s + 1}</span>${bwZelleSvg(platz)}${weg}</div>`;
+        }
+        html += '</div></div>';
     }
     host.innerHTML = html;
 }
 
+const BW_TAUSCH_KNOPF = '<button type="button" class="btn bw-chip" id="bw-tauschen" title="Im gewählten Platz Bassdrum und Snare vertauschen"><i class="fa-solid fa-right-left"></i> Bassdrum ⇄ Snare</button>';
+/* Im gewaehlten Platz Bassdrum und Snare vertauschen (Noten mit beidem bleiben). */
+function bwTauschen() {
+    const eb = bwAktiv.ebene, platz = bwAktiv.platz;
+    const roh = bwDaten(eb)[platz];
+    if (eb === 'oben' || !roh || !roh.inst.some(i => i.includes('b') || i.includes('s'))) {
+        zeigeToast('Erst einen Platz mit Bassdrum oder Snare antippen.', 'info');
+        return;
+    }
+    const neu = { code: roh.code, inst: roh.inst.map(i => instSortieren(i.map(x => x === 'b' ? 's' : x === 's' ? 'b' : x))) };
+    bwSetzen(eb, platz, neu);
+    bwVorhoeren(abgeleitet(eb, platz));
+    bwAenderung();
+}
 const BW_EBENEN_NAME = { oben: 'Ebene 1 · Hi-Hat / Becken', unten: 'Ebene 2 · Bassdrum & Snare', easy: 'Easy · Becken + Bassdrum/Snare' };
 function bwPaletteZeichnen() {
     const eb = bwAktiv.ebene;
@@ -646,12 +680,12 @@ function bwPaletteZeichnen() {
     if (eb === 'unten') {
         stifte += '<span class="schalter-feld">Trommel</span>' +
             chip('trommel', 'b', 'Bassdrum', 'bw-bass') + chip('trommel', 's', 'Snare', 'bw-snare') +
-            chip('trommel', 'w', 'Wechsel B–S', 'bw-wechsel');
+            chip('trommel', 'w', 'Wechsel B–S', 'bw-wechsel') + BW_TAUSCH_KNOPF;
     }
     if (eb === 'easy') {
         stifte += '<span class="schalter-feld">auf die 1. Note dazu</span>' +
             chip('dazu', '', 'nichts') + chip('dazu', 'b', 'Bassdrum', 'bw-bass') +
-            chip('dazu', 's', 'Snare', 'bw-snare') + chip('dazu', 'bs', 'beides', 'bw-wechsel');
+            chip('dazu', 's', 'Snare', 'bw-snare') + chip('dazu', 'bs', 'beides', 'bw-wechsel') + BW_TAUSCH_KNOPF;
     }
     document.getElementById('bw-stifte').innerHTML = stifte;
     document.getElementById('bw-palette').innerHTML = BEAT_FORMEN
@@ -665,7 +699,6 @@ function bwPaletteZeichnen() {
 
 function bwAnzeigeZeichnen() {
     const host = document.getElementById('bw-anzeige');
-    host.classList.toggle('bw-farbig', beat.farbig);
     const breite = host.clientWidth || 900;
     const taktBreite = (4 * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
     const proZeile = Math.max(1, Math.floor((breite - 80 * BW_ANZEIGE_SKALA) / taktBreite));
@@ -688,7 +721,9 @@ function bwSchalterZeichnen() {
     document.getElementById('bw-tempo-regler').value = beat.bpm;
     document.getElementById('bw-metronom').checked = beat.metronom;
     document.getElementById('bw-zaehlzeiten').checked = beat.zaehlzeiten;
-    document.getElementById('bw-farbig').checked = beat.farbig;
+    document.getElementById('reiter-beat').classList.toggle('bw-bunt', beat.farbe);
+    document.getElementById('bw-farbe').innerHTML = beat.farbe
+        ? '<i class="fa-solid fa-palette"></i> Farbe aus' : '<i class="fa-solid fa-palette"></i> Farbe an';
     document.querySelectorAll('[data-bw-stumm]').forEach(b => {
         const stumm = beat.stumm[b.dataset.bwStumm];
         b.classList.toggle('stumm', stumm);
@@ -696,7 +731,7 @@ function bwSchalterZeichnen() {
     });
     const legende = beat.modus === 'easy'
         ? 'Eine Reihe: jede Becken-Note kann zusätzlich <span class="bw-punkt bw-bass"></span> Bassdrum, <span class="bw-punkt bw-snare"></span> Snare oder beides bekommen.'
-        : 'Obere Reihe <span class="bw-punkt bw-becken"></span> Hi-Hat / Becken · untere Reihe <span class="bw-punkt bw-bass"></span> Bassdrum und <span class="bw-punkt bw-snare"></span> Snare.';
+        : 'Ein Notensystem, zwei Ebenen: oben <span class="bw-punkt bw-becken"></span> Hi-Hat / Becken (Hälse nach oben), unten <span class="bw-punkt bw-bass"></span> Bassdrum und <span class="bw-punkt bw-snare"></span> Snare (Hälse nach unten). Oben oder unten in einen Platz tippen wählt die Ebene.';
     document.getElementById('bw-legende').innerHTML = legende +
         (beat.backbeat ? ' <span class="bw-hinweis-bb">Backbeat an: Snare auf 2 und 4 kommt automatisch dazu (blass).</span>' : '');
 }
@@ -820,7 +855,9 @@ function bwEinrichten() {
         }
         const el = e.target.closest('.bw-platz');
         if (!el) return;
-        const eb = el.dataset.ebene, platz = Number(el.dataset.platz);
+        const ebEl = e.target.closest('[data-ebene]');
+        const eb = ebEl ? ebEl.dataset.ebene : bwAktiv.ebene;
+        const platz = Number(el.dataset.platz);
         bwAktiv = { ebene: eb, platz };
         if (e.target.closest('.bw-weg')) bwSetzen(eb, platz, null);
         else {
@@ -832,6 +869,7 @@ function bwEinrichten() {
 
     // Werkzeug: Stift waehlen, Baustein setzen
     document.getElementById('bw-stifte').addEventListener('click', (e) => {
+        if (e.target.closest('#bw-tauschen')) { bwTauschen(); return; }
         const c = e.target.closest('[data-stift]');
         if (!c) return;
         beat.stift[c.dataset.stift] = c.dataset.wert;
@@ -873,7 +911,7 @@ function bwEinrichten() {
     document.getElementById('bw-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
     document.getElementById('bw-metronom').addEventListener('change', (e) => { beat.metronom = e.target.checked; beatSpeichern(); });
     document.getElementById('bw-zaehlzeiten').addEventListener('change', (e) => { beat.zaehlzeiten = e.target.checked; bwAenderung(); });
-    document.getElementById('bw-farbig').addEventListener('change', (e) => { beat.farbig = e.target.checked; bwAenderung(); });
+    document.getElementById('bw-farbe').addEventListener('click', () => { beat.farbe = !beat.farbe; bwAenderung(); });
     document.querySelectorAll('[data-bw-stumm]').forEach(b => b.addEventListener('click', () => {
         beat.stumm[b.dataset.bwStumm] = !beat.stumm[b.dataset.bwStumm];
         beatSpeichern(); bwSchalterZeichnen();

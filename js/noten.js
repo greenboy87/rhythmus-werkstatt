@@ -247,7 +247,8 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         if (t.d >= 4) return;
         const hx = px + 6.6;
         ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), H - 1, Y + 7);
-        teile.push(`<line x1="${hx}" y1="${Y - 2}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="round"/>`);
+        // Gerades Ende (butt): ein rundes ragte um die halbe Strichbreite ueber den Balken
+        teile.push(`<line x1="${hx}" y1="${Y - 2}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="butt"/>`);
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();

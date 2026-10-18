@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=30">
-<link rel="stylesheet" href="css/druck.css?v=30">
+<link rel="stylesheet" href="css/stil.css?v=31">
+<link rel="stylesheet" href="css/druck.css?v=31">
 </head>
 <body>
 
@@ -236,9 +236,12 @@
     <section class="karte">
         <div class="leiste" style="justify-content: space-between; margin-bottom:.8rem;">
             <h2 style="font-size:1rem;">Beat bauen</h2>
+            <div class="leiste">
+            <button type="button" class="btn" id="bw-farbe" title="Bassdrum, Snare und Becken in eigenen Farben zeigen oder alles schwarz-weiß"><i class="fa-solid fa-palette"></i> Farbe an</button>
             <div class="bw-segment" role="group" aria-label="Modus">
                 <button type="button" class="btn" data-bw-modus="profi" title="Oben Hi-Hat/Becken, unten Bassdrum und Snare - wie im Schlagzeug-Notensatz">Zwei Ebenen</button>
                 <button type="button" class="btn" data-bw-modus="easy" title="Eine Reihe: jede Becken-Note bekommt auf Wunsch Bassdrum, Snare oder beides dazu">Easy · eine Ebene</button>
+            </div>
             </div>
         </div>
         <div class="leiste" style="margin-bottom:.7rem;">
@@ -268,7 +271,7 @@
             <div class="leiste">
                 <button type="button" class="btn" id="bw-mehr"></button>
                 <button type="button" class="btn" id="bw-auffuellen" title="Kopiert den zuletzt gesetzten Baustein in alle leeren Plätze dieser Reihe"><i class="fa-solid fa-fill-drip"></i> Leere Plätze auffüllen</button>
-                <button type="button" class="btn" id="bw-reihe-leeren" title="Leert nur die gerade gewählte Reihe"><i class="fa-solid fa-eraser"></i> Reihe leeren</button>
+                <button type="button" class="btn" id="bw-reihe-leeren" title="Leert nur die gerade gewählte Ebene"><i class="fa-solid fa-eraser"></i> Ebene leeren</button>
             </div>
             <p class="anzeige-tipp" style="text-align:left; margin:.2rem 0 0;">Tipp: Platz antippen, dann Baustein wählen – danach springt es zum nächsten Platz. Eine Note antippen wechselt das Instrument (Becken: Hi-Hat → offen → Ride → Crash, Trommel: Bassdrum → Snare → beides).</p>
         </div>
@@ -296,9 +299,6 @@
                 <label class="schalter"><input type="checkbox" id="bw-zaehlzeiten"><span class="schalter-schieber"></span></label>
                 <span class="schalter-feld">Zählzeiten</span>
             </span>
-            <span class="leiste" style="gap:.4rem;" title="Bassdrum, Snare und Becken in eigenen Farben">
-                <label class="schalter"><input type="checkbox" id="bw-farbig"><span class="schalter-schieber"></span></label>
-                <span class="schalter-feld">Farbig</span>
             </span>
         </div>
         <div id="bw-anzeige" class="bw-anzeige"></div>
@@ -311,16 +311,16 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=30"></script>
-<script src="js/noten.js?v=30"></script>
-<script src="js/editor.js?v=30"></script>
-<script src="js/audio.js?v=30"></script>
-<script src="js/generator.js?v=30"></script>
-<script src="js/link.js?v=30"></script>
-<script src="js/vendor/lame.min.js?v=30"></script>
-<script src="js/export.js?v=30"></script>
-<script src="js/pdf.js?v=30"></script>
-<script src="js/app.js?v=30"></script>
-<script src="js/beat.js?v=30"></script>
+<script src="js/version.js?v=31"></script>
+<script src="js/noten.js?v=31"></script>
+<script src="js/editor.js?v=31"></script>
+<script src="js/audio.js?v=31"></script>
+<script src="js/generator.js?v=31"></script>
+<script src="js/link.js?v=31"></script>
+<script src="js/vendor/lame.min.js?v=31"></script>
+<script src="js/export.js?v=31"></script>
+<script src="js/pdf.js?v=31"></script>
+<script src="js/app.js?v=31"></script>
+<script src="js/beat.js?v=31"></script>
 </body>
 </html>

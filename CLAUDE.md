@@ -177,6 +177,15 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     Stelle → Instrumente, daraus ergibt sich der passende Baustein).
   - Backbeat-Schalter: `abgeleitet()` rechnet die Snare auf 2 und 4 beim
     Zeichnen/Abspielen dazu, die Daten bleiben unverändert.
+  - Editor: je Platz EIN Fünf-Linien-System mit beiden Ebenen
+    (`bwZelleSvg`). Welche Ebene gemeint ist, entscheidet die angetippte
+    Fläche (`rect.bw-band[data-ebene]`, Grenze zweite Linie); alles andere
+    im SVG hat `pointer-events: none`. Knopf „Bassdrum ⇄ Snare“ tauscht
+    im gewählten Platz (`bwTauschen`).
+  - Farbe nur mit Knopf „Farbe an“ (`beat.farbe`, Klasse `bw-bunt` auf
+    `#reiter-beat`), Standard schwarz-weiß.
+  - Notenhälse mit geradem Ende (`stroke-linecap="butt"`), auch in
+    noten.js - ein rundes Ende ragte über den Balken.
   - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
