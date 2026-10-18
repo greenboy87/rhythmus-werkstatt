@@ -187,8 +187,11 @@ function trommelKlang(ctx, zeit, staerke) {
    der knackige Anschlag als sehr kurzes helles Rauschen und der Teppich
    (die Schnarrsaiten) als laenger ausklingendes, gefiltertes Rauschen.
    Das Rauschen kommt aus Math.random - beim Export ist das der feste
-   Zufallsgenerator, die Datei bleibt also reproduzierbar. */
-function snareKlang(ctx, zeit, staerke) {
+   Zufallsgenerator, die Datei bleibt also reproduzierbar.
+   ziel (optional): Knoten statt ctx.destination - die Beat-Werkstatt
+   schickt alles durch ihren eigenen Summen-Knoten (js/beat.js). */
+function snareKlang(ctx, zeit, staerke, ziel) {
+    const aus = ziel || ctx.destination;
     const st = klangStaerke(staerke);
     const ton = (f0, f1, laut, dauer) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
@@ -198,7 +201,7 @@ function snareKlang(ctx, zeit, staerke) {
         g.gain.setValueAtTime(0.0001, zeit);
         g.gain.exponentialRampToValueAtTime(laut * st, zeit + 0.002);
         g.gain.exponentialRampToValueAtTime(0.0001, zeit + dauer);
-        o.connect(g); g.connect(ctx.destination);
+        o.connect(g); g.connect(aus);
         o.start(zeit); o.stop(zeit + dauer + 0.02);
     };
     ton(195, 165, 0.26, 0.11);
@@ -220,7 +223,7 @@ function snareKlang(ctx, zeit, staerke) {
     g.gain.exponentialRampToValueAtTime(0.27 * st, zeit + 0.0015);
     g.gain.exponentialRampToValueAtTime(0.07 * st, zeit + 0.05);
     g.gain.exponentialRampToValueAtTime(0.0001, zeit + 0.22);
-    quelle.connect(hoch); hoch.connect(glocke); glocke.connect(g); g.connect(ctx.destination);
+    quelle.connect(hoch); hoch.connect(glocke); glocke.connect(g); g.connect(aus);
     quelle.start(zeit);
     return quelle;
 }

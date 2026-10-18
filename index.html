@@ -8,21 +8,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=29">
-<link rel="stylesheet" href="css/druck.css?v=29">
+<link rel="stylesheet" href="css/stil.css?v=30">
+<link rel="stylesheet" href="css/druck.css?v=30">
 </head>
 <body>
 
 <header class="kopfzeile nicht-in-uebung">
     <h1>🥁 Rhythmus-Werkstatt</h1>
-    <span class="untertitel">Takte bauen · vorklatschen · einüben</span>
+    <nav class="reiter" role="tablist" aria-label="Werkstatt wählen">
+        <button type="button" class="reiter-knopf an" role="tab" aria-selected="true" data-reiter="rhythmus">Rhythmus-Werkstatt</button>
+        <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="beat"><i class="fa-solid fa-drum"></i> Beat-Werkstatt</button>
+    </nav>
+    <span class="untertitel" id="kopf-untertitel">Takte bauen · vorklatschen · einüben</span>
     <span class="fuellt"></span>
     <button type="button" class="btn" id="theme-knopf" title="Helles/dunkles Layout umschalten">
         <i class="fa-solid fa-circle-half-stroke"></i>
     </button>
 </header>
 
-<main>
+<main id="reiter-rhythmus">
     <!-- ---------- Takt bauen ---------- -->
     <section class="karte nicht-in-uebung">
         <div class="leiste" style="justify-content: space-between; margin-bottom:.8rem;">
@@ -227,21 +231,96 @@
     </section>
 </main>
 
+<!-- ============ Beat-Werkstatt (eigener Reiter, js/beat.js) ============ -->
+<main id="reiter-beat" class="hidden nicht-in-uebung">
+    <section class="karte">
+        <div class="leiste" style="justify-content: space-between; margin-bottom:.8rem;">
+            <h2 style="font-size:1rem;">Beat bauen</h2>
+            <div class="bw-segment" role="group" aria-label="Modus">
+                <button type="button" class="btn" data-bw-modus="profi" title="Oben Hi-Hat/Becken, unten Bassdrum und Snare - wie im Schlagzeug-Notensatz">Zwei Ebenen</button>
+                <button type="button" class="btn" data-bw-modus="easy" title="Eine Reihe: jede Becken-Note bekommt auf Wunsch Bassdrum, Snare oder beides dazu">Easy · eine Ebene</button>
+            </div>
+        </div>
+        <div class="leiste" style="margin-bottom:.7rem;">
+            <span class="leiste bw-backbeat-feld" style="gap:.4rem;" title="Bei fast allen Pop- und Rock-Beats spielt die Snare auf den Zählzeiten 2 und 4 - an: kommt automatisch dazu">
+                <label class="schalter">
+                    <input type="checkbox" id="bw-backbeat">
+                    <span class="schalter-schieber"></span>
+                </label>
+                <span class="schalter-feld"><b>Backbeat</b>&nbsp;– Snare auf 2 und 4</span>
+            </span>
+            <span class="schalter-feld" style="margin-left:.4rem;">Takte</span>
+            <button type="button" class="btn" id="bw-takte-minus">−</button>
+            <span class="btn" id="bw-takte-anzeige" style="min-width:2.4rem; text-align:center">2</span>
+            <button type="button" class="btn" id="bw-takte-plus">+</button>
+            <select id="bw-vorlage" title="Fertigen Beat als Ausgangspunkt laden - ersetzt den aktuellen">
+                <option value="">Vorlage laden…</option>
+            </select>
+            <button type="button" class="btn" id="bw-leeren">Alles löschen</button>
+        </div>
+        <p class="bw-legende" id="bw-legende"></p>
+
+        <div id="bw-editor" class="bw-takte"></div>
+
+        <div class="bw-werkzeug">
+            <div class="leiste" id="bw-stifte"></div>
+            <div class="palette" id="bw-palette"></div>
+            <div class="leiste">
+                <button type="button" class="btn" id="bw-mehr"></button>
+                <button type="button" class="btn" id="bw-auffuellen" title="Kopiert den zuletzt gesetzten Baustein in alle leeren Plätze dieser Reihe"><i class="fa-solid fa-fill-drip"></i> Leere Plätze auffüllen</button>
+                <button type="button" class="btn" id="bw-reihe-leeren" title="Leert nur die gerade gewählte Reihe"><i class="fa-solid fa-eraser"></i> Reihe leeren</button>
+            </div>
+            <p class="anzeige-tipp" style="text-align:left; margin:.2rem 0 0;">Tipp: Platz antippen, dann Baustein wählen – danach springt es zum nächsten Platz. Eine Note antippen wechselt das Instrument (Becken: Hi-Hat → offen → Ride → Crash, Trommel: Bassdrum → Snare → beides).</p>
+        </div>
+    </section>
+
+    <section class="karte anzeige-karte">
+        <div class="leiste" style="margin-bottom:.7rem;">
+            <button type="button" class="btn btn-primär" id="bw-abspielen"><i class="fa-solid fa-play"></i> Beat abspielen</button>
+            <button type="button" class="btn" id="bw-tempo-minus">−</button>
+            <span class="btn" id="bw-tempo-anzeige" style="min-width:5.2rem; text-align:center">90 bpm</span>
+            <button type="button" class="btn" id="bw-tempo-plus">+</button>
+            <input type="range" min="40" max="200" step="1" value="90" id="bw-tempo-regler" style="width:7rem" aria-label="Tempo">
+            <span class="leiste" style="gap:.4rem;" title="Metronom-Klick auf jeder Zählzeit mitspielen">
+                <label class="schalter"><input type="checkbox" id="bw-metronom"><span class="schalter-schieber"></span></label>
+                <span class="schalter-feld">Metronom</span>
+            </span>
+            <span class="fuellt" style="flex:1"></span>
+            <span class="schalter-feld">Hören:</span>
+            <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="becken"><span class="bw-punkt bw-becken"></span> Becken</button>
+            <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="bass"><span class="bw-punkt bw-bass"></span> Bassdrum</button>
+            <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="snare"><span class="bw-punkt bw-snare"></span> Snare</button>
+        </div>
+        <div class="leiste" style="margin-bottom:.6rem; padding-top:.6rem; border-top:1px solid var(--rand-schwach);">
+            <span class="leiste" style="gap:.4rem;">
+                <label class="schalter"><input type="checkbox" id="bw-zaehlzeiten"><span class="schalter-schieber"></span></label>
+                <span class="schalter-feld">Zählzeiten</span>
+            </span>
+            <span class="leiste" style="gap:.4rem;" title="Bassdrum, Snare und Becken in eigenen Farben">
+                <label class="schalter"><input type="checkbox" id="bw-farbig"><span class="schalter-schieber"></span></label>
+                <span class="schalter-feld">Farbig</span>
+            </span>
+        </div>
+        <div id="bw-anzeige" class="bw-anzeige"></div>
+    </section>
+</main>
+
 <footer class="nicht-in-uebung" style="text-align:center; padding: 1rem; color: var(--text-schwach); font-size: .72rem;">
     <p id="build-stamp"></p>
 </footer>
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=29"></script>
-<script src="js/noten.js?v=29"></script>
-<script src="js/editor.js?v=29"></script>
-<script src="js/audio.js?v=29"></script>
-<script src="js/generator.js?v=29"></script>
-<script src="js/link.js?v=29"></script>
-<script src="js/vendor/lame.min.js?v=29"></script>
-<script src="js/export.js?v=29"></script>
-<script src="js/pdf.js?v=29"></script>
-<script src="js/app.js?v=29"></script>
+<script src="js/version.js?v=30"></script>
+<script src="js/noten.js?v=30"></script>
+<script src="js/editor.js?v=30"></script>
+<script src="js/audio.js?v=30"></script>
+<script src="js/generator.js?v=30"></script>
+<script src="js/link.js?v=30"></script>
+<script src="js/vendor/lame.min.js?v=30"></script>
+<script src="js/export.js?v=30"></script>
+<script src="js/pdf.js?v=30"></script>
+<script src="js/app.js?v=30"></script>
+<script src="js/beat.js?v=30"></script>
 </body>
 </html>

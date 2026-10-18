@@ -20,6 +20,10 @@
     --erfolg: #22c55e;
     --gefahr: #f43f5e;
     --schatten: 0 10px 30px -10px rgba(0,0,0,.5);
+    /* Beat-Werkstatt: je Instrument eine Farbe */
+    --bass: #60a5fa;
+    --snare: #fb923c;
+    --becken: #facc15;
 }
 html[data-theme="light"] {
     --bg: #f8fafc;
@@ -38,6 +42,9 @@ html[data-theme="light"] {
     --erfolg: #16a34a;
     --gefahr: #e11d48;
     --schatten: 0 10px 30px -12px rgba(15,23,42,.18);
+    --bass: #2563eb;
+    --snare: #ea580c;
+    --becken: #a16207;
 }
 
 * { box-sizing: border-box; }
@@ -329,3 +336,98 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .anzeige-tipp { font-size: .75rem; color: var(--text-schwach); margin: 0 0 .4rem; text-align: center; }
 @media print { .anzeige-tipp, #loop-auswahl-info { display: none !important; } }
 .anzeige-system .noten-feld { cursor: pointer; }
+
+/* ============================================================
+   REITER: Rhythmus-Werkstatt | Beat-Werkstatt
+   ============================================================ */
+.reiter { display: flex; gap: .25rem; background: var(--bg); border: 1px solid var(--rand-schwach); border-radius: 12px; padding: .2rem; }
+.reiter-knopf {
+    border: none; background: transparent; color: var(--text-gedaempft);
+    padding: .4rem .8rem; border-radius: 9px; font-size: .82rem; font-weight: 800; white-space: nowrap;
+}
+.reiter-knopf:hover { color: var(--text); background: var(--rand-schwach); }
+.reiter-knopf.an { background: var(--akzent); color: #fff; }
+@media (max-width: 760px) {
+    .kopfzeile { flex-wrap: wrap; }
+    .kopfzeile .untertitel { display: none; }
+}
+
+/* ============================================================
+   BEAT-WERKSTATT (js/beat.js)
+   ============================================================ */
+.bw-segment { display: flex; }
+.bw-segment .btn { border-radius: 0; }
+.bw-segment .btn:first-child { border-radius: 10px 0 0 10px; }
+.bw-segment .btn:last-child { border-radius: 0 10px 10px 0; border-left: none; }
+.bw-backbeat-feld { padding: .3rem .6rem; border: 1px solid var(--rand-schwach); border-radius: 10px; background: var(--bg-erhoben); }
+.bw-legende { font-size: .78rem; color: var(--text-gedaempft); margin: 0 0 .7rem; }
+.bw-hinweis-bb { color: var(--snare); font-weight: 700; }
+.bw-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; vertical-align: baseline; }
+.bw-punkt.bw-bass { background: var(--bass); }
+.bw-punkt.bw-snare { background: var(--snare); }
+.bw-punkt.bw-becken { background: var(--becken); }
+.bw-punkt.bw-wechsel { background: linear-gradient(90deg, var(--bass) 50%, var(--snare) 50%); }
+
+/* Editor: Takte als Kaesten, darin je Ebene eine Reihe mit vier Plaetzen -
+   gleiche Zaehlzeit steht genau untereinander. */
+.bw-takte { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: .9rem; }
+.bw-takt {
+    border: 1px solid var(--rand); border-radius: 12px; background: var(--bg-erhoben);
+    overflow: hidden; flex: 0 1 auto; max-width: 100%;
+}
+.bw-takt-kopf {
+    display: flex; justify-content: space-between; align-items: center; gap: .5rem;
+    padding: .25rem .5rem; font-size: .7rem; font-weight: 800; color: var(--text-schwach);
+    border-bottom: 1px solid var(--rand-schwach);
+}
+.bw-kopieren {
+    border: none; background: transparent; color: var(--text-schwach); font-size: .68rem; font-weight: 700;
+    padding: .1rem .3rem; border-radius: 6px;
+}
+.bw-kopieren:hover { color: var(--akzent); background: var(--rand-schwach); }
+.bw-reihe { display: grid; grid-template-columns: repeat(4, minmax(52px, 84px)); }
+.bw-reihe + .bw-reihe { border-top: 1px solid var(--rand); }
+.bw-reihe-oben { background: color-mix(in srgb, var(--becken) 6%, transparent); }
+.bw-reihe-unten { background: color-mix(in srgb, var(--bass) 6%, transparent); }
+.bw-platz { position: relative; cursor: pointer; border-right: 1px dashed var(--rand-schwach); color: var(--text); }
+.bw-platz:last-child { border-right: none; }
+.bw-platz svg { display: block; width: 100%; height: auto; }
+.bw-platz.leer { background: color-mix(in srgb, var(--rand-schwach) 55%, transparent); }
+.bw-platz.aktiv { outline: 2.5px solid var(--akzent); outline-offset: -2.5px; background: color-mix(in srgb, var(--akzent) 14%, transparent); }
+.bw-platz.jetzt { background: color-mix(in srgb, var(--warnung) 30%, transparent); }
+.bw-platz .noten-feld { cursor: pointer; }
+.bw-platz .noten-feld:hover { fill: color-mix(in srgb, var(--akzent) 20%, transparent); }
+.bw-schlag-nr { position: absolute; top: 2px; left: 4px; font-size: .6rem; font-weight: 800; color: var(--text-schwach); pointer-events: none; }
+.bw-weg {
+    position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0;
+    border: none; border-radius: 50%; background: transparent; color: var(--text-schwach);
+    font-size: .8rem; line-height: 16px; opacity: .55;
+}
+.bw-weg:hover { opacity: 1; color: var(--gefahr); background: var(--rand-schwach); }
+.bw-linie { opacity: .18; }
+.bw-platz .bw-auto { opacity: .45; }
+
+/* Noten immer farbig im Editor/Palette, in der Anzeige per Schalter */
+.bw-platz ellipse.bw-bass, .bw-baustein ellipse.bw-bass, .bw-farbig ellipse.bw-bass { fill: var(--bass); }
+.bw-platz ellipse.bw-snare, .bw-baustein ellipse.bw-snare, .bw-farbig ellipse.bw-snare { fill: var(--snare); }
+.bw-platz path.bw-becken, .bw-baustein path.bw-becken, .bw-farbig path.bw-becken { stroke: var(--becken); }
+
+/* Werkzeug: Stifte + Bausteine fuer die gewaehlte Reihe */
+.bw-werkzeug { display: flex; flex-direction: column; gap: .6rem; padding-top: .7rem; border-top: 1px solid var(--rand-schwach); }
+.bw-ziel { font-size: .8rem; color: var(--text-gedaempft); margin-right: .4rem; }
+.bw-ziel b { color: var(--text); }
+.bw-chip { padding: .35rem .65rem; font-size: .78rem; display: inline-flex; align-items: center; gap: .35rem; }
+.bw-baustein { height: auto; padding: 2px 4px; touch-action: manipulation; }
+.bw-baustein svg { display: block; width: 66px; height: auto; }
+
+.bw-stumm-knopf { display: inline-flex; align-items: center; gap: .35rem; }
+.bw-stumm-knopf.stumm { opacity: .45; text-decoration: line-through; }
+
+/* Notenbild */
+.bw-anzeige { overflow-x: auto; color: var(--text); }
+.bw-system { display: block; margin: 0 auto .4rem; max-width: 100%; height: auto; }
+.bw-system .kopf, .bw-system .zaehlzeit { fill: var(--text); }
+.bw-system .bw-linie-anzeige { color: var(--text-schwach); }
+.bw-system .bw-spiel { fill: transparent; }
+.bw-system .bw-spiel.jetzt { fill: var(--warnung); opacity: .28; }
+@media print { #reiter-beat { display: none !important; } }

@@ -158,6 +158,36 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   spielt „Abspielen“ nur diesen Ausschnitt (`Vorklatschen.starten(...,
   taktVersatz)` haelt die Mitlese-Markierung an der richtigen Stelle) und
   schaltet den Loop ein. Nicht im Link gespeichert.
+- `js/beat.js` - **Beat-Werkstatt**, eigener Reiter (Kopfzeile: „Rhythmus-
+  Werkstatt | Beat-Werkstatt“, `<main id="reiter-rhythmus">` bzw.
+  `#reiter-beat`; gewählter Reiter in `localStorage` `rw-reiter`, ein
+  Rhythmus-Link `#…r=…` öffnet immer die Rhythmus-Werkstatt; in den
+  Einbett-Ansichten `?ansicht=` gibt es den Reiter nicht).
+  - Bausteine `BEAT_FORMEN`: immer genau eine Zählzeit, alle 16
+    Einsatzfolgen im Sechzehntelraster (10 sichtbar, 6 hinter „Mehr“).
+    Eigene Liste, nicht `RHYTHMUS_BAUSTEINE` (dort fehlt `pSS`).
+  - Platz = `{code, inst: [[…] je Teil]}`, Instrumente `hh ho ride crash b s`.
+    Das Instrument steht je Note, nicht im Baustein: Note antippen schaltet
+    weiter (`instWeiter`), der „Stift“ bestimmt die Instrumente beim Setzen.
+  - Modi: „Zwei Ebenen“ (`beat.oben` Becken, Hals nach oben; `beat.unten`
+    Bassdrum + Snare, Hals nach unten) und „Easy“ (`beat.easy`, eine Reihe,
+    Trommeln als Akkord am Becken-Hals). Jede Ebene ist eine flache Liste,
+    Platz = Takt × 4 + Schlag. Moduswechsel übernimmt den Beat, wenn der
+    Ziel-Modus leer ist (über `platzKarte`/`platzAusKarte`: Sechzehntel-
+    Stelle → Instrumente, daraus ergibt sich der passende Baustein).
+  - Backbeat-Schalter: `abgeleitet()` rechnet die Snare auf 2 und 4 beim
+    Zeichnen/Abspielen dazu, die Daten bleiben unverändert.
+  - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie
+    üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
+    darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
+  - Klang: Becken als 808-artige Rechteck-Oszillatoren + Rauschen, Bassdrum
+    als Sinus mit Tonhöhenabfall, Snare = `snareKlang` aus audio.js (nimmt
+    dafür optional einen Ziel-Knoten). Alles läuft durch eine Summe mit
+    Begrenzer (`bwSummeBauen`); Stopp blendet sie aus statt Knoten einzeln
+    zu stoppen. `BeatSpieler` plant Takt für Takt 0,3 s voraus aus dem
+    aktuellen Stand - Änderungen und Tempo wirken im nächsten Takt.
+  - Zustand in `localStorage` `rw-beat` (nur dieser Browser). Noch ohne
+    Link, Druck/PDF und Audio-Export.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
