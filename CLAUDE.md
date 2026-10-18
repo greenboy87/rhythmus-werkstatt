@@ -190,7 +190,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - Farbe nur mit Knopf „Farbe an“ (`beat.farbe`, Klasse `bw-bunt` auf
     `#reiter-beat`), Standard schwarz-weiß.
   - Notenhälse mit geradem Ende (`stroke-linecap="butt"`), auch in
-    noten.js - ein rundes Ende ragte über den Balken.
+    noten.js - ein rundes Ende ragte über den Balken. Die rechte Halskante
+    sitzt bündig am rechten Rand des schrägen Kopfs (noten.js `px + 5.8`,
+    beat.js `±4.6`) und reicht in den Kopf hinein - sonst steht der Hals
+    seitlich über und sieht abgeschnitten aus.
+- Abstände im Notenbild (`VORSCHUB` in noten.js) sind bewusst großzügig
+  (Sechzehntel 26, Viertel 50), Balken 4,5 dick mit 3,5 Luft dazwischen.
   - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.

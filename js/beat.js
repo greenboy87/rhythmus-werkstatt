@@ -299,7 +299,8 @@ function bwStimme(slot, x0, richtung, pauseY) {
     gruppen.forEach(gr => {
         const spitze = auf ? Math.min(...gr.map(n => n.oben)) - BW_HALS : Math.max(...gr.map(n => n.unten)) + BW_HALS;
         gr.forEach(n => {
-            n.hx = auf ? n.px + 5.5 : n.px - 5.5;
+            // Hals buendig mit dem Kopfrand (Kopf reicht bis x±5,9), sonst steht er seitlich ueber
+            n.hx = auf ? n.px + 4.6 : n.px - 4.6;
             n.inst.forEach(x => {
                 const y = BW_Y[x];
                 if (x === 'crash') teile.push(`<line x1="${n.px - 9}" y1="${y}" x2="${n.px + 9}" y2="${y}" stroke="currentColor" stroke-width="1.3"/>`);

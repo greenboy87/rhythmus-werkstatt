@@ -124,11 +124,12 @@ function taktPulse(zeichen) { return Math.round(taktSoll(zeichen) / pulsWert(zei
 /* ============================================================
    ZEICHNEN
    ============================================================ */
-// 1/6 (Sechzehntel-Triole, Sechstole) stand bisher bei 13 - knapper als der
-// Notenkopf selbst breit ist (Durchmesser ~15), die Koepfe klebten also
-// ineinander. 17 wie ein normales Sechzehntel laesst wieder Luft.
-const VORSCHUB = { 4: 96, 2: 62, 1: 38, 0.75: 30, 0.5: 24, 0.25: 17, [1 / 3]: 21, [1 / 6]: 17 };
-const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 5;
+// Platz je Notenwert. Ein Notenkopf ist ~15 breit - bei Sechzehnteln mit 17
+// klebten die Koepfe fast aneinander und das Bild wirkte gequetscht. Jetzt
+// bleibt auch zwischen Sechzehnteln gut ein halber Kopf Luft.
+const VORSCHUB = { 4: 120, 2: 78, 1: 50, 0.75: 40, 0.5: 34, 0.25: 26, [1 / 3]: 30, [1 / 6]: 24 };
+const VORSCHUB_SONST = 50;
+const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 4.5, BALKEN_LUFT = 3.5;
 // Zaehlzeiten stehen ueber den Noten (oberhalb von Haelsen, Balken und
 // Triolenziffern), der Handsatz darunter - fuer alle Zeilen auf derselben
 // Hoehe, damit sie bei "Als Uebung" genau untereinander stehen.
@@ -180,7 +181,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
                 else if (nachbarLinks) continue;
                 else if (i > 0) { von = gruppe[i].hx - stummel; bis = gruppe[i].hx; }
                 else { von = gruppe[i].hx; bis = gruppe[i].hx + stummel; }
-                teile.push(`<rect x="${von - 1.2}" y="${H + BALKEN_DICKE + 1.5}" ` +
+                teile.push(`<rect x="${von - 1.2}" y="${H - 1 + BALKEN_DICKE + BALKEN_LUFT}" ` +
                            `width="${bis - von + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
                 ink(von - 2, bis + 2, H - 1, Y + 7);
             }
@@ -199,7 +200,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     };
     baustein.teile.forEach((t, teilNr) => {
         const px = x;
-        x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || 38);
+        x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || VORSCHUB_SONST);
         einsaetze.push({ px, d: t.d, pause: !!t.p });
         if (t.p) {
             if (t.d >= 2) {
@@ -245,10 +246,13 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         ink(px - 9, px + 9, Y - 7, Y + 7);
         if (istPunktiert(t.d)) punktSetzen(px + 12.5);
         if (t.d >= 4) return;
-        const hx = px + 6.6;
+        // Hals: rechte Kante buendig mit dem rechten Rand des (schraegen)
+        // Kopfs (x+7), unten ein Stueck in den Kopf hinein - so geht er
+        // nahtlos ueber. Gerades Ende (butt): ein rundes ragte oben ueber den
+        // Balken. Beim hohlen Kopf endet er am Rand, nicht im Loch.
+        const hx = px + 5.8;
         ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), H - 1, Y + 7);
-        // Gerades Ende (butt): ein rundes ragte um die halbe Strichbreite ueber den Balken
-        teile.push(`<line x1="${hx}" y1="${Y - 2}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="butt"/>`);
+        teile.push(`<line x1="${hx}" y1="${Y - (hohl ? 3 : 1)}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="butt"/>`);
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();
@@ -392,13 +396,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
     if (opt.alsUebung || opt.takteProZeile > 0) {
         proViertel = VORSCHUB[1];
         takte.forEach(t => t.bausteine.forEach(b => b.teile.forEach(teil => {
-            if (teil.d > 0) proViertel = Math.max(proViertel, (VORSCHUB[teil.d] || 38) / teil.d);
+            if (teil.d > 0) proViertel = Math.max(proViertel, (VORSCHUB[teil.d] || VORSCHUB_SONST) / teil.d);
         })));
     }
 
     function taktBreite(takt) {
         if (proViertel) return takt.bausteine.reduce((s, b) => s + b.dauer, 0) * proViertel + RAND_TAKT;
-        return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || 38), 0), 0) + RAND_TAKT;
+        return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || VORSCHUB_SONST), 0), 0) + RAND_TAKT;
     }
 
     // Takte auf Systeme (Zeilen) verteilen: entweder feste Anzahl je Zeile
