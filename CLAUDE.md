@@ -194,6 +194,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     sitzt bündig am rechten Rand des schrägen Kopfs (noten.js `px + 5.8`,
     beat.js `±4.6`) und reicht in den Kopf hinein - sonst steht der Hals
     seitlich über und sieht abgeschnitten aus.
+    Bei einem Becken-Kreuz als unterstem Kopf beginnt der Hals am rechten
+    oberen Arm des Kreuzes (`y - 4.5`), nicht in der Mitte.
 - Abstände im Notenbild (`VORSCHUB` in noten.js) sind bewusst großzügig
   (Sechzehntel 26, Viertel 50), Balken 4,5 dick mit 3,5 Luft dazwischen.
   - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie

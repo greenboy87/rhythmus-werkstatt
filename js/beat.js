@@ -310,7 +310,11 @@ function bwStimme(slot, x0, richtung, pauseY) {
                     teile.push(`<circle cx="${n.px + 11}" cy="${aufLinie ? y - 4 : y}" r="2.4" fill="currentColor"/>`);
                 }
             });
-            const von = auf ? n.unten : n.oben;
+            // Hals nach oben beginnt beim untersten Kopf: bei einem Becken-Kreuz
+            // an dessen rechtem oberen Arm (sonst ragt er unten durchs Kreuz),
+            // bei einem runden Kopf in der Mitte.
+            const untenKreuz = n.inst.filter(x => BW_Y[x] === n.unten).every(x => BEAT_BECKEN[x]);
+            const von = auf ? (untenKreuz ? n.unten - 4.5 : n.unten) : n.oben;
             teile.push(`<line x1="${n.hx}" y1="${von}" x2="${n.hx}" y2="${spitze}" stroke="currentColor" stroke-width="2.2" stroke-linecap="butt"/>`);
             if (n.inst.includes('ho')) {
                 const oy = auf ? spitze - 8 : n.oben - 12;
