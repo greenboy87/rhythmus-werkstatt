@@ -124,6 +124,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         ink(dx - 4, dx + 4, Y - 9, Y - 1);
     };
     const gruppe = [];
+    const einsaetze = [];   // x und Dauer je Teil - fuer den Handsatz darunter
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
@@ -158,6 +159,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     baustein.teile.forEach(t => {
         const px = x;
         x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || 38);
+        einsaetze.push({ px, d: t.d, pause: !!t.p });
         if (t.p) {
             if (t.d >= 2) {
                 // Ganze/halbe Pause haengen mittig im Platz, den sie fuellen -
@@ -201,7 +203,41 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();
-    return { teile, x, inkVon, inkBis, inkOben, inkUnten };
+    return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze };
+}
+
+/* Handsatz (R/L) fuer die Einsaetze eines Taktes. Grundsatz: rechts, links,
+   rechts, links im Raster des Schlags - wird ein Rasterplatz ausgelassen,
+   faellt auch seine Hand weg (Achtel + 2 Sechzehntel = R R L). Das Raster
+   bestimmt jeder Viertelschlag fuer sich: das groebste, auf dem alle seine
+   Einsaetze liegen (Viertel, Achtel, Triole, Sechzehntel, Sechstole ...).
+   Daraus folgt: Schlag- und Taktanfang immer R, Viertel immer R, zwei Achtel
+   auf der Zaehlzeit R L, Achtelpause + Achtel = L.
+   Bewusst immer die Viertel als Einheit, auch in /8-Takten (deren Puls dort
+   das Achtel ist) - sonst waere in 6/8 jedes Achtel ein eigener Schlag und
+   damit R R R R R R.
+   einsaetze: [{ v (Viertel seit Taktanfang), pause }] -> ['R'|'L'|null, ...] */
+function handsatzBerechnen(einsaetze) {
+    const RASTER = [1, 0.5, 1 / 3, 0.25, 1 / 6, 0.125];
+    const passt = (wert, g) => Math.abs(wert / g - Math.round(wert / g)) < 0.01;
+    const schlaege = new Map();
+    einsaetze.forEach((e, i) => {
+        if (e.pause) return;
+        const schlag = Math.floor(e.v + 1e-6);
+        if (!schlaege.has(schlag)) schlaege.set(schlag, []);
+        schlaege.get(schlag).push(i);
+    });
+    const hand = einsaetze.map(() => null);
+    schlaege.forEach((liste, schlag) => {
+        const rel = liste.map(i => einsaetze[i].v - schlag);
+        const g = RASTER.find(r => rel.every(w => passt(w, r)));
+        liste.forEach((i, k) => {
+            // Kein Raster passt (krumme Werte): einfach abwechselnd ab R.
+            const platz = g ? Math.round(rel[k] / g) : k;
+            hand[i] = platz % 2 === 0 ? 'R' : 'L';
+        });
+    });
+    return hand;
 }
 
 /* Ein einzelner Baustein, eng zugeschnitten - fuer Palette und Editor-Kaestchen. */
@@ -260,7 +296,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1 }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
@@ -423,6 +459,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
             const taktStartX = x;
             const marken = [];
             let gelaufen = 0;
+            const taktEinsaetze = [];
             // Steht das Liniensystem, sitzt die Snare Drum konventionell im
             // Raum ueber der Mittellinie (c2), nicht auf ihr (h1) - ohne
             // Notenlinien bleibt die alte Referenzlinie unveraendert.
@@ -433,6 +470,8 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz, proViertel);
                 teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
                 merge(r);
+                let v = gelaufen;
+                r.einsaetze.forEach(e => { taktEinsaetze.push({ v, px: e.px, pause: e.pause }); v += e.d; });
                 x = r.x;
                 gelaufen += b.dauer;
             });
@@ -476,6 +515,16 @@ function stueckAnzeigeHtml(stueck, optionen) {
                     });
                 });
                 inkUnten = Math.max(inkUnten, LINIE_Y + 36);
+            }
+            if (opt.handsatz) {
+                // Unter den Zaehlzeiten, falls die da sind - sonst an deren Platz.
+                const hy = LINIE_Y + (opt.zaehlzeiten ? 47 : 30);
+                handsatzBerechnen(taktEinsaetze).forEach((h, i) => {
+                    if (!h) return;
+                    zaehlzeitenTexte.push(`<text class="handsatz" x="${taktEinsaetze[i].px}" y="${hy}" font-size="12" font-weight="800"` +
+                        ` text-anchor="middle" font-family="DM Sans, sans-serif" fill="${tinte}">${h}</text>`);
+                });
+                inkUnten = Math.max(inkUnten, hy + 6);
             }
             // Im Spalten-Modus bis zur vollen Spaltenbreite auffuellen (Luft
             // nach den Noten, vor dem naechsten Taktstrich) - damit Takt 1

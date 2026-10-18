@@ -50,5 +50,6 @@
     .anzeige-system { margin-bottom: 22px !important; max-width: 100%; }
     #druck-anzeige { overflow: visible; }
     .anzeige-system .linien-fuenf { color: #666 !important; }
-    [data-ab] { opacity: 1 !important; }   /* "Verdecken" soll auf Papier nie greifen */
+    [data-ab], .handsatz { opacity: 1 !important; }
+    .anzeige-system .handsatz { fill: #000 !important; }   /* "Verdecken" soll auf Papier nie greifen */
 }

@@ -23,6 +23,7 @@ const LINK_STANDARD = {
     undAlsPlus: false,
     durchgaenge: 1,        // 1 = keine Wiederholung, 2+ = Wiederholungszeichen
     alsUebung: false,
+    handsatz: false,
     takteProZeile: 0,      // 0 = automatisch
     groesse: 100           // Groesse-Regler in Prozent, 60-300
 };
@@ -92,6 +93,7 @@ function linkLesen(hash) {
             case 'l': erg.notenlinien = true; break;
             case 'z': erg.zaehlzeiten = true; break;
             case 'p': erg.undAlsPlus = true; break;
+            case 'h': erg.handsatz = true; break;
             case 'u': erg.alsUebung = true; break;
             case 'w': erg.durchgaenge = Math.max(2, Math.min(10, n || 2)); break;
             case 'k': if (n !== null) erg.takteProZeile = Math.min(8, n); break;
@@ -120,6 +122,7 @@ function linkBauen(x) {
     if (x.notenlinien) o += 'l';
     if (x.zaehlzeiten) o += 'z';
     if (x.undAlsPlus) o += 'p';
+    if (x.handsatz) o += 'h';
     if (x.durchgaenge > 1) o += 'w' + (x.durchgaenge === 2 ? '' : x.durchgaenge);
     if (x.alsUebung) o += 'u';
     if (x.takteProZeile > 0) o += 'k' + x.takteProZeile;

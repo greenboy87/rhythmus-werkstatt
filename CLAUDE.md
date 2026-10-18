@@ -76,7 +76,7 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - `bpm` Tempo 40-200 (sonst ignoriert, Standard 90)
   - `o` Schalter als Buchstaben: `l` Notenlinien, `z` Zählzeiten,
     `p` "+" statt "und", `w` Wiederholung (`w3` = 3× insgesamt, `w` = 2×),
-    `u` Als Übung, `k4` = 4 Takte/Zeile (ohne `k` = auto)
+    `u` Als Übung, `h` Handsatz (R/L), `k4` = 4 Takte/Zeile (ohne `k` = auto)
   - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel` (Standard klatschen)
   - `v` Vorlauf-Takte 0-4 (Standard 1)
   - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)

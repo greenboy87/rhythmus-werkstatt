@@ -55,6 +55,7 @@ function anzeigeOptionen() {
         notenlinien: document.getElementById('opt-notenlinien').checked,
         zaehlzeiten: document.getElementById('opt-zaehlzeiten').checked,
         undAlsPlus: document.getElementById('opt-und-als-plus').checked,
+        handsatz: document.getElementById('opt-handsatz').checked,
         wiederholung: document.getElementById('opt-wiederholung').checked,
         wiederholungen: wiederholungen,
         alsUebung: document.getElementById('opt-als-uebung').checked,
@@ -312,6 +313,7 @@ function linkStand() {
         notenlinien: opt.notenlinien,
         zaehlzeiten: opt.zaehlzeiten,
         undAlsPlus: opt.undAlsPlus,
+        handsatz: opt.handsatz,
         durchgaenge: opt.wiederholung ? wiederholungen + 1 : 1,
         alsUebung: opt.alsUebung,
         takteProZeile: opt.takteProZeile,
@@ -337,6 +339,7 @@ function linkUebernehmen(hash) {
     document.getElementById('opt-zaehlzeiten').checked = x.zaehlzeiten;
     document.getElementById('und-plus-feld').classList.toggle('hidden', !x.zaehlzeiten);
     document.getElementById('opt-und-als-plus').checked = x.undAlsPlus;
+    document.getElementById('opt-handsatz').checked = x.handsatz;
     document.getElementById('opt-wiederholung').checked = x.durchgaenge > 1;
     document.getElementById('wiederholungen-feld').classList.toggle('hidden', x.durchgaenge <= 1);
     wiederholungen = Math.max(1, x.durchgaenge - 1);
@@ -462,6 +465,7 @@ function init() {
         anzeigeNeuZeichnen();
     });
     document.getElementById('opt-und-als-plus').addEventListener('change', anzeigeNeuZeichnen);
+    document.getElementById('opt-handsatz').addEventListener('change', anzeigeNeuZeichnen);
     document.getElementById('opt-als-uebung').addEventListener('change', anzeigeNeuZeichnen);
 
     // Anzeige/Bedienung zaehlen die Gesamtzahl der Durchgaenge (2,3,4...),

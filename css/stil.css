@@ -268,7 +268,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 }
 .anzeige-system .linien-fuenf { color: var(--text-schwach); }
 .anzeige-system [data-ab] { transition: opacity .1s; }
-.anzeige-verdeckt .anzeige-system [data-ab] { opacity: 0; }
+.anzeige-verdeckt .anzeige-system [data-ab],
+.anzeige-verdeckt .anzeige-system .handsatz { opacity: 0; }
+.anzeige-system .handsatz { fill: var(--akzent); }
 .anzeige-verdeckt .anzeige-hinweis { display: block; }
 .anzeige-hinweis {
     display: none; color: var(--text-gedaempft); font-weight: 700; font-size: .85rem; margin-top: -.4rem;
