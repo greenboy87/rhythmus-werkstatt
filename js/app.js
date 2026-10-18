@@ -96,21 +96,25 @@ function titelAktualisieren() {
 }
 
 /* ---------- Druck: dieselben Schalter wie der Bildschirm (Takte/Zeile,
-   Linien, Zaehlzeiten, Titel ...), aber NICHT die Bildschirm-Groesse - die
-   ist fuer den Beamer gedacht und hat auf A4 alles ueber den Rand geschoben.
-   Gezeichnet wird fuer die A4-Breite, danach so verkleinert, dass jede Zeile
-   in die Breite und alle Zeilen zusammen auf eine Seite passen. ---------- */
+   Linien, Zaehlzeiten, Titel, Groesse). Die Groesse wirkt auch auf dem
+   Papier, aber nur so weit, wie es passt: Gezeichnet wird fuer die A4-Breite
+   (im auto-Modus brechen groessere Noten also frueher um), danach wird so
+   weit verkleinert, dass jede Zeile in die Breite und alle Zeilen zusammen
+   auf eine Seite passen. Ab da bringt "groesser" auf dem Papier nichts mehr. ---------- */
 const DRUCK_BREITE = 670;    // A4 (210 mm) minus 2 × 16 mm Rand, in CSS-px
 const DRUCK_HOEHE = 900;     // 297 mm minus Raender, Kopfzeile und Luft
 const DRUCK_ZEILENABSTAND = 22;
 function druckNeuZeichnen() {
-    const optionen = Object.assign(anzeigeOptionen(), { skalierung: 1, breite: DRUCK_BREITE });
+    const optionen = Object.assign(anzeigeOptionen(), {
+        skalierung: anzeigeSkalierung, breite: Math.max(200, DRUCK_BREITE / anzeigeSkalierung)
+    });
     const host = document.getElementById('druck-anzeige');
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     const svgs = [...host.querySelectorAll('.anzeige-system')];
     if (!svgs.length) return;
     const masse = svgs.map(s => {
-        const b = Number(s.getAttribute('width')) || 1, h = Number(s.getAttribute('height')) || 1;
+        // Inline-Groesse = schon mit dem Groesse-Regler skaliert.
+        const b = parseFloat(s.style.width) || 1, h = parseFloat(s.style.height) || 1;
         const f = Math.min(1, DRUCK_BREITE / b);
         return { b: b * f, h: h * f };
     });
