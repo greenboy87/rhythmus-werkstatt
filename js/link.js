@@ -28,7 +28,7 @@ const LINK_STANDARD = {
     takteProZeile: 0,      // 0 = automatisch
     groesse: 100           // Groesse-Regler in Prozent, 60-300
 };
-const LINK_KLAENGE = ['klatschen', 'holzblock', 'klick', 'trommel'];
+const LINK_KLAENGE = ['klatschen', 'holzblock', 'klick', 'trommel', 'snare'];
 
 function linkDekodieren(text) {
     try { return decodeURIComponent(String(text).replace(/\+/g, '%20')); }
@@ -63,8 +63,9 @@ function linkLesen(hash) {
     const r = werte.r.replace(/\s+/g, '');
     if (r) {
         erg.takte = r.split(/[_|]/).map((taktText, taktNr) =>
+            // "SSSS!13": Code + Akzente - geprueft wird nur der Code
             taktText.split('-').filter(Boolean).filter(code => {
-                if (!bekannt || bekannt[code]) return true;
+                if (!bekannt || bekannt[code.split('!')[0]]) return true;
                 erg.unbekannt.push({ code, takt: taktNr + 1 });
                 return false;
             }));
@@ -111,7 +112,8 @@ function linkLesen(hash) {
 function linkBauen(x) {
     const s = LINK_STANDARD;
     const teile = [];
-    const code = (b) => (typeof b === 'string' ? b : b.code);
+    const code = (b) => (typeof b === 'string' ? b
+        : typeof bausteinKuerzel === 'function' ? bausteinKuerzel(b) : b.code);
     // Takt-Trenner "_" und Baustein-Trenner "-" sind in URLs ohnehin
     // unverdaechtig, die Kuerzel selbst bestehen nur aus Buchstaben/Ziffern.
     const takte = (x.takte || []).map(t => (Array.isArray(t) ? t : (t.bausteine || [])).map(code).join('-'));

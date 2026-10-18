@@ -112,6 +112,12 @@ function loopAuswahlSetzen(neu) {
     anzeigeNeuZeichnen();
 }
 function anzeigeAngetippt(e) {
+    // Note antippen = Akzent an/aus (Flaechen der Noten liegen ueber denen der Takte)
+    const note = e.target.closest('.noten-feld');
+    if (note) {
+        editor.akzentUmschalten(Number(note.dataset.takt), Number(note.dataset.baustein), Number(note.dataset.teil));
+        return;
+    }
     const nr = e.target.closest('.uebung-nr');
     if (nr) {
         const von = Number(nr.dataset.von), bis = Number(nr.dataset.bis);
@@ -358,7 +364,7 @@ function linkStand() {
     const stueck = editor.stueck();
     return {
         zeichen: stueck.zeichen,
-        takte: stueck.takte.map(t => t.bausteine.map(b => b.code)),
+        takte: stueck.takte.map(t => t.bausteine.map(bausteinKuerzel)),
         titel: document.getElementById('druck-titel').value.trim(),
         bpm: Metronom.bpm(),
         klang: document.getElementById('klatsch-sound-wahl').value,
@@ -409,7 +415,7 @@ function linkUebernehmen(hash) {
     // Setzt den Editor und zeichnet ueber aufAenderung alles neu (Anzeige,
     // Titel, Druck). Takte, die nicht aufgehen, kommen trotzdem hinein - der
     // Editor markiert sie ohnehin.
-    editor.setzen(x.zeichen, x.takte.map(codes => ({ bausteine: codes.map(c => RHYTHMUS_NACH_CODE[c]) })));
+    editor.setzen(x.zeichen, x.takte.map(codes => ({ bausteine: codes.map(bausteinAusKuerzel).filter(Boolean) })));
     x.unbekannt.forEach(u => zeigeToast(`Unbekannter Baustein „${u.code}" in Takt ${u.takt} – übersprungen`, 'danger'));
     return true;
 }

@@ -78,7 +78,7 @@ function mp3Kodieren(samples, rate) {
    Angabe der Rhythmus im Editor. optionen (alle optional, Standard =
    aktuelle Einstellungen der Seite):
      format 'mp3'|'wav' (Standard mp3), bpm, vorlaufTakte, durchgaenge,
-     klang 'klatschen'|'holzblock'|'klick'|'trommel',
+     klang 'klatschen'|'holzblock'|'klick'|'trommel'|'snare',
      metronom 0-1 (0 = ohne Metronom), nurMetronom (bool).
    Liefert ein Promise auf einen Blob. */
 async function rhythmusAudio(stueck, optionen) {
@@ -130,7 +130,7 @@ async function rhythmusAudio(stueck, optionen) {
     }
 
     const samples = new Float32Array(laenge);
-    await spurMischen(samples, plan.ereignisse.filter(e => e.art === 'klatsch'), (ctx, zeit) => klangFn(ctx, zeit));
+    await spurMischen(samples, plan.ereignisse.filter(e => e.art === 'klatsch'), (ctx, zeit, e) => klangFn(ctx, zeit, e.akzent ? 'akzent' : null));
     if (metronom > 0) {
         // Eigener Gain-Knoten fuer die Metronom-Lautstaerke - der globale
         // metronomGainNode des Live-Contexts bleibt unangetastet.

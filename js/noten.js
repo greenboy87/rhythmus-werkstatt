@@ -47,6 +47,40 @@ const RHYTHMUS_BAUSTEINE = [
 const RHYTHMUS_NACH_CODE = {};
 RHYTHMUS_BAUSTEINE.forEach(b => { RHYTHMUS_NACH_CODE[b.code] = b; });
 
+/* ---------- Akzente ----------
+   Ein Akzent gehoert zu einer einzelnen Note (einem Teil) eines Bausteins.
+   Die Baustein-Objekte oben sind geteilt - ein akzentuierter Baustein ist
+   deshalb eine eigene Kopie mit "akzente": [Teil-Index, ...] (0-basiert,
+   nur Noten, keine Pausen). Ohne Akzente bleibt es das geteilte Objekt.
+   Kuerzel im Link: Code + "!" + Teilnummern 1-basiert, z.B. "SSSS!13" =
+   erste und dritte Sechzehntel betont, "V!1" = betonte Viertel. */
+function bausteinMitAkzenten(baustein, akzente) {
+    const basis = RHYTHMUS_NACH_CODE[baustein.code] || baustein;
+    const liste = [...new Set(akzente || [])]
+        .filter(i => Number.isInteger(i) && i >= 0 && i < basis.teile.length && !basis.teile[i].p)
+        .sort((a, b) => a - b);
+    return liste.length ? Object.assign({}, basis, { akzente: liste }) : basis;
+}
+function akzentUmschalten(baustein, teil) {
+    const a = new Set(baustein.akzente || []);
+    if (a.has(teil)) a.delete(teil); else a.add(teil);
+    return bausteinMitAkzenten(baustein, [...a]);
+}
+function istAkzent(baustein, teil) { return !!(baustein.akzente && baustein.akzente.includes(teil)); }
+function bausteinKuerzel(baustein) {
+    return baustein.code + (baustein.akzente && baustein.akzente.length ? '!' + baustein.akzente.map(i => i + 1).join('') : '');
+}
+/* "SSSS!13" -> Baustein (mit Akzenten), unbekannter Code -> null */
+function bausteinAusKuerzel(text) {
+    const [code, akz] = String(text || '').split('!');
+    const b = RHYTHMUS_NACH_CODE[code];
+    if (!b) return null;
+    return akz ? bausteinMitAkzenten(b, akz.split('').map(z => Number(z) - 1)) : b;
+}
+function hatAkzente(stueck) {
+    return (stueck.takte || []).some(t => t.bausteine.some(b => b.akzente && b.akzente.length));
+}
+
 function rhythmusLesen(text) {
     return String(text || '').split('-').map(c => RHYTHMUS_NACH_CODE[c]).filter(Boolean);
 }
@@ -98,7 +132,9 @@ const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 5;
 // Zaehlzeiten stehen ueber den Noten (oberhalb von Haelsen, Balken und
 // Triolenziffern), der Handsatz darunter - fuer alle Zeilen auf derselben
 // Hoehe, damit sie bei "Als Uebung" genau untereinander stehen.
-const ZAEHL_Y = HALS_OBEN - 22, HANDSATZ_Y = LINIE_Y + 30;
+// Mit Akzenten (>) rutschen die Zaehlzeiten ein Stueck hoeher, das Zeichen
+// sitzt zwischen Notenhals und Zaehlzeit.
+const ZAEHL_Y = HALS_OBEN - 22, ZAEHL_Y_AKZENT = HALS_OBEN - 34, HANDSATZ_Y = LINIE_Y + 30;
 
 function istPunktiert(d) {
     return Math.abs(d - 0.75) < 0.001 || Math.abs(d - 1.5) < 0.001 || Math.abs(d - 3) < 0.001;
@@ -129,6 +165,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     };
     const gruppe = [];
     const einsaetze = [];   // x und Dauer je Teil - fuer den Handsatz darunter
+    const treffer = [];     // Tippflaeche je Note (fuer Akzente per Klick)
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
@@ -160,7 +197,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         }
         gruppe.length = 0;
     };
-    baustein.teile.forEach(t => {
+    baustein.teile.forEach((t, teilNr) => {
         const px = x;
         x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || 38);
         einsaetze.push({ px, d: t.d, pause: !!t.p });
@@ -195,6 +232,13 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
             gruppeAbschliessen();
             return;
         }
+        treffer.push({ teil: teilNr, x0: px - 10, x1: px + 13, y0: H - 16, y1: Y + 9 });
+        if (istAkzent(baustein, teilNr)) {
+            // Akzent > ueber Hals und Balken (bei Triolen ueber der Ziffer)
+            const ax = px + 3, ay = H - (baustein.triole ? 19 : 9);
+            teile.push(`<path class="akzent" d="M${ax - 5.5} ${ay - 3.6} L${ax + 5.5} ${ay} L${ax - 5.5} ${ay + 3.6}" fill="none" stroke="${tinte}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`);
+            ink(ax - 7, ax + 7, ay - 6, ay + 6);
+        }
         const hohl = t.d >= 2;
         teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.5" ry="5.4" transform="rotate(-18 ${px} ${Y})"` +
                    (hohl ? ` class="kopf-hohl" fill="none" stroke="${tinte}" stroke-width="2.6"/>` : ` fill="${tinte}"/>`));
@@ -207,7 +251,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();
-    return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze };
+    return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze, treffer };
 }
 
 /* Handsatz (R/L) fuer die Einsaetze eines Taktes. Grundsatz: rechts, links,
@@ -259,8 +303,10 @@ function handsatzBerechnen(einsaetze) {
 }
 
 /* Ein einzelner Baustein, eng zugeschnitten - fuer Palette und Editor-Kaestchen. */
-function bausteinSvg(baustein) {
+function bausteinSvg(baustein, mitTreffern) {
     const r = bausteinTeileZeichnen(baustein, 16, 'currentColor');
+    // Im Eingabefeld: jede Note antippbar (Akzent an/aus)
+    if (mitTreffern) r.treffer.forEach(f => r.teile.push(`<rect class="noten-feld" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
     const von = (isFinite(r.inkVon) ? r.inkVon : 16) - 5;
     const breite = Math.max(24, (isFinite(r.inkBis) ? r.inkBis : r.x) + 5 - von);
     const hoeheNackt = 62;
@@ -317,6 +363,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
     const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
+    const zaehlY = hatAkzente(stueck) ? ZAEHL_Y_AKZENT : ZAEHL_Y;
     if (!takte.length) return '<p class="anzeige-hinweis" style="display:block">Noch kein Takt eingetragen.</p>';
 
     const LINKS_RAND = 16;
@@ -468,6 +515,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
 
         const zaehlzeitenTexte = [];
         const taktFelder = [];   // Flaeche je Takt: zum Antippen (Loop-Bereich) und Markieren
+        const notenFelder = [];  // Flaeche je Note: Antippen = Akzent an/aus (liegt ueber den Taktflaechen)
         system.forEach(({ takt, index }, posInSystem) => {
             // Taktstrich vor jedem Takt, ausser ganz am Anfang des ersten Systems -
             // im Spalten-Modus gilt das fuer den ersten Takt JEDER Zeile, sonst
@@ -485,12 +533,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
             // Raum ueber der Mittellinie (c2), nicht auf ihr (h1) - ohne
             // Notenlinien bleibt die alte Referenzlinie unveraendert.
             const notenVersatz = opt.notenlinien ? -4 : 0;
-            takt.bausteine.forEach((b) => {
+            takt.bausteine.forEach((b, bausteinNr) => {
                 marken.push({ ab: gelaufen, px: x, dauer: b.dauer });
                 const globalAb = index * taktSoll(stueck.zeichen) + gelaufen;
                 const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz, proViertel);
                 teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
                 merge(r);
+                r.treffer.forEach(f => notenFelder.push(`<rect class="noten-feld" data-takt="${index}" data-baustein="${bausteinNr}" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
                 let v = gelaufen;
                 r.einsaetze.forEach(e => { taktEinsaetze.push({ v, px: e.px, pause: e.pause }); v += e.d; });
                 x = r.x;
@@ -508,7 +557,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 const pw = pulsWert(stueck.zeichen);
                 const SILBEN = ['', 'e', opt.undAlsPlus ? '+' : 'und', 'e'];
                 const zaehlzeitText = (v, text, blass) =>
-                    `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${ZAEHL_Y}" font-size="12" font-weight="700"` +
+                    `<text class="zaehlzeit" x="${xBeiViertel(marken, v, taktEndeX)}" y="${zaehlY}" font-size="12" font-weight="700"` +
                     ` text-anchor="middle" font-family="DM Sans, sans-serif" opacity="${blass ? '.4' : '1'}">${text}</text>`;
                 let v = 0;
                 takt.bausteine.forEach(b => {
@@ -535,7 +584,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                         v += teil.d;
                     });
                 });
-                inkOben = Math.min(inkOben, ZAEHL_Y - 12);
+                inkOben = Math.min(inkOben, zaehlY - 12);
             }
             if (opt.handsatz) {
                 // Immer unter den Noten (die Zaehlzeiten stehen darueber).
@@ -565,6 +614,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
             }
             teileSvg.push(`<rect class="takt-feld" data-takt="${f.index}" x="${f.von}" y="${feldOben}" width="${f.bis - f.von}" height="${feldHoehe}" fill="transparent"/>`);
         });
+        teileSvg.push(...notenFelder);
 
         const rechts = x + 6;
         if ((istLetztesSystem || opt.alsUebung) && opt.wiederholung) {

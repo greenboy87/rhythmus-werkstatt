@@ -154,6 +154,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 }
 .editor-platz:last-of-type { border-right: none; }
 .editor-platz.leer { background: var(--rand-schwach); opacity: .55; }
+.editor-platz { position: relative; }
+.editor-platz .noten-feld { cursor: pointer; }
+.editor-platz .platz-weg {
+    position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0;
+    border: none; border-radius: 50%; background: transparent; color: var(--text-schwach);
+    font-size: .8rem; line-height: 16px; cursor: pointer; opacity: .55;
+}
+.editor-platz .platz-weg:hover { opacity: 1; color: var(--gefahr); background: var(--rand-schwach); }
 .editor-platz.ziel { outline: 2px solid var(--akzent); outline-offset: -2px; }
 .editor-platz.jetzt { background: var(--warnung); opacity: 1; }
 .editor-platz svg { color: var(--text); }
@@ -320,3 +328,4 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 #loop-auswahl-info b { color: var(--akzent); }
 .anzeige-tipp { font-size: .75rem; color: var(--text-schwach); margin: 0 0 .4rem; text-align: center; }
 @media print { .anzeige-tipp, #loop-auswahl-info { display: none !important; } }
+.anzeige-system .noten-feld { cursor: pointer; }

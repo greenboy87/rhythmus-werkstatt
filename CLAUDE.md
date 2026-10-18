@@ -68,7 +68,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   GitHub Pages nichts sieht):
   `#t=4/4&r=V-AA-Vp-SSSS_H-H&titel=Übung%201&bpm=90&o=lz&k=holzblock&v=1&m=60`
   - `t` Taktart aus `TAKTARTEN` (sonst/fehlt: 4/4)
-  - `r` Pflicht: Bausteine mit `-`, Takte mit `_` getrennt; beim Lesen auch
+  - `r` Pflicht: Bausteine mit `-`, Takte mit `_` getrennt. Ein Baustein
+    mit Akzenten: Code + `!` + Nummern der betonten Noten (1-basiert),
+    z.B. `SSSS!13`, `V!1`. Beim Lesen auch
     `|` bzw. `%7C` als Takttrenner, Leerzeichen werden ignoriert.
     Unbekannte Kürzel werden übersprungen und per Toast gemeldet,
     nicht aufgehende Takte trotzdem übernommen.
@@ -78,7 +80,7 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `p` "+" statt "und", `w` Wiederholung (`w3` = 3× insgesamt, `w` = 2×),
     `u` Als Übung, `h` Handsatz (R/L), `e` Loop (endlos abspielen),
     `k4` = 4 Takte/Zeile (ohne `k` = auto)
-  - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel` (Standard klatschen)
+  - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel|snare` (Standard klatschen)
   - `v` Vorlauf-Takte 0-4 (Standard 1)
   - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)
   - `g` Größe-Regler in Prozent 60-300 (Standard 100)
@@ -134,6 +136,19 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
 - Zählzeiten stehen über den Noten (`ZAEHL_Y`), der Handsatz darunter
   (`HANDSATZ_Y`) - fest für alle Zeilen, damit sie bei „Als Übung“
   untereinander stehen.
+- Akzente (noten.js): ein Baustein mit `akzente: [Teil-Index]` ist eine
+  eigene Kopie des geteilten Bausteins (`bausteinMitAkzenten`,
+  `akzentUmschalten`, `bausteinKuerzel`/`bausteinAusKuerzel` fürs Link-
+  Kürzel). Gezeichnet als `>` über Hals/Balken (`path.akzent`); mit Akzenten
+  rücken die Zählzeiten höher (`ZAEHL_Y_AKZENT`). Note antippen schaltet um -
+  im Eingabefeld (Tippflächen aus `bausteinSvg(b, true)`, entfernt wird jetzt
+  über das kleine × je Baustein) und im Notenbild (`.noten-feld`, liegt über
+  den Takt-Flächen des Loop-Bereichs). Der Zeitplan markiert betonte Noten
+  (`akzent: true`), jeder Klang nimmt eine Stärke (`klangStaerke`: normal
+  0,7, Akzent 1,3 - live und im Export gleich). Alle Klänge sind so
+  eingepegelt, dass auch ein Akzent live unter 1,0 bleibt.
+- Klang `snare` (Snare Drum): Fell als zwei kurze Dreieckstöne mit
+  Tonhöhenabfall + gefiltertes Rauschen für den Teppich.
 - Loop-Bereich (`loopAuswahl` in app.js, `{von, bis}` Taktnummern): Takt
   in der Anzeige antippen waehlt ihn, weitere Takte erweitern, Tippen in den
   Bereich hebt ihn auf; die Uebungsnummer (`.uebung-nr`, bei „Als Übung“)

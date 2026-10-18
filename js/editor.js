@@ -56,6 +56,12 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
         takte[taktNr].bausteine.splice(index, 1);
         zeichnen();
     }
+    function akzentBei(taktNr, index, teil) {
+        const t = takte[taktNr];
+        if (!t || !t.bausteine[index]) return;
+        t.bausteine[index] = akzentUmschalten(t.bausteine[index], teil);
+        zeichnen();
+    }
     function zurueck() {
         for (let i = takte.length - 1; i >= 0; i--) {
             if (takte[i].bausteine.length) { takte[i].bausteine.pop(); break; }
@@ -172,12 +178,18 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
             nr.className = 'takt-nr'; nr.textContent = taktNr + 1;
             box.appendChild(nr);
 
+            // Note antippen = Akzent an/aus, das kleine × entfernt den Baustein
             takt.bausteine.forEach((b, i) => {
                 const platz = document.createElement('div');
                 platz.className = 'editor-platz';
-                platz.title = b.wort + ' (antippen zum Entfernen)';
-                platz.innerHTML = bausteinSvg(b);
-                platz.addEventListener('click', () => entfernenBei(taktNr, i));
+                platz.title = b.wort + ' – Note antippen: Akzent an/aus';
+                platz.innerHTML = bausteinSvg(b, true) +
+                    '<button type="button" class="platz-weg" title="Baustein entfernen" aria-label="Baustein entfernen">×</button>';
+                platz.addEventListener('click', (e) => {
+                    if (e.target.closest('.platz-weg')) { entfernenBei(taktNr, i); return; }
+                    const note = e.target.closest('[data-teil]');
+                    if (note) akzentBei(taktNr, i, Number(note.dataset.teil));
+                });
                 box.appendChild(platz);
             });
             let frei = Math.max(0, soll() - dauer(takt));
@@ -212,6 +224,7 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
             takte = (neueTakte && neueTakte.length) ? neueTakte.map(t => ({ bausteine: t.bausteine.slice() })) : [{ bausteine: [] }];
             zeichnen();
         },
+        akzentUmschalten: akzentBei,
         leeren, zurueck, taktHinzufuegen, letztenTaktLoeschen, taktartSetzen,
         takteProZeileSetzen: (n) => { takteProZeile = n; zeichnen(); },
         zeichen: () => zeichen,
