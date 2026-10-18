@@ -183,6 +183,10 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - Backbeat-Schalter: `abgeleitet()` rechnet die Snare beim Zeichnen/
     Abspielen dazu (`bwBackbeatSchlaege`: gerade Zählzeiten, im 3/4 auf
     2 und 3), die Daten bleiben unverändert.
+  - Easy-Raster (`BW_RASTER`, `bwRasterTippen`): im Easy-Platz je
+    Sechzehntel-Stelle drei Tippflächen - Becken (mit Becken-Stift),
+    Snare, Bassdrum jeweils an/aus; der Baustein ergibt sich über
+    `platzAusKarte`. Über dem System (Hälse/Balken) nur Auswahl.
   - Ghost Notes: Kennzeichen `'g'` in der Instrumentenliste einer Note
     (gilt für die ganze Note). Schalter „Ghost Notes“ (`bwGhostModus`, nicht
     gespeichert): Antippen schaltet `'g'` statt das Instrument. Gezeichnet

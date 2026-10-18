@@ -657,6 +657,13 @@ function bwAenderung() {
    abwaerts (Bassdrum/Snare). Noten haben eigene Tippflaechen. */
 const BW_ZELLE = { profi: [-48, 112], easy: [-48, 86] };
 const BW_GRENZE = 8;   // y der zweiten Linie: Trennung oben/unten
+/* Easy: Zeilen im System - oben Becken, Mitte Snare, unten Bassdrum.
+   Darueber (Haelse/Balken) bleibt frei zum blossen Auswaehlen des Platzes. */
+const BW_RASTER = [
+    { reihe: 'becken', von: -14, bis: 6,  titel: 'Becken an/aus' },
+    { reihe: 's',      von: 6,   bis: 20, titel: 'Snare an/aus' },
+    { reihe: 'b',      von: 20,  bis: 38, titel: 'Bassdrum an/aus' }
+];
 function bwZelleSvg(platz) {
     const [y0, h] = BW_ZELLE[beat.modus];
     const ebenen = bwEbenen();
@@ -671,8 +678,18 @@ function bwZelleSvg(platz) {
         if (!slot) return;
         const r = bwStimme(slot, 0, eb === 'unten' ? 'ab' : 'auf', BW_PAUSE_Y[eb]);
         noten.push(...r.teile);
-        r.treffer.forEach(f => felder.push(`<rect class="noten-feld" data-ebene="${eb}" data-k="${f.k}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
+        if (eb !== 'easy') r.treffer.forEach(f => felder.push(`<rect class="noten-feld" data-ebene="${eb}" data-k="${f.k}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
     });
+    if (beat.modus === 'easy') {
+        // Raster: je Sechzehntel-Stelle eine Tippflaeche pro Zeile
+        BW_RASTER.forEach(z => {
+            for (let k = 0; k < 4; k++) {
+                const x0 = k ? BW_EINRUECK + (k - 0.5) * BW_ZEIT / 4 : 0;
+                const x1 = k < 3 ? BW_EINRUECK + (k + 0.5) * BW_ZEIT / 4 : BW_SCHLAG;
+                felder.push(`<rect class="noten-feld bw-raster" data-ebene="easy" data-k="${k}" data-reihe="${z.reihe}" x="${x0}" y="${z.von}" width="${x1 - x0}" height="${z.bis - z.von}" fill="transparent"><title>${z.titel}</title></rect>`);
+            }
+        });
+    }
     const linien = BW_LINIEN.map(y => `<line x1="0" y1="${y}" x2="${BW_SCHLAG}" y2="${y}" class="bw-linie" stroke="currentColor" stroke-width="1"/>`).join('');
     return `<svg viewBox="0 ${y0} ${BW_SCHLAG} ${h}" width="${BW_SCHLAG}" height="${h}" class="bw-platz-svg">${baender.join('')}${linien}${noten.join('')}${felder.join('')}</svg>`;
 }
@@ -841,7 +858,7 @@ function bwSchalterZeichnen() {
         b.title = stumm ? 'Stumm – antippen zum Einschalten' : 'Hörbar – antippen zum Stummschalten';
     });
     const legende = beat.modus === 'easy'
-        ? 'Eine Reihe: jede Becken-Note kann zusätzlich <span class="bw-punkt bw-bass"></span> Bassdrum, <span class="bw-punkt bw-snare"></span> Snare oder beides bekommen.'
+        ? 'Eine Ebene: Hi-Hat-Rhythmus mit den Bausteinen setzen. Dann im Platz antippen – auf Höhe der Becken: Becken an/aus, Mitte: <span class="bw-punkt bw-snare"></span> Snare an/aus, unten: <span class="bw-punkt bw-bass"></span> Bassdrum an/aus. Das geht an jeder Sechzehntel-Stelle; oben bei den Balken nur auswählen.'
         : 'Ein Notensystem, zwei Ebenen: oben <span class="bw-punkt bw-becken"></span> Hi-Hat / Becken (Hälse nach oben), unten <span class="bw-punkt bw-bass"></span> Bassdrum und <span class="bw-punkt bw-snare"></span> Snare (Hälse nach unten). Oben oder unten in einen Platz tippen wählt die Ebene.';
     document.getElementById('bw-legende').innerHTML = legende +
         (beat.backbeat ? ` <span class="bw-hinweis-bb">Backbeat an: Snare auf ${bwBackbeatText()} kommt automatisch dazu (blass).</span>` : '') +
@@ -947,6 +964,33 @@ function bwNoteWechseln(ebene, platz, k) {
     bwVorhoeren({ code: 'V', inst: [m.get(k)] });
 }
 
+/* Easy-Raster angetippt: an Sechzehntel-Stelle k das Instrument der Zeile
+   an/aus (Becken mit dem gewaehlten Becken-Stift). Der Baustein ergibt sich
+   aus den Einsaetzen von selbst. Im Ghost-Modus: Note leise an/aus. */
+function bwRasterTippen(platz, k, reihe) {
+    const m = platzKarte(bwDaten('easy')[platz]);
+    let note = (m.get(k) || []).slice();
+    const echt = note.filter(x => x !== 'g');
+    const auto = abgeleitet('easy', platz);
+    if (!bwGhostModus && reihe === 's' && k === 0 && !note.includes('s') && auto && auto.auto) {
+        zeigeToast('Diese Snare kommt vom Backbeat – zum Entfernen den Backbeat ausschalten.', 'info');
+        return;
+    }
+    if (bwGhostModus) {
+        if (!echt.length) { zeigeToast('Ghost Notes: Hier ist noch keine Note – erst Ghost Notes ausschalten und eine setzen.', 'info'); return; }
+        note = note.includes('g') ? echt : [...echt, 'g'];
+    } else if (reihe === 'becken') {
+        note = echt.some(x => BEAT_BECKEN[x]) ? note.filter(x => !BEAT_BECKEN[x]) : [...note, beat.stift.becken];
+    } else if (note.includes(reihe)) {
+        note = note.filter(x => x !== reihe);
+    } else {
+        note = [...note, reihe];
+    }
+    if (note.some(x => x !== 'g')) m.set(k, instSortieren(note)); else m.delete(k);
+    bwSetzen('easy', platz, platzAusKarte(m));
+    if (m.get(k)) bwVorhoeren({ code: 'V', inst: [m.get(k)] });
+}
+
 function bwEinrichten() {
     beatLaden();
     if (!beat.oben.some(Boolean) && !beat.unten.some(Boolean) && !beat.easy.some(Boolean)) {
@@ -1020,7 +1064,8 @@ function bwEinrichten() {
         if (e.target.closest('.bw-weg')) bwSetzen(eb, platz, null);
         else {
             const note = e.target.closest('[data-k]');
-            if (note) bwNoteWechseln(eb, platz, Number(note.dataset.k));
+            if (note && note.dataset.reihe) bwRasterTippen(platz, Number(note.dataset.k), note.dataset.reihe);
+            else if (note) bwNoteWechseln(eb, platz, Number(note.dataset.k));
         }
         bwAenderung();
     });
