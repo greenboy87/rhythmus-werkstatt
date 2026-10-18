@@ -219,7 +219,9 @@ function blattSpeichernAls(name) {
     if (!name) return;
     const alle = blaetterLesen();
     const ueberschreibt = Object.prototype.hasOwnProperty.call(alle, name);
-    alle[name] = editor.stueck();
+    // Mit allen Einstellungen (Als Uebung, Takte/Zeile, Groesse, Tempo ...)
+    // im selben Format wie ein Link - Laden stellt so genau diesen Stand her.
+    alle[name] = Object.assign(editor.stueck(), { einstellungen: linkBauen(linkStand()) });
     blaetterSchreiben(alle);
     blattAuswahlZeichnen(name);
     zeigeToast(ueberschreibt ? `„${name}" überschrieben.` : `„${name}" gespeichert.`, 'success');
@@ -243,8 +245,14 @@ function blaetterAufbauen() {
         if (!name) return;
         const blatt = blaetterLesen()[name];
         if (!blatt) return;
-        document.getElementById('taktart-wahl').value = blatt.zeichen;
-        editor.setzen(blatt.zeichen, blatt.takte);
+        if (blatt.einstellungen) {
+            linkUebernehmen(blatt.einstellungen);
+        } else {
+            // Aeltere Blaetter (vor dem Mitspeichern): nur der Rhythmus,
+            // die Einstellungen bleiben, wie sie gerade sind.
+            document.getElementById('taktart-wahl').value = blatt.zeichen;
+            editor.setzen(blatt.zeichen, blatt.takte);
+        }
         const titelFeld = document.getElementById('druck-titel');
         if (!titelFeld.value.trim()) { titelFeld.value = name; titelAktualisieren(); druckNeuZeichnen(); }
         zeigeToast(`„${name}" geladen.`, 'info');
@@ -306,7 +314,8 @@ function linkStand() {
         undAlsPlus: opt.undAlsPlus,
         durchgaenge: opt.wiederholung ? wiederholungen + 1 : 1,
         alsUebung: opt.alsUebung,
-        takteProZeile: opt.takteProZeile
+        takteProZeile: opt.takteProZeile,
+        groesse: Math.round(anzeigeSkalierung * 100)
     };
 }
 
@@ -335,6 +344,8 @@ function linkUebernehmen(hash) {
     document.getElementById('opt-als-uebung').checked = x.alsUebung;
     takteProZeile = x.takteProZeile;
     takteProZeileAnzeigen();
+    anzeigeSkalierung = x.groesse / 100;
+    document.getElementById('anzeige-groesse-anzeige').textContent = x.groesse + '%';
 
     // Setzt den Editor und zeichnet ueber aufAenderung alles neu (Anzeige,
     // Titel, Druck). Takte, die nicht aufgehen, kommen trotzdem hinein - der

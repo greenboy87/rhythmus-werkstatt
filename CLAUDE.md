@@ -80,10 +80,13 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel` (Standard klatschen)
   - `v` Vorlauf-Takte 0-4 (Standard 1)
   - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)
+  - `g` Größe-Regler in Prozent 60-300 (Standard 100)
   Fehlende Parameter bedeuten den Standardwert - ein Link beschreibt immer
   den kompletten Stand; "Link kopieren" lässt Standardwerte weg. Wird beim
   Laden und bei `hashchange` übernommen; gespeicherte Blätter im
-  localStorage bleiben unberührt.
+  localStorage bleiben unberührt. Blätter speichern ihre Einstellungen
+  selbst im selben Format (`einstellungen`: Hash ohne `#`); ältere Blätter
+  ohne das Feld laden nur den Rhythmus.
 - `js/export.js` - `rhythmusAudio(stueck, optionen) -> Promise<Blob>`:
   rendert den Zeitplan mit denselben Klangfunktionen in einem
   `OfflineAudioContext` (44,1 kHz mono, 0,5 s Ausklang, Spitze auf -1 dBFS).

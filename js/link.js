@@ -23,7 +23,8 @@ const LINK_STANDARD = {
     undAlsPlus: false,
     durchgaenge: 1,        // 1 = keine Wiederholung, 2+ = Wiederholungszeichen
     alsUebung: false,
-    takteProZeile: 0       // 0 = automatisch
+    takteProZeile: 0,      // 0 = automatisch
+    groesse: 100           // Groesse-Regler in Prozent, 60-300
 };
 const LINK_KLAENGE = ['klatschen', 'holzblock', 'klick', 'trommel'];
 
@@ -80,6 +81,8 @@ function linkLesen(hash) {
     if (vorlauf !== null) erg.vorlauf = vorlauf;
     const metronom = zahl(werte.m, 0, 100);
     if (metronom !== null) erg.metronom = metronom;
+    const groesse = zahl(werte.g, 60, 300);
+    if (groesse !== null) erg.groesse = groesse;
     if (LINK_KLAENGE.includes(String(werte.k || '').trim().toLowerCase())) erg.klang = werte.k.trim().toLowerCase();
 
     // Schalter: je ein Buchstabe, w und k optional mit Zahl dahinter.
@@ -125,5 +128,6 @@ function linkBauen(x) {
     if (x.klang && x.klang !== s.klang) teile.push('k=' + x.klang);
     if (x.vorlauf !== undefined && x.vorlauf !== s.vorlauf) teile.push('v=' + x.vorlauf);
     if (x.metronom !== undefined && x.metronom !== s.metronom) teile.push('m=' + x.metronom);
+    if (x.groesse !== undefined && x.groesse !== s.groesse) teile.push('g=' + x.groesse);
     return teile.join('&');
 }
