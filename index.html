@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=34">
-<link rel="stylesheet" href="css/druck.css?v=34">
+<link rel="stylesheet" href="css/stil.css?v=35">
+<link rel="stylesheet" href="css/druck.css?v=35">
 </head>
 <body>
 
@@ -245,12 +245,32 @@
             </div>
         </div>
         <div class="leiste" style="margin-bottom:.7rem;">
-            <span class="leiste bw-backbeat-feld" style="gap:.4rem;" title="Bei fast allen Pop- und Rock-Beats spielt die Snare auf den Zählzeiten 2 und 4 - an: kommt automatisch dazu">
+            <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem;" title="Zählzeiten je Takt (in Vierteln)">
+                Taktart
+                <select id="bw-taktart">
+                    <option value="4">4/4</option>
+                    <option value="3">3/4</option>
+                    <option value="2">2/4</option>
+                    <option value="eigene">Eigene…</option>
+                </select>
+            </label>
+            <span class="leiste hidden" id="bw-taktart-eigen" style="gap:.3rem;">
+                <input type="number" id="bw-zaehler" min="1" max="12" step="1" value="4" style="width:3.6rem" aria-label="Zählzeiten je Takt">
+                <span class="schalter-feld">/ 4</span>
+            </span>
+            <span class="leiste bw-backbeat-feld" style="gap:.4rem;" title="Bei fast allen Pop- und Rock-Beats spielt die Snare auf den Zählzeiten 2 und 4 (im 3/4-Takt auf 2 und 3) - an: kommt automatisch dazu">
                 <label class="schalter">
                     <input type="checkbox" id="bw-backbeat">
                     <span class="schalter-schieber"></span>
                 </label>
-                <span class="schalter-feld"><b>Backbeat</b>&nbsp;– Snare auf 2 und 4</span>
+                <span class="schalter-feld"><b>Backbeat</b>&nbsp;– <span id="bw-backbeat-text">Snare auf 2 und 4</span></span>
+            </span>
+            <span class="leiste bw-backbeat-feld" style="gap:.4rem;" title="An: eine Note antippen macht sie zur Ghost Note - leiser gespielt und in Klammern notiert. Nochmal antippen hebt es auf. Aus: Antippen wechselt wie gewohnt das Instrument.">
+                <label class="schalter">
+                    <input type="checkbox" id="bw-ghost">
+                    <span class="schalter-schieber"></span>
+                </label>
+                <span class="schalter-feld"><b>Ghost Notes</b>&nbsp;( )</span>
             </span>
             <span class="schalter-feld" style="margin-left:.4rem;">Takte</span>
             <button type="button" class="btn" id="bw-takte-minus">−</button>
@@ -312,16 +332,16 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=34"></script>
-<script src="js/noten.js?v=34"></script>
-<script src="js/editor.js?v=34"></script>
-<script src="js/audio.js?v=34"></script>
-<script src="js/generator.js?v=34"></script>
-<script src="js/link.js?v=34"></script>
-<script src="js/vendor/lame.min.js?v=34"></script>
-<script src="js/export.js?v=34"></script>
-<script src="js/pdf.js?v=34"></script>
-<script src="js/app.js?v=34"></script>
-<script src="js/beat.js?v=34"></script>
+<script src="js/version.js?v=35"></script>
+<script src="js/noten.js?v=35"></script>
+<script src="js/editor.js?v=35"></script>
+<script src="js/audio.js?v=35"></script>
+<script src="js/generator.js?v=35"></script>
+<script src="js/link.js?v=35"></script>
+<script src="js/vendor/lame.min.js?v=35"></script>
+<script src="js/export.js?v=35"></script>
+<script src="js/pdf.js?v=35"></script>
+<script src="js/app.js?v=35"></script>
+<script src="js/beat.js?v=35"></script>
 </body>
 </html>

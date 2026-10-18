@@ -175,8 +175,18 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     Platz = Takt × 4 + Schlag. Moduswechsel übernimmt den Beat, wenn der
     Ziel-Modus leer ist (über `platzKarte`/`platzAusKarte`: Sechzehntel-
     Stelle → Instrumente, daraus ergibt sich der passende Baustein).
-  - Backbeat-Schalter: `abgeleitet()` rechnet die Snare auf 2 und 4 beim
-    Zeichnen/Abspielen dazu, die Daten bleiben unverändert.
+  - Taktart `beat.schlaege` (Viertel je Takt, 1-12; Auswahl 4/4, 3/4, 2/4,
+    „Eigene…“). Platz = Takt × Schläge + Schlag. Beim Wechsel behält jeder
+    Takt seine ersten Zählzeiten; was wegfällt, merkt sich `bwTaktRest`
+    (nur solange die Seite offen ist). Vorlagen sind 4/4-Muster
+    (`bwMusterPlatz`). Keine x/8-Takte - die Bausteine sind Viertel lang.
+  - Backbeat-Schalter: `abgeleitet()` rechnet die Snare beim Zeichnen/
+    Abspielen dazu (`bwBackbeatSchlaege`: gerade Zählzeiten, im 3/4 auf
+    2 und 3), die Daten bleiben unverändert.
+  - Ghost Notes: Kennzeichen `'g'` in der Instrumentenliste einer Note
+    (gilt für die ganze Note). Schalter „Ghost Notes“ (`bwGhostModus`, nicht
+    gespeichert): Antippen schaltet `'g'` statt das Instrument. Gezeichnet
+    in Klammern, gespielt mit `BW_GHOST` (Snare: Stärke normal statt Akzent).
   - Editor: je Platz EIN Fünf-Linien-System mit beiden Ebenen
     (`bwZelleSvg`). Welche Ebene gemeint ist, entscheidet die angetippte
     Fläche (`rect.bw-band[data-ebene]`, Grenze zweite Linie); alles andere

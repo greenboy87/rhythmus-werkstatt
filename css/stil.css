@@ -385,7 +385,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     padding: .1rem .3rem; border-radius: 6px;
 }
 .bw-kopieren:hover { color: var(--akzent); background: var(--rand-schwach); }
-.bw-reihe { display: grid; grid-template-columns: repeat(4, minmax(52px, 84px)); }
+.bw-reihe { display: grid; grid-template-columns: repeat(4, minmax(52px, 84px)); }   /* Spaltenzahl = Taktart, setzt beat.js */
+#bw-editor.ghost-modus .noten-feld { cursor: cell; }
 .bw-platz { position: relative; cursor: pointer; border-right: 1px dashed var(--rand-schwach); color: var(--text); }
 .bw-platz:last-child { border-right: none; }
 .bw-platz svg { display: block; width: 100%; height: auto; }

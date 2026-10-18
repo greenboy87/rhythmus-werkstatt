@@ -19,7 +19,8 @@
    Ein Platz ("slot") = { code, inst: [[...] je Teil] } - Pausen-Teile
    haben []. Instrumente: hh (Hi-Hat zu), ho (Hi-Hat offen), ride,
    crash, b (Bassdrum), s (Snare).
-   Daten je Ebene als flache Liste: Platz = Takt * 4 + Schlag.
+   Daten je Ebene als flache Liste: Platz = Takt * Schlaege + Schlag
+   (Schlaege = Zaehlzeiten je Takt, beat.schlaege: 4/4, 3/4, 2/4 oder eigene x/4).
 
    Backbeat (Schalter): Snare auf 2 und 4 wird beim Zeichnen und
    Abspielen dazugerechnet (abgeleitet), die eingegebenen Daten bleiben
@@ -54,7 +55,9 @@ BEAT_FORMEN.forEach(f => { BEAT_FORM[f.code] = f; });
 
 const BEAT_BECKEN = { hh: 'Hi-Hat', ho: 'Hi-Hat offen', ride: 'Ride', crash: 'Crash' };
 const BEAT_TROMMEL = { b: 'Bassdrum', s: 'Snare' };
-const INST_REIHE = ['crash', 'hh', 'ho', 'ride', 's', 'b'];
+// 'g' = Ghost Note: die ganze Note leise und in Klammern (kein Instrument)
+const INST_REIHE = ['crash', 'hh', 'ho', 'ride', 's', 'b', 'g'];
+const BW_GHOST = 0.3;   // Lautstaerke einer Ghost Note im Verhaeltnis
 function instSortieren(liste) {
     return [...new Set(liste)].filter(x => INST_REIHE.includes(x))
         .sort((a, b) => INST_REIHE.indexOf(a) - INST_REIHE.indexOf(b));
@@ -135,7 +138,7 @@ const BEAT_VORLAGEN = [
 const BEAT_SCHLUESSEL = 'rw-beat';
 const BEAT_TAKTE_MAX = 8;
 const beat = {
-    modus: 'profi', takte: 2, backbeat: true, bpm: 90,
+    modus: 'profi', takte: 2, schlaege: 4, backbeat: true, bpm: 90,
     oben: [], unten: [], easy: [],
     zaehlzeiten: true, farbe: false, metronom: false,
     stumm: { becken: false, bass: false, snare: false },
@@ -143,11 +146,30 @@ const beat = {
     mehr: false
 };
 let bwAktiv = { ebene: 'oben', platz: 0 };
+let bwGhostModus = false;
+let bwTaktartEigen = false;   // Auswahl steht auf "Eigene…" (auch bei 4, 3 oder 2)   // an: Note antippen = Ghost Note an/aus (nicht gespeichert)
 const bwZuletzt = {};   // zuletzt gesetzter Baustein je Ebene (fuer "Auffuellen")
 
 function bwDaten(ebene) { return beat[ebene]; }
 function bwEbenen() { return beat.modus === 'easy' ? ['easy'] : ['oben', 'unten']; }
-function bwPlaetze() { return beat.takte * 4; }
+const BW_SCHLAEGE_MAX = 12;
+function bwS() { return beat.schlaege; }
+function bwPlaetze() { return beat.takte * bwS(); }
+/* Backbeat: bei geraden Taktarten jede gerade Zaehlzeit (2, 4, 6 ...),
+   im 3/4-Takt 2 und 3 (wie im Walzer-/Ballade-Beat), sonst 2, 4, ... */
+function bwBackbeatSchlaege() {
+    const S = bwS();
+    if (S === 3) return [1, 2];
+    const r = [];
+    for (let i = 1; i < S; i += 2) r.push(i);
+    return r;
+}
+function bwBackbeatText() {
+    const z = bwBackbeatSchlaege().map(i => i + 1);
+    return z.length > 1 ? z.slice(0, -1).join(', ') + ' und ' + z[z.length - 1] : String(z[0] || '–');
+}
+/* Vorlagen sind 4/4-Muster: Schlag s eines Takts nimmt Muster-Platz s % 4. */
+function bwMusterPlatz(p) { return (p % bwS()) % 4; }
 
 function platzGueltig(slot) {
     if (!slot || typeof slot !== 'object' || !BEAT_FORM[slot.code] || !Array.isArray(slot.inst)) return null;
@@ -162,9 +184,10 @@ function beatLaden() {
         if (x.modus === 'easy' || x.modus === 'profi') beat.modus = x.modus;
         beat.takte = Math.max(1, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         beat.bpm = Math.max(40, Math.min(200, Math.round(Number(x.bpm) || 90)));
+        beat.schlaege = Math.max(1, Math.min(BW_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
         ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
         ['oben', 'unten', 'easy'].forEach(eb => {
-            beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * 4).map(platzGueltig) : [];
+            beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * BW_SCHLAEGE_MAX).map(platzGueltig) : [];
         });
         if (x.stumm) Object.keys(beat.stumm).forEach(k => { beat.stumm[k] = !!x.stumm[k]; });
         if (x.stift) {
@@ -185,8 +208,8 @@ function beatSpeichern() {
    auto: Teil-Nummer(n), deren Snare automatisch dazukam (blasser im Editor). */
 function abgeleitet(ebene, platz) {
     const slot = bwDaten(ebene)[platz] || null;
-    const schlag = platz % 4;
-    if (!beat.backbeat || ebene === 'oben' || (schlag !== 1 && schlag !== 3)) return slot;
+    const schlag = platz % bwS();
+    if (!beat.backbeat || ebene === 'oben' || !bwBackbeatSchlaege().includes(schlag)) return slot;
     const m = platzKarte(slot);
     const vorher = m.get(0) || [];
     if (vorher.includes('s')) return slot;
@@ -212,6 +235,10 @@ function stiftInst(ebene, code) {
    oben: Hi-Hat -> offen -> Ride -> Crash; unten: Bass -> Snare -> beides;
    easy: Becken bleibt, dazu nichts -> Bass -> Snare -> beides. */
 function instWeiter(ebene, inst) {
+    const g = inst.includes('g') ? ['g'] : [];
+    return instSortieren([...instWeiterOhneGhost(ebene, inst.filter(x => x !== 'g')), ...g]);
+}
+function instWeiterOhneGhost(ebene, inst) {
     const hatB = inst.includes('b'), hatS = inst.includes('s');
     if (ebene === 'oben') {
         const reihe = Object.keys(BEAT_BECKEN);
@@ -240,7 +267,9 @@ const BW_Y = { crash: -8, hh: -4, ho: -4, ride: 0, s: 12, b: 28 };
 const BW_LINIEN = [0, 8, 16, 24, 32];
 const BW_ZEIT = 72, BW_SCHLAG = 84, BW_EINRUECK = 12;
 const BW_HALS = 26, BW_BALKEN = 4.5;
-const BW_PAUSE_Y = { oben: -2, unten: 26, easy: 14 };
+// Pausen der oberen Ebene sitzen hoch (ueber der obersten Linie), damit sie
+// nicht an Snare/Bassdrum der unteren Ebene stossen.
+const BW_PAUSE_Y = { oben: -14, unten: 26, easy: 14 };
 const BW_ANZEIGE_SKALA = 1.3;
 
 function bwPause(px, d, Y) {
@@ -280,9 +309,11 @@ function bwStimme(slot, x0, richtung, pauseY) {
         const k = Math.round(v * 4);
         v += t.d;
         const inst = t.p ? [] : (slot.inst[i] || []);
-        if (!inst.length) { teile.push(bwPause(px, t.d, pauseY)); noten.push(null); return; }
-        const ys = inst.map(x => BW_Y[x]);
-        noten.push({ px, k, d: t.d, teil: i, inst, oben: Math.min(...ys), unten: Math.max(...ys), auto: (slot.auto || []).includes(i) });
+        const ghost = inst.includes('g');
+        const echte = inst.filter(x => x !== 'g');
+        if (!echte.length) { teile.push(bwPause(px, t.d, pauseY)); noten.push(null); return; }
+        const ys = echte.map(x => BW_Y[x]);
+        noten.push({ px, k, d: t.d, teil: i, inst: echte, ghost, oben: Math.min(...ys), unten: Math.max(...ys), auto: (slot.auto || []).includes(i) });
     });
 
     // Balkengruppen: aufeinanderfolgende Achtel/Sechzehntel, Pause trennt
@@ -305,9 +336,13 @@ function bwStimme(slot, x0, richtung, pauseY) {
                 const y = BW_Y[x];
                 if (x === 'crash') teile.push(`<line x1="${n.px - 9}" y1="${y}" x2="${n.px + 9}" y2="${y}" stroke="currentColor" stroke-width="1.3"/>`);
                 teile.push(bwKopf(n.px, y, x, n.auto && x === 's'));
+                if (n.ghost) {
+                    // Ghost Note: Kopf in runden Klammern
+                    teile.push(`<path class="bw-klammer" d="M${n.px - 8} ${y - 5.5} q -3.6 5.5 0 11 M${n.px + 8} ${y - 5.5} q 3.6 5.5 0 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`);
+                }
                 if (n.d > 0.5 && n.d < 1) {
                     const aufLinie = Math.abs(y / 8 - Math.round(y / 8)) < 0.01;
-                    teile.push(`<circle cx="${n.px + 11}" cy="${aufLinie ? y - 4 : y}" r="2.4" fill="currentColor"/>`);
+                    teile.push(`<circle cx="${n.px + (n.ghost ? 13.5 : 11)}" cy="${aufLinie ? y - 4 : y}" r="2.4" fill="currentColor"/>`);
                 }
             });
             // Hals nach oben beginnt beim untersten Kopf: bei einem Becken-Kreuz
@@ -371,7 +406,7 @@ function bwSystemSvg(taktListe, erstes, letztes) {
     teile.push(schluesselSvg(x + 8, 16, 'currentColor'));
     x += 22;
     if (erstes) {
-        teile.push(`<text class="kopf" x="${x + 8}" y="8" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">4</text>`);
+        teile.push(`<text class="kopf" x="${x + 8}" y="8" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${bwS()}</text>`);
         teile.push(`<text class="kopf" x="${x + 8}" y="25" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">4</text>`);
         x += 22;
     }
@@ -382,8 +417,8 @@ function bwSystemSvg(taktListe, erstes, letztes) {
             teile.push(`<line x1="${x}" y1="0" x2="${x}" y2="32" stroke="currentColor" stroke-width="1.6"/>`);
             x += 6;
         }
-        for (let s = 0; s < 4; s++) {
-            const platz = t * 4 + s, sx = x + s * BW_SCHLAG;
+        for (let s = 0; s < bwS(); s++) {
+            const platz = t * bwS() + s, sx = x + s * BW_SCHLAG;
             vorn.push(`<rect class="bw-spiel" data-spiel="${platz}" x="${sx + 2}" y="-44" width="${BW_SCHLAG - 4}" height="108" rx="6"/>`);
             const einsaetze = new Set();
             ebenen.forEach(eb => {
@@ -400,7 +435,7 @@ function bwSystemSvg(taktListe, erstes, letztes) {
                 });
             }
         }
-        x += 4 * BW_SCHLAG;
+        x += bwS() * BW_SCHLAG;
     });
     if (letztes) {
         // Wiederholungszeichen am Schluss: ein Beat laeuft im Kreis
@@ -489,9 +524,10 @@ function bwBassdrum(ctx, zeit, ziel, staerke) {
     k.connect(kg); kg.connect(ziel);
     k.start(zeit); k.stop(zeit + 0.03);
 }
-function bwInstrumentSpielen(ctx, zeit, ziel, inst, staerke) {
+function bwInstrumentSpielen(ctx, zeit, ziel, inst, staerke, ghost) {
     if (inst === 'b') { if (!beat.stumm.bass) bwBassdrum(ctx, zeit, ziel, staerke); return; }
-    if (inst === 's') { if (!beat.stumm.snare) snareKlang(ctx, zeit, 'akzent', ziel); return; }
+    // Snare kennt nur normal/Akzent: Ghost = "normal" (gut 9 dB leiser)
+    if (inst === 's') { if (!beat.stumm.snare) snareKlang(ctx, zeit, ghost ? null : 'akzent', ziel); return; }
     if (!beat.stumm.becken) bwBecken(ctx, zeit, ziel, inst, staerke);
 }
 function bwSummeBauen(ctx) {
@@ -510,6 +546,14 @@ function bwStaerke(inst, k) {
     return k === 0 ? 1 : k === 2 ? 0.8 : 0.62;
 }
 
+/* Eine Note (alle Instrumente auf einer Sechzehntel-Stelle k) spielen. */
+function bwNoteSpielen(ctx, zeit, ziel, inst, k) {
+    const ghost = inst.includes('g');
+    inst.forEach(x => {
+        if (x !== 'g') bwInstrumentSpielen(ctx, zeit, ziel, x, bwStaerke(x, k) * (ghost ? BW_GHOST : 1), ghost);
+    });
+}
+
 /* Kurz vorhoeren (Note angetippt, Baustein gesetzt). */
 let bwVorhoerSumme = null;
 function bwVorhoeren(slot) {
@@ -518,7 +562,7 @@ function bwVorhoeren(slot) {
     if (!ctx) return;
     if (!bwVorhoerSumme || bwVorhoerSumme.context !== ctx) bwVorhoerSumme = bwSummeBauen(ctx);
     const t0 = ctx.currentTime + 0.03, schlag = 60 / beat.bpm;
-    platzKarte(slot).forEach((inst, k) => inst.forEach(x => bwInstrumentSpielen(ctx, t0 + k / 4 * schlag, bwVorhoerSumme, x, bwStaerke(x, k))));
+    platzKarte(slot).forEach((inst, k) => bwNoteSpielen(ctx, t0 + k / 4 * schlag, bwVorhoerSumme, inst, k));
 }
 
 /* ============================================================
@@ -537,14 +581,13 @@ const BeatSpieler = (function () {
     }
     function taktPlanen(takt, t0) {
         const schlag = 60 / beat.bpm;
-        for (let s = 0; s < 4; s++) {
-            const platz = takt * 4 + s, ts = t0 + s * schlag;
+        for (let s = 0; s < bwS(); s++) {
+            const platz = takt * bwS() + s, ts = t0 + s * schlag;
             if (beat.metronom) metronomKlick(ctx, ts, s === 0);
             anzeigeTimer.push(setTimeout(() => { if (laeuft) markieren(platz); }, Math.max(0, (ts - ctx.currentTime) * 1000)));
             bwEbenen().forEach(eb => {
                 const slot = abgeleitet(eb, platz);
-                platzKarte(slot).forEach((inst, k) => inst.forEach(x =>
-                    bwInstrumentSpielen(ctx, ts + k / 4 * schlag, summe, x, bwStaerke(x, k))));
+                platzKarte(slot).forEach((inst, k) => bwNoteSpielen(ctx, ts + k / 4 * schlag, summe, inst, k));
             });
         }
         // Erledigte Timer nicht ewig sammeln
@@ -556,7 +599,7 @@ const BeatSpieler = (function () {
         audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
         while (naechsteZeit < ctx.currentTime + 0.3) {
             taktPlanen(taktZaehler % beat.takte, naechsteZeit);
-            naechsteZeit += 4 * 60 / beat.bpm;
+            naechsteZeit += bwS() * 60 / beat.bpm;
             taktZaehler++;
         }
     }
@@ -643,9 +686,9 @@ function bwEditorZeichnen() {
     for (let t = 0; t < beat.takte; t++) {
         html += `<div class="bw-takt"><div class="bw-takt-kopf"><span>Takt ${t + 1}</span>` +
             `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
-            '<div class="bw-reihe">';
-        for (let s = 0; s < 4; s++) {
-            const platz = t * 4 + s;
+            `<div class="bw-reihe" style="grid-template-columns: repeat(${bwS()}, minmax(52px, 84px))">`;
+        for (let s = 0; s < bwS(); s++) {
+            const platz = t * bwS() + s;
             const weg = ebenen.filter(eb => bwDaten(eb)[platz]).map(eb =>
                 `<button type="button" class="bw-weg bw-weg-${eb}" data-ebene="${eb}" title="${eb === 'oben' ? 'Becken' : eb === 'unten' ? 'Bassdrum/Snare' : 'Baustein'} entfernen" aria-label="Baustein entfernen">×</button>`).join('');
             html += `<div class="bw-platz" data-platz="${platz}" data-spiel="${platz}"` +
@@ -759,7 +802,7 @@ function bwPaletteZeichnen() {
 function bwAnzeigeZeichnen() {
     const host = document.getElementById('bw-anzeige');
     const breite = host.clientWidth || 900;
-    const taktBreite = (4 * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
+    const taktBreite = (bwS() * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
     const proZeile = Math.max(1, Math.floor((breite - 80 * BW_ANZEIGE_SKALA) / taktBreite));
     const zeilen = [];
     for (let t = 0; t < beat.takte; t += proZeile) {
@@ -773,6 +816,15 @@ function bwAnzeigeZeichnen() {
 function bwSchalterZeichnen() {
     document.querySelectorAll('[data-bw-modus]').forEach(b => b.classList.toggle('an', b.dataset.bwModus === beat.modus));
     document.getElementById('bw-backbeat').checked = beat.backbeat;
+    document.getElementById('bw-backbeat-text').textContent = 'Snare auf ' + bwBackbeatText();
+    const ta = document.getElementById('bw-taktart');
+    const fest = [4, 3, 2].includes(bwS());
+    if (document.activeElement !== ta) ta.value = fest && !bwTaktartEigen ? String(bwS()) : 'eigene';
+    document.getElementById('bw-taktart-eigen').classList.toggle('hidden', ta.value !== 'eigene');
+    const ez = document.getElementById('bw-zaehler');
+    if (document.activeElement !== ez) ez.value = bwS();
+    document.getElementById('bw-ghost').checked = bwGhostModus;
+    document.getElementById('bw-editor').classList.toggle('ghost-modus', bwGhostModus);
     document.getElementById('bw-takte-anzeige').textContent = beat.takte;
     document.getElementById('bw-takte-minus').disabled = beat.takte <= 1;
     document.getElementById('bw-takte-plus').disabled = beat.takte >= BEAT_TAKTE_MAX;
@@ -792,7 +844,8 @@ function bwSchalterZeichnen() {
         ? 'Eine Reihe: jede Becken-Note kann zusätzlich <span class="bw-punkt bw-bass"></span> Bassdrum, <span class="bw-punkt bw-snare"></span> Snare oder beides bekommen.'
         : 'Ein Notensystem, zwei Ebenen: oben <span class="bw-punkt bw-becken"></span> Hi-Hat / Becken (Hälse nach oben), unten <span class="bw-punkt bw-bass"></span> Bassdrum und <span class="bw-punkt bw-snare"></span> Snare (Hälse nach unten). Oben oder unten in einen Platz tippen wählt die Ebene.';
     document.getElementById('bw-legende').innerHTML = legende +
-        (beat.backbeat ? ' <span class="bw-hinweis-bb">Backbeat an: Snare auf 2 und 4 kommt automatisch dazu (blass).</span>' : '');
+        (beat.backbeat ? ` <span class="bw-hinweis-bb">Backbeat an: Snare auf ${bwBackbeatText()} kommt automatisch dazu (blass).</span>` : '') +
+        (bwGhostModus ? ' <span class="bw-hinweis-bb">Ghost Notes an: Note antippen = leise, in Klammern.</span>' : '');
 }
 
 function bwZeichnen() {
@@ -819,9 +872,10 @@ function bwModusSetzen(modus) {
         for (let p = 0; p < n; p++) {
             const mo = new Map(), mu = new Map();
             platzKarte(beat.easy[p]).forEach((inst, k) => {
+                const g = inst.includes('g') ? ['g'] : [];
                 const b = inst.filter(x => BEAT_BECKEN[x]), t = inst.filter(x => BEAT_TROMMEL[x]);
-                if (b.length) mo.set(k, b);
-                if (t.length) mu.set(k, t);
+                if (b.length) mo.set(k, [...b, ...g]);
+                if (t.length) mu.set(k, [...t, ...g]);
             });
             beat.oben[p] = platzAusKarte(mo);
             beat.unten[p] = platzAusKarte(mu);
@@ -833,15 +887,40 @@ function bwModusSetzen(modus) {
     bwAenderung();
 }
 
+/* Taktart wechseln: jeder Takt behaelt seine ersten Zaehlzeiten, neue
+   bleiben leer. Was beim Verkleinern wegfaellt, merkt sich bwTaktRest -
+   zurueck auf die groessere Taktart, und es ist wieder da (nur solange
+   die Seite offen ist). */
+const bwTaktRest = { oben: [], unten: [], easy: [] };
+function bwTaktartSetzen(neu) {
+    const S2 = Math.max(1, Math.min(BW_SCHLAEGE_MAX, Math.round(Number(neu) || 4)));
+    const S1 = bwS();
+    if (S2 === S1) return;
+    ['oben', 'unten', 'easy'].forEach(eb => {
+        const alt = beat[eb], liste = [];
+        for (let t = 0; t < BEAT_TAKTE_MAX; t++) {
+            const rest = bwTaktRest[eb][t] || [];
+            for (let s = 0; s < S1; s++) rest[s] = alt[t * S1 + s] || null;
+            bwTaktRest[eb][t] = rest;
+            for (let s = 0; s < S2; s++) liste[t * S2 + s] = rest[s] || null;
+        }
+        beat[eb] = liste;
+    });
+    beat.schlaege = S2;
+    bwAktiv.platz = Math.min(bwAktiv.platz, bwPlaetze() - 1);
+    bwAenderung();
+}
+
 function bwVorlageLaden(nr) {
     const v = BEAT_VORLAGEN[nr];
     if (!v) return;
     const kopie = (s) => s ? { code: s.code, inst: s.inst.map(i => i.slice()) } : null;
     for (let p = 0; p < bwPlaetze(); p++) {
-        beat.oben[p] = kopie(v.oben[p % 4]);
-        beat.unten[p] = kopie(v.unten[p % 4]);
-        const m = platzKarte(v.oben[p % 4]);
-        platzKarte(v.unten[p % 4]).forEach((inst, k) => m.set(k, [...(m.get(k) || []), ...inst]));
+        const q = bwMusterPlatz(p);
+        beat.oben[p] = kopie(v.oben[q]);
+        beat.unten[p] = kopie(v.unten[q]);
+        const m = platzKarte(v.oben[q]);
+        platzKarte(v.unten[q]).forEach((inst, k) => m.set(k, [...(m.get(k) || []), ...inst]));
         beat.easy[p] = platzAusKarte(m);
     }
     beat.backbeat = v.backbeat;
@@ -855,7 +934,14 @@ function bwNoteWechseln(ebene, platz, k) {
     // Noch keine eigene Note an der Stelle (nur der automatische Backbeat):
     // dann wird sie zur eigenen - mit dem naechsten Instrument nach der Snare.
     const jetzt = m.get(k) || (ebene === 'easy' ? [beat.stift.becken] : ebene === 'unten' ? ['s'] : [beat.stift.becken]);
-    m.set(k, instWeiter(ebene, jetzt));
+    if (bwGhostModus) {
+        // Ghost-Modus: Note leise (in Klammern) an/aus; eine nur automatische
+        // Backbeat-Snare wird dabei zur eigenen Note
+        const basis = m.get(k) || ['s'];
+        m.set(k, instSortieren(basis.includes('g') ? basis.filter(x => x !== 'g') : [...basis, 'g']));
+    } else {
+        m.set(k, instWeiter(ebene, jetzt));
+    }
     const neu = platzAusKarte(m);
     bwSetzen(ebene, platz, neu);
     bwVorhoeren({ code: 'V', inst: [m.get(k)] });
@@ -877,6 +963,7 @@ function bwEinrichten() {
         beat.backbeat = true;
     }
     bwAktiv = { ebene: bwEbenen()[0], platz: 0 };
+    bwTaktartEigen = ![4, 3, 2].includes(bwS());
 
     const vorlage = document.getElementById('bw-vorlage');
     BEAT_VORLAGEN.forEach((v, i) => {
@@ -888,6 +975,18 @@ function bwEinrichten() {
 
     document.querySelectorAll('[data-bw-modus]').forEach(b => b.addEventListener('click', () => bwModusSetzen(b.dataset.bwModus)));
     document.getElementById('bw-backbeat').addEventListener('change', (e) => { beat.backbeat = e.target.checked; bwAenderung(); });
+    document.getElementById('bw-ghost').addEventListener('change', (e) => {
+        bwGhostModus = e.target.checked;
+        if (bwGhostModus) zeigeToast('Ghost Notes: Note antippen macht sie leise (in Klammern) – nochmal antippen hebt es auf.', 'info');
+        bwZeichnen();
+    });
+    const taktart = document.getElementById('bw-taktart');
+    taktart.addEventListener('change', () => {
+        bwTaktartEigen = taktart.value === 'eigene';
+        if (bwTaktartEigen) { bwSchalterZeichnen(); document.getElementById('bw-zaehler').focus(); return; }
+        bwTaktartSetzen(Number(taktart.value));
+    });
+    document.getElementById('bw-zaehler').addEventListener('change', (e) => bwTaktartSetzen(e.target.value));
     document.getElementById('bw-takte-minus').addEventListener('click', () => { beat.takte = Math.max(1, beat.takte - 1); bwAenderung(); });
     document.getElementById('bw-takte-plus').addEventListener('click', () => { beat.takte = Math.min(BEAT_TAKTE_MAX, beat.takte + 1); bwAenderung(); });
     document.getElementById('bw-leeren').addEventListener('click', () => {
@@ -904,9 +1003,9 @@ function bwEinrichten() {
             if (t + 1 >= BEAT_TAKTE_MAX) { zeigeToast('Mehr als ' + BEAT_TAKTE_MAX + ' Takte gehen nicht.', 'danger'); return; }
             if (t + 1 >= beat.takte) beat.takte = t + 2;
             ['oben', 'unten', 'easy'].forEach(eb => {
-                for (let s = 0; s < 4; s++) {
-                    const q = beat[eb][t * 4 + s];
-                    beat[eb][(t + 1) * 4 + s] = q ? { code: q.code, inst: q.inst.map(i => i.slice()) } : null;
+                for (let s = 0; s < bwS(); s++) {
+                    const q = beat[eb][t * bwS() + s];
+                    beat[eb][(t + 1) * bwS() + s] = q ? { code: q.code, inst: q.inst.map(i => i.slice()) } : null;
                 }
             });
             bwAenderung();
