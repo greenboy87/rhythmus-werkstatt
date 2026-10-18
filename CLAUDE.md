@@ -187,6 +187,10 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     Sechzehntel-Stelle drei Tippflächen - Becken (mit Becken-Stift),
     Snare, Bassdrum jeweils an/aus; der Baustein ergibt sich über
     `platzAusKarte`. Über dem System (Hälse/Balken) nur Auswahl.
+  - Easy: ein Baustein aus der Palette ersetzt nur die Becken eines Platzes,
+    Bassdrum/Snare (samt Ghost) bleiben stehen (`bwBausteinSetzen`).
+  - Schalter „Hi-Hat öffnen“ (`bwOffenModus`, nicht gespeichert, schließt
+    Ghost Notes aus und umgekehrt): Antippen einer Hi-Hat wechselt hh ⇄ ho.
   - Ghost Notes: Kennzeichen `'g'` in der Instrumentenliste einer Note
     (gilt für die ganze Note). Schalter „Ghost Notes“ (`bwGhostModus`, nicht
     gespeichert): Antippen schaltet `'g'` statt das Instrument. Gezeichnet

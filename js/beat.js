@@ -147,6 +147,13 @@ const beat = {
 };
 let bwAktiv = { ebene: 'oben', platz: 0 };
 let bwGhostModus = false;
+let bwOffenModus = false;   // an: Hi-Hat antippen = offen/zu (nicht gespeichert)
+/* Hi-Hat zu <-> offen; andere Becken bleiben, ohne Becken kommt eine offene dazu */
+function hiHatOeffnen(note) {
+    if (note.includes('hh')) return note.map(x => x === 'hh' ? 'ho' : x);
+    if (note.includes('ho')) return note.map(x => x === 'ho' ? 'hh' : x);
+    return null;
+}
 let bwTaktartEigen = false;   // Auswahl steht auf "Eigene…" (auch bei 4, 3 oder 2)   // an: Note antippen = Ghost Note an/aus (nicht gespeichert)
 const bwZuletzt = {};   // zuletzt gesetzter Baustein je Ebene (fuer "Auffuellen")
 
@@ -735,8 +742,21 @@ function bwTauschen() {
 function bwBausteinSetzen(code) {
     const eb = bwAktiv.ebene;
     const slot = { code, inst: stiftInst(eb, code) };
-    bwSetzen(eb, bwAktiv.platz, slot);
     bwZuletzt[eb] = slot;
+    if (eb === 'easy') {
+        // Easy: der Baustein ersetzt nur die Becken - schon gesetzte
+        // Bassdrum/Snare (samt Ghost) bleiben an ihrer Stelle stehen
+        const m = platzKarte(slot);
+        platzKarte(bwDaten(eb)[bwAktiv.platz]).forEach((inst, k) => {
+            const trommeln = inst.filter(x => BEAT_TROMMEL[x]);
+            if (!trommeln.length) return;
+            const g = inst.includes('g') ? ['g'] : [];
+            m.set(k, instSortieren([...(m.get(k) || []), ...trommeln, ...g]));
+        });
+        bwSetzen(eb, bwAktiv.platz, platzAusKarte(m));
+    } else {
+        bwSetzen(eb, bwAktiv.platz, slot);
+    }
     bwVorhoeren(abgeleitet(eb, bwAktiv.platz));
     if (bwAktiv.platz < bwPlaetze() - 1) bwAktiv.platz++;
     bwAenderung();
@@ -841,7 +861,8 @@ function bwSchalterZeichnen() {
     const ez = document.getElementById('bw-zaehler');
     if (document.activeElement !== ez) ez.value = bwS();
     document.getElementById('bw-ghost').checked = bwGhostModus;
-    document.getElementById('bw-editor').classList.toggle('ghost-modus', bwGhostModus);
+    document.getElementById('bw-offen').checked = bwOffenModus;
+    document.getElementById('bw-editor').classList.toggle('ghost-modus', bwGhostModus || bwOffenModus);
     document.getElementById('bw-takte-anzeige').textContent = beat.takte;
     document.getElementById('bw-takte-minus').disabled = beat.takte <= 1;
     document.getElementById('bw-takte-plus').disabled = beat.takte >= BEAT_TAKTE_MAX;
@@ -862,7 +883,8 @@ function bwSchalterZeichnen() {
         : 'Ein Notensystem, zwei Ebenen: oben <span class="bw-punkt bw-becken"></span> Hi-Hat / Becken (Hälse nach oben), unten <span class="bw-punkt bw-bass"></span> Bassdrum und <span class="bw-punkt bw-snare"></span> Snare (Hälse nach unten). Oben oder unten in einen Platz tippen wählt die Ebene.';
     document.getElementById('bw-legende').innerHTML = legende +
         (beat.backbeat ? ` <span class="bw-hinweis-bb">Backbeat an: Snare auf ${bwBackbeatText()} kommt automatisch dazu (blass).</span>` : '') +
-        (bwGhostModus ? ' <span class="bw-hinweis-bb">Ghost Notes an: Note antippen = leise, in Klammern.</span>' : '');
+        (bwGhostModus ? ' <span class="bw-hinweis-bb">Ghost Notes an: Note antippen = leise, in Klammern.</span>' : '') +
+        (bwOffenModus ? ' <span class="bw-hinweis-bb">Hi-Hat öffnen an: Hi-Hat antippen = offen (o) / zu.</span>' : '');
 }
 
 function bwZeichnen() {
@@ -951,7 +973,11 @@ function bwNoteWechseln(ebene, platz, k) {
     // Noch keine eigene Note an der Stelle (nur der automatische Backbeat):
     // dann wird sie zur eigenen - mit dem naechsten Instrument nach der Snare.
     const jetzt = m.get(k) || (ebene === 'easy' ? [beat.stift.becken] : ebene === 'unten' ? ['s'] : [beat.stift.becken]);
-    if (bwGhostModus) {
+    if (bwOffenModus && ebene !== 'unten') {
+        const neu = m.get(k) && hiHatOeffnen(m.get(k));
+        if (!neu) { zeigeToast('Hi-Hat öffnen geht nur bei einer Hi-Hat.', 'info'); return; }
+        m.set(k, instSortieren(neu));
+    } else if (bwGhostModus) {
         // Ghost-Modus: Note leise (in Klammern) an/aus; eine nur automatische
         // Backbeat-Snare wird dabei zur eigenen Note
         const basis = m.get(k) || ['s'];
@@ -976,7 +1002,12 @@ function bwRasterTippen(platz, k, reihe) {
         zeigeToast('Diese Snare kommt vom Backbeat – zum Entfernen den Backbeat ausschalten.', 'info');
         return;
     }
-    if (bwGhostModus) {
+    if (bwOffenModus && reihe === 'becken') {
+        const neu = hiHatOeffnen(note);
+        if (neu) note = neu;
+        else if (!echt.some(x => BEAT_BECKEN[x])) note = [...note, 'ho'];
+        else { zeigeToast('Hi-Hat öffnen geht nur bei einer Hi-Hat.', 'info'); return; }
+    } else if (bwGhostModus) {
         if (!echt.length) { zeigeToast('Ghost Notes: Hier ist noch keine Note – erst Ghost Notes ausschalten und eine setzen.', 'info'); return; }
         note = note.includes('g') ? echt : [...echt, 'g'];
     } else if (reihe === 'becken') {
@@ -1021,7 +1052,16 @@ function bwEinrichten() {
     document.getElementById('bw-backbeat').addEventListener('change', (e) => { beat.backbeat = e.target.checked; bwAenderung(); });
     document.getElementById('bw-ghost').addEventListener('change', (e) => {
         bwGhostModus = e.target.checked;
+        if (bwGhostModus) bwOffenModus = false;
         if (bwGhostModus) zeigeToast('Ghost Notes: Note antippen macht sie leise (in Klammern) – nochmal antippen hebt es auf.', 'info');
+        bwZeichnen();
+    });
+    document.getElementById('bw-offen').addEventListener('change', (e) => {
+        bwOffenModus = e.target.checked;
+        if (bwOffenModus) {
+            bwGhostModus = false;
+            zeigeToast('Hi-Hat öffnen: Hi-Hat antippen öffnet sie (o) – nochmal antippen schließt sie.', 'info');
+        }
         bwZeichnen();
     });
     const taktart = document.getElementById('bw-taktart');
