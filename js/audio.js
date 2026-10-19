@@ -113,7 +113,7 @@ function klangStaerke(staerke) { return staerke === 'akzent' ? KLANG_AKZENT : KL
 /* Ein Klatschen: kurzes Rauschen mit scharfem Einsatz. Ein Sinuston klaenge
    wie ein zweites Metronom - Taktschlag und Rhythmus muessen auseinander
    zu hoeren sein. */
-function klatschKlang(ctx, zeit, staerke) {
+function klatschKlang(ctx, zeit, staerke, ziel) {
     const laenge = Math.floor(ctx.sampleRate * 0.09);
     const puffer = ctx.createBuffer(1, laenge, ctx.sampleRate);
     const daten = puffer.getChannelData(0);
@@ -124,7 +124,7 @@ function klatschKlang(ctx, zeit, staerke) {
     filter.type = 'bandpass'; filter.frequency.value = 1500; filter.Q.value = 0.8;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.9 * klangStaerke(staerke), zeit);
-    quelle.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    quelle.connect(filter); filter.connect(g); g.connect(ziel || ctx.destination);
     quelle.start(zeit);
     return quelle;
 }
@@ -132,7 +132,7 @@ function klatschKlang(ctx, zeit, staerke) {
 /* Holzblock: ein stark gedaempftes Rauschen durch ein schmales (hohes Q)
    Bandpass-Filter - der Resonanzpeak gibt ihm die "hohle" Holz-Klangfarbe,
    die ein reines Klatschen (breitbandig, kein Peak) nicht hat. */
-function holzblockKlang(ctx, zeit, staerke) {
+function holzblockKlang(ctx, zeit, staerke, ziel) {
     const laenge = Math.floor(ctx.sampleRate * 0.045);
     const puffer = ctx.createBuffer(1, laenge, ctx.sampleRate);
     const daten = puffer.getChannelData(0);
@@ -143,14 +143,14 @@ function holzblockKlang(ctx, zeit, staerke) {
     filter.type = 'bandpass'; filter.frequency.value = 1400; filter.Q.value = 9;
     const g = ctx.createGain();
     g.gain.setValueAtTime(3 * klangStaerke(staerke), zeit);
-    quelle.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    quelle.connect(filter); filter.connect(g); g.connect(ziel || ctx.destination);
     quelle.start(zeit);
     return quelle;
 }
 
 /* Klick: noch kuerzer und hochpassgefiltert statt Bandpass - duenn und
    trocken, wie ein Stick-Klick, deutlich heller als Klatschen und Holzblock. */
-function klickKlang(ctx, zeit, staerke) {
+function klickKlang(ctx, zeit, staerke, ziel) {
     const laenge = Math.floor(ctx.sampleRate * 0.025);
     const puffer = ctx.createBuffer(1, laenge, ctx.sampleRate);
     const daten = puffer.getChannelData(0);
@@ -161,7 +161,7 @@ function klickKlang(ctx, zeit, staerke) {
     filter.type = 'highpass'; filter.frequency.value = 3500;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.5 * klangStaerke(staerke), zeit);
-    quelle.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    quelle.connect(filter); filter.connect(g); g.connect(ziel || ctx.destination);
     quelle.start(zeit);
     return quelle;
 }
@@ -169,7 +169,7 @@ function klickKlang(ctx, zeit, staerke) {
 /* Conga: anders als die drei Rausch-Klaenge ein echter Ton mit schnellem
    Tonhoehenabfall (220 -> 90 Hz) - tief und "rund", eindeutig von den
    geraeuschhaften Klaengen zu unterscheiden. */
-function trommelKlang(ctx, zeit, staerke) {
+function trommelKlang(ctx, zeit, staerke, ziel) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(220, zeit);
@@ -177,7 +177,7 @@ function trommelKlang(ctx, zeit, staerke) {
     g.gain.setValueAtTime(0.0001, zeit);
     g.gain.exponentialRampToValueAtTime(0.72 * klangStaerke(staerke), zeit + 0.004);
     g.gain.exponentialRampToValueAtTime(0.0001, zeit + 0.14);
-    o.connect(g); g.connect(ctx.destination);
+    o.connect(g); g.connect(ziel || ctx.destination);
     o.start(zeit); o.stop(zeit + 0.16);
     return o;
 }
@@ -188,8 +188,8 @@ function trommelKlang(ctx, zeit, staerke) {
    (die Schnarrsaiten) als laenger ausklingendes, gefiltertes Rauschen.
    Das Rauschen kommt aus Math.random - beim Export ist das der feste
    Zufallsgenerator, die Datei bleibt also reproduzierbar.
-   ziel (optional): Knoten statt ctx.destination - die Beat-Werkstatt
-   schickt alles durch ihren eigenen Summen-Knoten (js/beat.js). */
+   ziel (optional, wie bei allen Klaengen): Knoten statt ctx.destination -
+   Vorklatschen und Beat-Werkstatt schicken alles durch eine eigene Summe. */
 function snareKlang(ctx, zeit, staerke, ziel) {
     const aus = ziel || ctx.destination;
     const st = klangStaerke(staerke);
@@ -234,9 +234,9 @@ const KLATSCH_KLAENGE = {
     trommel: trommelKlang,
     snare: snareKlang
 };
-let klatschSound = 'klatschen';
+let klatschSound = 'snare';
 function klatschSoundSetzen(code) { if (KLATSCH_KLAENGE[code]) klatschSound = code; }
-function klatschSoundSpielen(ctx, zeit, staerke) { return KLATSCH_KLAENGE[klatschSound](ctx, zeit, staerke); }
+function klatschSoundSpielen(ctx, zeit, staerke, ziel) { return KLATSCH_KLAENGE[klatschSound](ctx, zeit, staerke, ziel); }
 
 /* ziel (optional): Knoten, in den der Klick laeuft. Ohne Angabe der
    dauerhafte Live-Gain-Knoten (metronomZiel) - der Audio-Export uebergibt
@@ -496,43 +496,42 @@ function rhythmusZeitplan(stueck, optionen) {
 
 /* ============================================================
    VORKLATSCHEN / MITKLATSCHEN
-   Ein Takt (oder mehr) Vorlauf, dann das ganze Stueck - alles auf
-   einen Schlag auf die Audiouhr gelegt. "mitklatschen" laesst die
-   Klatschtoene weg und zeigt nur den durchlaufenden Puls, zum
-   Mitlesen an der Wand.
+   Vorlauf, dann das Stueck. "mitklatschen" laesst die Klatschtoene weg
+   und zeigt nur den durchlaufenden Puls, zum Mitlesen an der Wand.
+
+   Geplant wird nur kurz voraus (wie in der Beat-Werkstatt): Der Zeitplan
+   rechnet in Schlaegen (rhythmusZeitplan mit bpm 60), alle 20 ms wird
+   gelegt, was in den naechsten 0,2 s faellig ist - umgerechnet mit dem
+   AKTUELLEN Tempo. So wirkt der Tempo-Regler sofort, ohne Neustart
+   (anker: ab diesem Schlag gilt dieses Tempo). Alle Klaenge laufen durch
+   eine eigene Summe; Stopp blendet sie aus und haengt sie ab - so
+   verstummt auch, was aus mehreren Knoten besteht (Snare: zwei Toene +
+   Rauschen), statt leise weiterzuklingen.
    ============================================================ */
 const Vorklatschen = (function () {
-    let knoten = [], anzeigeFolge = [], anzeigeTakt = null, laeuft = false;
+    const VORAUS = 0.2;
+    let laeuft = false, uhr = null, ctx = null, summe = null, klicks = [];
+    let folge = [], anzeigeFolge = [], anker = null, horizont = 0;
     let letzterHost = null, letztesZeichen = '4/4';
     let zustandCallback = null;
     function zustandMelden() { if (zustandCallback) zustandCallback(laeuft); }
 
-    function anzeigePlanen(zeit, tat) { anzeigeFolge.push({ zeit, tat }); }
-    function anzeigeStarten(ctx) {
-        anzeigeFolge.sort((a, b) => a.zeit - b.zeit);
-        if (anzeigeTakt) clearInterval(anzeigeTakt);
-        anzeigeTakt = setInterval(() => {
-            // Faellt die Ausgabe waehrend des Vorklatschens weg (Geraetewechsel,
-            // andere App), tickte es sonst stumm bis zum geplanten Ende durch,
-            // ohne dass irgendwer davon erfaehrt - lieber anhalten und es sagen.
-            if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - abgebrochen.', 'danger'); return; }
-            audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
-            const jetzt = ctx.currentTime;
-            while (anzeigeFolge.length && anzeigeFolge[0].zeit <= jetzt) {
-                try { anzeigeFolge.shift().tat(); } catch (e) { /* Anzeige bricht nie den Ablauf ab */ }
-            }
-            if (!anzeigeFolge.length) { clearInterval(anzeigeTakt); anzeigeTakt = null; }
-        }, 20);
-    }
-    function anzeigeStoppen() {
-        if (anzeigeTakt) { clearInterval(anzeigeTakt); anzeigeTakt = null; }
-        anzeigeFolge = [];
-    }
+    function zeitVon(schlag) { return anker.zeit + (schlag - anker.schlag) * 60 / anker.bpm; }
+    function schlagVon(zeit) { return anker.schlag + (zeit - anker.zeit) * anker.bpm / 60; }
 
     function stoppen(leise) {
-        knoten.forEach(k => { try { k.stop(0); } catch (e) { /* schon vorbei */ } });
-        knoten = [];
-        anzeigeStoppen();
+        if (uhr) { clearInterval(uhr); uhr = null; }
+        klicks.forEach(k => { try { k.stop(0); } catch (e) { /* schon vorbei */ } });
+        klicks = [];
+        if (summe && ctx) {
+            const alt = summe;
+            try {
+                alt.gain.setTargetAtTime(0, ctx.currentTime, 0.01);
+                setTimeout(() => { try { alt.disconnect(); } catch (e) { /* schon weg */ } }, 200);
+            } catch (e) { /* Kontext schon zu */ }
+        }
+        summe = null;
+        folge = []; anzeigeFolge = [];
         if (laeuft && !leise) zeigeToast('Abgebrochen.', 'info');
         laeuft = false;
         if (letzterHost) stueckMarkieren(letzterHost, letztesZeichen, -1, 0);
@@ -548,7 +547,7 @@ const Vorklatschen = (function () {
        0 = einmal, 1 = zweimal (das klassische Wiederholungszeichen), usw.
        endlos (optional): Funktion -> true = Loop. Dann beginnt nach dem
        letzten Durchgang nahtlos der naechste (ohne neuen Vorlauf), bis Stopp
-       gedrueckt wird. Wird vor jedem Ende neu gefragt - der Loop-Schalter
+       gedrueckt wird. Wird kurz vor jedem Ende neu gefragt - der Loop-Schalter
        wirkt also auch mitten im Abspielen.
        taktVersatz (optional): stueck ist nur ein Ausschnitt (Loop-Bereich),
        der bei diesem Takt des angezeigten Stuecks beginnt - fuer die
@@ -557,59 +556,86 @@ const Vorklatschen = (function () {
         const versatz = Number(taktVersatz) || 0;
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const ctx = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz));
-        if (!ctx) return;
+        const c = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz));
+        if (!c) return;
         Metronom.stoppen();
+        ctx = c;
+        summe = ctx.createGain();
+        summe.gain.value = 1;
+        summe.connect(ctx.destination);
         laeuft = true;
         zustandMelden();
         letzterHost = host; letztesZeichen = stueck.zeichen;
         const durchgaenge = Math.max(1, (Number(wiederholungen) || 0) + 1);
         const loop = typeof endlos === 'function' ? endlos : () => false;
-        const bpm = Metronom.bpm();
 
-        // Plant einen kompletten Ablauf (Vorlauf + alle Durchgaenge) ab "ab"
-        // auf die Audiouhr und liefert dessen Ende.
-        function ablaufPlanen(ab, vorlaufTakte) {
-            const plan = rhythmusZeitplan(stueck, { bpm, vorlaufTakte, durchgaenge, nurMetronom, zeilen });
-            plan.ereignisse.forEach(e => {
-                const wann = ab + e.zeit;
-                if (e.art === 'klick') {
-                    knoten.push(metronomKlick(ctx, wann, e.betont));
-                    anzeigePlanen(wann, () => Metronom.pulsZeichnen(e.puls));
-                } else {
-                    knoten.push(klatschSoundSpielen(ctx, wann, e.akzent ? 'akzent' : null));
-                }
-            });
-            plan.markierungen.forEach(m => {
-                anzeigePlanen(ab + m.zeit, () => stueckMarkieren(host, stueck.zeichen, m.taktNr + versatz, m.ab));
-            });
-            plan.wechsel.forEach(w => {
-                anzeigePlanen(ab + w.zeit, () => zeigeToast(w.zeile ? `Übung ${w.zeile}: Durchgang ${w.nr} von ${durchgaenge}…` : `Durchgang ${w.nr} von ${durchgaenge}…`, 'info'));
-            });
-            return ab + plan.dauer;
+        // Ein kompletter Ablauf (Vorlauf + alle Durchgaenge) ab Schlag "ab"
+        // als Ereignisliste in Schlaegen - am Ende ein "ende"-Eintrag.
+        function ablauf(ab, vorlaufTakte) {
+            const plan = rhythmusZeitplan(stueck, { bpm: 60, vorlaufTakte, durchgaenge, nurMetronom, zeilen });
+            const liste = [
+                ...plan.ereignisse.map(e => Object.assign({}, e, { schlag: ab + e.zeit })),
+                ...plan.markierungen.map(m => ({ schlag: ab + m.zeit, art: 'markierung', taktNr: m.taktNr, ab: m.ab })),
+                ...plan.wechsel.map(w => ({ schlag: ab + w.zeit, art: 'wechsel', nr: w.nr, zeile: w.zeile }))
+            ].sort((a, b) => a.schlag - b.schlag);
+            liste.push({ schlag: ab + plan.dauer, art: 'ende' });
+            return liste;
         }
-        // Kurz vor dem Ende: im Loop den naechsten Ablauf nahtlos anhaengen,
-        // sonst nach dem Ende aufraeumen.
-        function endePlanen(ende) {
-            let gehtWeiter = false;
-            anzeigePlanen(ende - 0.6, () => {
-                if (!laeuft || !loop()) return;
-                gehtWeiter = true;
-                endePlanen(ablaufPlanen(ende, 0));
-                anzeigeFolge.sort((a, b) => a.zeit - b.zeit);
-            });
-            anzeigePlanen(ende + 0.15, () => {
-                if (gehtWeiter) return;
-                laeuft = false; knoten = [];
-                stueckMarkieren(host, stueck.zeichen, -1, 0);
-                Metronom.pulsZeichnen(-1);
-                zustandMelden();
-            });
+        function anzeigen(zeit, tat) { anzeigeFolge.push({ zeit, tat }); }
+        function fertig() {
+            if (uhr) { clearInterval(uhr); uhr = null; }
+            laeuft = false; klicks = [];
+            if (summe) { const alt = summe; setTimeout(() => { try { alt.disconnect(); } catch (e) { /* schon weg */ } }, 500); }
+            summe = null;
+            stueckMarkieren(host, stueck.zeichen, -1, 0);
+            Metronom.pulsZeichnen(-1);
+            zustandMelden();
+        }
+        function tick() {
+            if (!laeuft) return;
+            // Faellt die Ausgabe weg (Geraetewechsel, andere App), tickte es
+            // sonst stumm weiter - lieber anhalten und es sagen.
+            if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - abgebrochen.', 'danger'); return; }
+            audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
+            // Tempo geaendert: ab dem schon geplanten Stand gilt das neue
+            const bpm = Metronom.bpm();
+            if (bpm !== anker.bpm) anker = { schlag: schlagVon(horizont), zeit: horizont, bpm };
+            const bis = Math.max(horizont, ctx.currentTime + VORAUS);
+            while (laeuft && folge.length && zeitVon(folge[0].schlag) < bis) {
+                const e = folge.shift(), wann = zeitVon(e.schlag);
+                if (e.art === 'klick') {
+                    klicks.push(metronomKlick(ctx, wann, e.betont));
+                    anzeigen(wann, () => Metronom.pulsZeichnen(e.puls));
+                } else if (e.art === 'klatsch') {
+                    klatschSoundSpielen(ctx, wann, e.akzent ? 'akzent' : null, summe);
+                } else if (e.art === 'markierung') {
+                    anzeigen(wann, () => stueckMarkieren(host, stueck.zeichen, e.taktNr + versatz, e.ab));
+                } else if (e.art === 'wechsel') {
+                    anzeigen(wann, () => zeigeToast(e.zeile ? `Übung ${e.zeile}: Durchgang ${e.nr} von ${durchgaenge}…` : `Durchgang ${e.nr} von ${durchgaenge}…`, 'info'));
+                } else if (e.art === 'ende') {
+                    // Im Loop nahtlos den naechsten Ablauf anhaengen, sonst aufraeumen
+                    if (loop()) folge.push(...ablauf(e.schlag, 0));
+                    else anzeigen(wann + 0.15, fertig);
+                }
+            }
+            horizont = bis;
+            if (klicks.length > 64) klicks = klicks.slice(-16);
+            anzeigeFolge.sort((a, b) => a.zeit - b.zeit);
+            const jetzt = ctx.currentTime;
+            while (laeuft && anzeigeFolge.length && anzeigeFolge[0].zeit <= jetzt) {
+                try { anzeigeFolge.shift().tat(); } catch (e) { /* Anzeige bricht nie den Ablauf ab */ }
+            }
         }
 
         const vorlaufTakte = Math.max(0, Metronom.vorlaufTakte());
-        endePlanen(ablaufPlanen(ctx.currentTime + 0.25, vorlaufTakte));
-        anzeigeStarten(ctx);
+        const beginn = ctx.currentTime + 0.25;
+        anker = { schlag: 0, zeit: beginn, bpm: Metronom.bpm() };
+        horizont = beginn;
+        folge = ablauf(0, vorlaufTakte);
+        anzeigeFolge = [];
+        klicks = [];
+        uhr = setInterval(tick, 20);
+        tick();
         const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
         const wiederholHinweis = durchgaenge > 1 ? (zeilen && zeilen.length > 1 ? ` (jede Zeile ${durchgaenge}×)` : ` (${durchgaenge}× hintereinander)`) : '';
         const loopHinweis = loop() ? ' Loop: läuft, bis du Stopp drückst.' : '';

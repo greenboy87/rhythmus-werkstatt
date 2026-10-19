@@ -96,6 +96,8 @@ function leisteAnzeigen() {
     document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
     const modus = document.getElementById('abspielen-modus').value;
     document.querySelectorAll('[data-modus]').forEach(b => b.classList.toggle('an', b.dataset.modus === modus));
+    const klang = document.getElementById('klatsch-sound-wahl').value;
+    document.querySelectorAll('[data-klang]').forEach(b => b.classList.toggle('an', b.dataset.klang === klang));
 }
 
 function anzeigeNeuZeichnen() {
@@ -654,13 +656,17 @@ function init() {
         leisteAnzeigen();
     }));
 
-    // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf)
+    // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf).
+    // Die Knoepfe setzen die versteckte Auswahl - Link, Blatt und Export lesen weiter dort.
     const klangWahl = document.getElementById('klatsch-sound-wahl');
-    klangWahl.addEventListener('change', () => {
+    document.querySelectorAll('[data-klang]').forEach(b => b.addEventListener('click', () => {
+        klangWahl.value = b.dataset.klang;
         klatschSoundSetzen(klangWahl.value);
+        leisteAnzeigen();
         const probe = () => { const ctx = tonBereit(probe); if (ctx) klatschSoundSpielen(ctx, ctx.currentTime + 0.05); };
         probe();
-    });
+    }));
+    document.addEventListener('keydown', rhythmusTaste);
 
     let resizeTimer = null;
     window.addEventListener('resize', () => {
@@ -679,6 +685,37 @@ function init() {
     if (!linkUebernehmen(location.hash)) anzeigeNeuZeichnen();
     zeigeStand();
     if (EINGEBETTET) einbettungMelden();
+}
+
+/* ---------- Tastatur (nur im Rhythmus-Reiter, nicht in Textfeldern) ----------
+   Leertaste Abspielen/Stopp, Pfeil hoch/runter Tempo (wirkt auch waehrend
+   des Abspielens), Pfeil links/rechts waehlt den Takt davor/danach als
+   Loop-Bereich, Esc hebt ihn auf. */
+function rhythmusTaste(e) {
+    const reiter = document.getElementById('reiter-rhythmus');
+    if (!reiter || reiter.classList.contains('hidden')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const ziel = e.target;
+    if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
+    const takte = editor.stueck().takte.length;
+    let fertig = true;
+    if (e.key === ' ') {
+        // Sonst loest die Leertaste zusaetzlich den zuletzt angeklickten Knopf aus
+        if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+        document.getElementById('abspielen-btn').click();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        Metronom.tempoSetzen(Metronom.bpm() + (e.key === 'ArrowUp' ? 5 : -5));
+    } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && takte) {
+        const r = e.key === 'ArrowRight' ? 1 : -1;
+        const jetzt = loopAuswahl ? (r > 0 ? loopAuswahl.bis : loopAuswahl.von) : (r > 0 ? -1 : takte);
+        const t = Math.max(0, Math.min(takte - 1, jetzt + r));
+        loopAuswahlSetzen({ von: t, bis: t });
+    } else if (e.key === 'Escape' && loopAuswahl) {
+        loopAuswahlSetzen(null);
+    } else {
+        fertig = false;
+    }
+    if (fertig) e.preventDefault();
 }
 
 /* Eingebettet: der einbettenden Seite die Hoehe melden (damit sie den

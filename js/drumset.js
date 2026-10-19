@@ -24,15 +24,19 @@
      Bassdrum).
    ============================================================ */
 
+/* Reihenfolge = Knoepfe und Tasten, wie das Set vor einem steht:
+   Zahlenreihe die Becken, obere Buchstabenreihe die Trommeln von der
+   Snare zur Standtom, B die Bassdrum. */
 const DS_INST = [
-    { k: 'crash', name: 'Crash',    y: -8, fam: 'becken' },
-    { k: 'hh',    name: 'Hi-Hat',   y: -4, fam: 'becken' },
-    { k: 'ride',  name: 'Ride',     y: 0,  fam: 'becken' },
-    { k: 't1',    name: 'Tom 1',    y: 4,  fam: 'trommel' },
-    { k: 't2',    name: 'Tom 2',    y: 8,  fam: 'trommel' },
-    { k: 's',     name: 'Snare',    y: 12, fam: 'trommel' },
-    { k: 't3',    name: 'Tom 3',    y: 20, fam: 'trommel' },
-    { k: 'b',     name: 'Bassdrum', y: 28, fam: 'bass' }
+    { k: 'crash', name: 'Crash',        y: -8, fam: 'becken',  taste: '1' },
+    { k: 'hh',    name: 'Hi-Hat',       y: -4, fam: 'becken',  taste: '2' },
+    { k: 'ho',    name: 'Hi-Hat offen', y: -4, fam: 'becken',  taste: '3' },
+    { k: 'ride',  name: 'Ride',         y: 0,  fam: 'becken',  taste: '4' },
+    { k: 's',     name: 'Snare',        y: 12, fam: 'trommel', taste: 'q' },
+    { k: 't1',    name: 'Tom 1',        y: 4,  fam: 'trommel', taste: 'w' },
+    { k: 't2',    name: 'Tom 2',        y: 8,  fam: 'trommel', taste: 'e' },
+    { k: 't3',    name: 'Tom 3',        y: 20, fam: 'trommel', taste: 'r' },
+    { k: 'b',     name: 'Bassdrum',     y: 28, fam: 'bass',    taste: 'b' }
 ];
 const DS = {};
 DS_INST.forEach(i => { DS[i.k] = i; });
@@ -62,6 +66,10 @@ const DS_BAUSTEINE = [
 ];
 const DS_BAUSTEIN = {};
 DS_BAUSTEINE.forEach(b => { DS_BAUSTEIN[b.id] = b; });
+/* Tasten der Bausteine: die geraden wie in der Beat-Werkstatt auf der
+   mittleren Reihe (A S D F G H J K L Ö, Viertelpause = L, Achtelpause +
+   Achtel = Ö), Triolen T Z U. P = ganze Zaehlzeit Pause. */
+const DS_BAUSTEIN_TASTEN = { V: 'a', AA: 's', SSSS: 'd', AdS: 'f', SAd: 'g', ASS: 'h', SSA: 'j', SAS: 'k', Vp: 'l', pA: 'ö', T: 't', TpT: 'z', X: 'u' };
 
 /* Zaehlsilben je Rasterstelle (die Zahl steht auf der Zaehlzeit selbst) */
 const DS_SILBEN = { 4: ['', 'e', '+', 'e'], 3: ['', 'ta', 'ti'], 6: ['', 'ta', 'ti', '+', 'ta', 'ti'] };
@@ -234,6 +242,10 @@ function dsStimme(no, x0) {
             // Hals beim untersten Kopf: bei einem Becken-Kreuz am rechten oberen Arm
             const untenKreuz = DS[reihe[0]].fam === 'becken';
             teile.push(`<line x1="${n.hx}" y1="${untenKreuz ? n.unten - 4.5 : n.unten}" x2="${n.hx}" y2="${spitze}" stroke="currentColor" stroke-width="2.2" stroke-linecap="butt"/>`);
+            if (n.inst.includes('ho')) {
+                teile.push(`<circle cx="${n.hx}" cy="${spitze - 8}" r="3.3" fill="none" stroke="currentColor" stroke-width="1.6"/>`);
+                ganzOben = Math.min(ganzOben, spitze - 12);
+            }
         });
         const y1 = spitze, y2 = spitze + 7;
         if (gr.length >= 2) {
@@ -282,7 +294,8 @@ function dsPlatzSvg(p, breite) {
 function dsLageSvg(k) {
     const y = DS[k].y;
     const linien = BW_LINIEN.map(l => `<line x1="-9" y1="${l}" x2="9" y2="${l}" stroke="currentColor" stroke-width="1" opacity=".45"/>`).join('');
-    const hilfs = k === 'crash' ? `<line x1="-8" y1="-8" x2="8" y2="-8" stroke="currentColor" stroke-width="1.2"/>` : '';
+    const hilfs = k === 'crash' ? `<line x1="-8" y1="-8" x2="8" y2="-8" stroke="currentColor" stroke-width="1.2"/>`
+        : k === 'ho' ? `<circle cx="0" cy="-11" r="2.4" fill="none" stroke="currentColor" stroke-width="1.2"/>` : '';
     return `<svg class="ds-lage" viewBox="-10 -14 20 50" width="16" height="40" aria-hidden="true">${linien}${hilfs}${dsKopf(0, y, k)}</svg>`;
 }
 
@@ -537,12 +550,14 @@ function dsEditorZeichnen() {
 
 function dsWerkzeugZeichnen() {
     document.getElementById('ds-stifte').innerHTML = '<span class="bw-ziel">Instrument</span>' + DS_INST.map((x, i) =>
-        `<button type="button" class="btn bw-chip ds-stift${ds.stift === x.k ? ' an' : ''}" data-stift="${x.k}" title="${x.name} – Taste ${i + 1}">` +
-        `${dsLageSvg(x.k)}<span class="ds-stift-name"><span class="bw-punkt ds-p-${dsFarbe(x.k)}"></span>${x.name}</span><span class="ds-taste">${i + 1}</span></button>`).join('');
+        (i && DS_INST[i - 1].fam !== x.fam ? '<span class="ds-trenner"></span>' : '') +
+        `<button type="button" class="btn bw-chip ds-stift${ds.stift === x.k ? ' an' : ''}" data-stift="${x.k}" title="${x.name} – Taste ${x.taste.toUpperCase()}">` +
+        `${dsLageSvg(x.k)}<span class="ds-stift-name"><span class="bw-punkt ds-p-${dsFarbe(x.k)}"></span>${x.name}</span><span class="ds-taste">${x.taste.toUpperCase()}</span></button>`).join('');
     const knopf = (b) => {
         const p = dsLeer(b.r);
         b.m.forEach((an, i) => { if (an) p.n[i] = [ds.stift]; });
-        return `<button type="button" class="palette-baustein bw-baustein ds-baustein" data-baustein="${b.id}" title="${b.wort}">${dsPlatzSvg(p, 76)}</button>`;
+        const taste = (DS_BAUSTEIN_TASTEN[b.id] || '').toUpperCase();
+        return `<button type="button" class="palette-baustein bw-baustein ds-baustein" data-baustein="${b.id}" title="${b.wort}${taste ? ' – Taste ' + taste : ''}">${dsPlatzSvg(p, 76)}${taste ? `<span class="bw-taste">${taste}</span>` : ''}</button>`;
     };
     const sichtbar = DS_BAUSTEINE.filter(b => ds.mehr || !b.mehr);
     document.getElementById('ds-palette').innerHTML =
@@ -679,12 +694,17 @@ function dsVorlageLaden(nr) {
     dsAenderung();
 }
 
-/* Tastatur (nur im Drumset-Reiter): Leertaste, ←/→, ⌫, 1-8 Instrument */
+/* Tastatur (nur im Drumset-Reiter): Instrumente auf ihren Tasten (1-4
+   Becken, Q W E R Trommeln, B Bassdrum), Bausteine auf DS_BAUSTEIN_TASTEN,
+   P Pause (ganze Zaehlzeit leer, weiter), Leertaste, ←/→, ⌫. */
 function dsTaste(e) {
     if (document.getElementById('reiter-drumset').classList.contains('hidden')) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const ziel = e.target;
     if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
+    const taste = e.key.toLowerCase();
+    const inst = DS_INST.find(x => x.taste === taste);
+    const baustein = Object.keys(DS_BAUSTEIN_TASTEN).find(id => DS_BAUSTEIN_TASTEN[id] === taste);
     let fertig = true;
     if (e.key === ' ') {
         if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
@@ -695,9 +715,16 @@ function dsTaste(e) {
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
         ds.plaetze[dsAktiv] = null;
         dsAenderung();
-    } else if (/^[1-8]$/.test(e.key)) {
-        ds.stift = DS_INST[Number(e.key) - 1].k;
+    } else if (taste === 'p') {
+        ds.plaetze[dsAktiv] = null;
+        if (dsAktiv < dsPlaetze() - 1) dsAktiv++;
         dsAenderung();
+    } else if (inst) {
+        ds.stift = inst.k;
+        dsVorhoeren({ r: 1, n: [[inst.k]] });
+        dsAenderung();
+    } else if (baustein) {
+        dsBausteinSetzen(baustein);
     } else {
         fertig = false;
     }

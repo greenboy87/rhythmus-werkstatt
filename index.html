@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=41">
-<link rel="stylesheet" href="css/druck.css?v=41">
+<link rel="stylesheet" href="css/stil.css?v=42">
+<link rel="stylesheet" href="css/druck.css?v=42">
 </head>
 <body>
 
@@ -110,12 +110,19 @@
                 <option value="vorklatschen">Vorklatschen</option>
                 <option value="selbstklatschen">Selbstklatschen</option>
             </select>
-            <select id="klatsch-sound-wahl" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
-                <option value="klatschen">👏 Klatschen</option>
-                <option value="holzblock">🪵 Holzblock</option>
-                <option value="klick">· Klick</option>
-                <option value="trommel">🪘 Conga</option>
-                <option value="snare">🥁 Snare</option>
+            <span class="segment" role="group" aria-label="Klang des Rhythmus" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
+                <button type="button" class="btn an" data-klang="snare">🥁 Snare</button>
+                <button type="button" class="btn" data-klang="klatschen">👏 Klatschen</button>
+                <button type="button" class="btn" data-klang="holzblock">🪵 Holzblock</button>
+                <button type="button" class="btn" data-klang="klick">Klick</button>
+                <button type="button" class="btn" data-klang="trommel">🪘 Conga</button>
+            </span>
+            <select id="klatsch-sound-wahl" class="hidden" aria-hidden="true">
+                <option value="snare">Snare</option>
+                <option value="klatschen">Klatschen</option>
+                <option value="holzblock">Holzblock</option>
+                <option value="klick">Klick</option>
+                <option value="trommel">Conga</option>
             </select>
             <span id="metronom" class="metronom-gruppen"></span>
         </div>
@@ -169,7 +176,7 @@
             <span><i class="fa-solid fa-repeat"></i> <b id="loop-auswahl-text"></b> – nur dieser Teil wird abgespielt</span>
             <button type="button" class="btn" id="loop-auswahl-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
         </div>
-        <p class="anzeige-tipp" id="loop-tipp">Tipp: Note antippen = Akzent an/aus. Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.</p>
+        <p class="anzeige-tipp" id="loop-tipp">Tipp: Note antippen = Akzent an/aus. Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück</span></p>
         <h2 id="anzeige-titel" class="hidden" style="text-align:center; margin:0 0 .6rem;"></h2>
         </div>
         <div id="anzeige"></div>
@@ -352,7 +359,7 @@
             <div class="leiste">
                 <button type="button" class="btn" id="ds-mehr"></button>
             </div>
-            <p class="anzeige-tipp bw-tastatur" style="text-align:left; margin:0;"><b>Tastatur:</b> <kbd>1</kbd>–<kbd>8</kbd> Instrument · <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>←</kbd><kbd>→</kbd> Zählzeit · <kbd>⌫</kbd> Zählzeit leeren</p>
+            <p class="anzeige-tipp bw-tastatur" style="text-align:left; margin:0;"><b>Tastatur:</b> <kbd>1</kbd>–<kbd>4</kbd> Becken · <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> Snare und Toms · <kbd>B</kbd> Bassdrum · Buchstabe am Baustein = einsetzen (<kbd>A</kbd>–<kbd>Ö</kbd>, Triolen <kbd>T</kbd><kbd>Z</kbd><kbd>U</kbd>) · <kbd>P</kbd> Pause · <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>←</kbd><kbd>→</kbd> Zählzeit · <kbd>⌫</kbd> Zählzeit leeren</p>
         </div>
     </section>
 
@@ -407,18 +414,18 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=41"></script>
-<script src="js/noten.js?v=41"></script>
-<script src="js/editor.js?v=41"></script>
-<script src="js/audio.js?v=41"></script>
-<script src="js/generator.js?v=41"></script>
-<script src="js/link.js?v=41"></script>
-<script src="js/vendor/lame.min.js?v=41"></script>
-<script src="js/export.js?v=41"></script>
-<script src="js/pdf.js?v=41"></script>
-<script src="js/app.js?v=41"></script>
-<script src="js/beat.js?v=41"></script>
-<script src="js/drumset.js?v=41"></script>
-<script src="js/reiter.js?v=41"></script>
+<script src="js/version.js?v=42"></script>
+<script src="js/noten.js?v=42"></script>
+<script src="js/editor.js?v=42"></script>
+<script src="js/audio.js?v=42"></script>
+<script src="js/generator.js?v=42"></script>
+<script src="js/link.js?v=42"></script>
+<script src="js/vendor/lame.min.js?v=42"></script>
+<script src="js/export.js?v=42"></script>
+<script src="js/pdf.js?v=42"></script>
+<script src="js/app.js?v=42"></script>
+<script src="js/beat.js?v=42"></script>
+<script src="js/drumset.js?v=42"></script>
+<script src="js/reiter.js?v=42"></script>
 </body>
 </html>

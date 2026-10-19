@@ -470,6 +470,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
    hier nur, was dazukommt.
    ============================================================ */
 .ds-stifte { gap: .3rem; }
+.ds-trenner { width: 1px; align-self: stretch; margin: 0 .2rem; background: var(--rand-schwach); }
 .ds-stift { padding: .2rem .55rem .2rem .3rem; gap: .3rem; }
 .ds-stift .ds-lage { color: var(--text); flex-shrink: 0; }
 .ds-stift.an .ds-lage { color: #fff; }

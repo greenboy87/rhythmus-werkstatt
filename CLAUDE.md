@@ -57,8 +57,16 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   ist die **gemeinsame Grundlage von Live-Abspielen und Audio-Export**:
   DOM-frei, liefert `{ereignisse: [{zeit, art: 'klick'|'klatsch', betont,
   puls}], markierungen, wechsel, dauer}` (Zeiten in Sekunden ab 0).
-  `Vorklatschen.starten` plant genau diese Ereignisse auf die Audiouhr,
-  `rhythmusAudio` rendert sie offline - Änderungen am Timing also nur dort,
+  `Vorklatschen.starten` holt den Zeitplan in Schlägen (`bpm: 60`) und
+  legt alle 20 ms nur, was in den nächsten 0,2 s fällig ist - umgerechnet
+  mit dem aktuellen `Metronom.bpm()` (`anker`: ab diesem Schlag gilt dieses
+  Tempo). So wirkt der Tempo-Regler live, ohne Stopp. Der Loop hängt den
+  nächsten Ablauf an, sobald das `ende` des laufenden fällig wird. Alle
+  Klatschklänge laufen durch eine eigene Summe (jeder Klang nimmt optional
+  einen `ziel`-Knoten); Stopp blendet sie aus und hängt sie ab - vorher
+  wurde nur der zurückgegebene Knoten gestoppt, und bei der Snare (zwei
+  Töne + Rauschen) klangen die Töne leise weiter. `rhythmusAudio` rendert
+  denselben Zeitplan offline - Änderungen am Timing also nur dort,
   sonst laufen Live und Datei auseinander. `metronomKlick` nimmt optional
   einen eigenen Ziel-Knoten (Export), sonst den Live-Knoten `metronomZiel`.
 - `js/generator.js` - würfelt Übungen aus den ausgewählten Bausteinen.
@@ -80,7 +88,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `p` "+" statt "und", `w` Wiederholung (`w3` = 3× insgesamt, `w` = 2×),
     `u` Als Übung, `h` Handsatz (R/L), `e` Loop (endlos abspielen),
     `k4` = 4 Takte/Zeile (ohne `k` = auto)
-  - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel|snare` (Standard klatschen)
+  - `k` Klatsch-Klang `klatschen|holzblock|klick|trommel|snare` (fehlt: klatschen -
+    bleibt so, damit alte Links gleich klingen; die Seite selbst startet mit Snare)
   - `v` Vorlauf-Takte 0-4 (Standard 1)
   - `m` Metronom-Lautstärke 0-100, `m=0` = stumm (Standard 60)
   - `g` Größe-Regler in Prozent 60-300 (Standard 100)
@@ -247,9 +256,14 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   für Fills. Nutzt Notensatz-Teile und Klänge aus beat.js (`bwPause`,
   `BW_LINIEN`, `bwBecken`, `bwBassdrum`, `bwSummeBauen`, `BEAT_FORMEN`,
   `FORM_NACH_MUSTER`), die Klassen `bw-…` für Editor und Anzeige.
-  - Instrumente `DS_INST` (Lage): Crash -8 (Hilfslinie), Hi-Hat -4, Ride 0,
-    Tom 1 4, Tom 2 8, Snare 12, Tom 3 20, Bassdrum 28. Familien `becken`,
-    `trommel` (Snare + Toms), `bass`. Tasten 1-8 in dieser Reihenfolge.
+  - Instrumente `DS_INST` (Lage, Taste): Crash -8 (Hilfslinie) `1`, Hi-Hat
+    -4 `2`, Hi-Hat offen -4 mit „o“ `3`, Ride 0 `4`, Snare 12 `Q`, Tom 1 4
+    `W`, Tom 2 8 `E`, Tom 3 20 `R`, Bassdrum 28 `B`. Familien `becken`,
+    `trommel` (Snare + Toms), `bass`.
+  - Tastatur (`dsTaste`): Instrumente wie oben, Bausteine über
+    `DS_BAUSTEIN_TASTEN` (gerade wie in der Beat-Werkstatt auf A S D F G H
+    J K L Ö, Triolen T Z U, „Mehr“-Bausteine ohne Taste), `P` = ganze
+    Zählzeit Pause und weiter, ⌫ leeren, ←/→, Leertaste.
   - Platz = eine Zählzeit = `{r, n}`: Raster `r` 4 (Sechzehntel), 3
     (Achteltriolen) oder 6 (Sextolen), `n[i]` Instrumente je Rasterstelle
     (leer = Pause). Das Notenbild ergibt sich erst beim Zeichnen
@@ -288,12 +302,16 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `.regler` (Name, Schieber, Wert), `.segment`, Menü `details.menue`
   („Speichern“: PDF, Drucken, MP3, WAV - Format über `data-format`).
   Intern unverändert und versteckt: `#abspielen-modus` (Umschalter
-  „Vorspielen | Selbst“ setzt den Wert) und `#opt-wiederholung` (Regler
+  „Vorspielen | Selbst“ setzt den Wert), `#klatsch-sound-wahl` (Knöpfe
+  `[data-klang]`, Snare zuerst und Standard) und `#opt-wiederholung` (Regler
   „Durchgänge“, 1 = aus). `leisteAnzeigen()` (läuft in jedem
   `anzeigeNeuZeichnen`) bringt Regler und Umschalter auf den Stand - so
   stimmen sie auch nach Link oder Blatt laden. Metronom-Teil (Tempo,
   Vorlauf, Lautstärke, freies Metronom) baut `Metronom.bauen` in audio.js
   direkt in diese Zeile. Klang wechseln spielt ihn einmal vor.
+- Tastatur im Rhythmus-Reiter (`rhythmusTaste` in app.js, nicht in
+  Textfeldern): Leertaste Abspielen/Stopp, ↑/↓ Tempo ±5 (wirkt live),
+  ←/→ Takt davor/danach als Loop-Bereich, Esc ganzes Stück.
 - `css/druck.css` - A4-Druckausgabe nur der Anzeige-Karte, siehe
   `@media print`. Der `<link>` auf diese Datei darf **kein**
   `media="print"`-Attribut haben, sonst gilt auch die Regel, die die
