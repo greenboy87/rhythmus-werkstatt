@@ -169,6 +169,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - Platz = `{code, inst: [[…] je Teil]}`, Instrumente `hh ho ride crash b s`.
     Das Instrument steht je Note, nicht im Baustein: Note antippen schaltet
     weiter (`instWeiter`), der „Stift“ bestimmt die Instrumente beim Setzen.
+  - Knöpfe „Eine Ebene“ (intern `easy`, links, Start-Modus bei jedem
+    Laden - der Modus wird nicht aus dem Speicher übernommen) und
+    „Zwei Ebenen“ (`profi`).
   - Modi: „Zwei Ebenen“ (`beat.oben` Becken, Hals nach oben; `beat.unten`
     Bassdrum + Snare, Hals nach unten) und „Easy“ (`beat.easy`, eine Reihe,
     Trommeln als Akkord am Becken-Hals). Jede Ebene ist eine flache Liste,

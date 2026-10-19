@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=37">
-<link rel="stylesheet" href="css/druck.css?v=37">
+<link rel="stylesheet" href="css/stil.css?v=38">
+<link rel="stylesheet" href="css/druck.css?v=38">
 </head>
 <body>
 
@@ -239,8 +239,8 @@
             <div class="leiste">
             <button type="button" class="btn" id="bw-farbe" title="Bassdrum, Snare und Becken in eigenen Farben zeigen oder alles schwarz-weiß"><i class="fa-solid fa-palette"></i> Farbe an</button>
             <div class="bw-segment" role="group" aria-label="Modus">
+                <button type="button" class="btn" data-bw-modus="easy" title="Ein Notensystem, eine Ebene: Becken aus Bausteinen, Becken, Snare und Bassdrum an jeder Stelle per Antippen an/aus">Eine Ebene</button>
                 <button type="button" class="btn" data-bw-modus="profi" title="Oben Hi-Hat/Becken, unten Bassdrum und Snare - wie im Schlagzeug-Notensatz">Zwei Ebenen</button>
-                <button type="button" class="btn" data-bw-modus="easy" title="Eine Reihe: jede Becken-Note bekommt auf Wunsch Bassdrum, Snare oder beides dazu">Easy · eine Ebene</button>
             </div>
             </div>
         </div>
@@ -300,7 +300,7 @@
                 <button type="button" class="btn" id="bw-auffuellen" title="Kopiert den zuletzt gesetzten Baustein in alle leeren Plätze dieser Reihe"><i class="fa-solid fa-fill-drip"></i> Leere Plätze auffüllen</button>
                 <button type="button" class="btn" id="bw-reihe-leeren" title="Leert nur die gerade gewählte Ebene"><i class="fa-solid fa-eraser"></i> Ebene leeren</button>
             </div>
-            <p class="anzeige-tipp" style="text-align:left; margin:.2rem 0 0;">Tipp: Platz antippen, dann Baustein wählen – danach springt es zum nächsten Platz. Zwei Ebenen: eine Note antippen wechselt das Instrument (Becken: Hi-Hat → offen → Ride → Crash, Trommel: Bassdrum → Snare → beides). Easy: auf Höhe der Becken, der Snare oder der Bassdrum antippen schaltet genau dieses Instrument an/aus.</p>
+            <p class="anzeige-tipp" style="text-align:left; margin:.2rem 0 0;">Tipp: Platz antippen, dann Baustein wählen – danach springt es zum nächsten Platz. Zwei Ebenen: eine Note antippen wechselt das Instrument (Becken: Hi-Hat → offen → Ride → Crash, Trommel: Bassdrum → Snare → beides). Eine Ebene: auf Höhe der Becken, der Snare oder der Bassdrum antippen schaltet genau dieses Instrument an/aus.</p>
             <p class="anzeige-tipp bw-tastatur" style="text-align:left; margin:0;"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>←</kbd><kbd>→</kbd> Platz · <kbd>↑</kbd><kbd>↓</kbd> Ebene · Buchstabe am Baustein = einsetzen · <kbd>X</kbd> Bassdrum ⇄ Snare · <kbd>⌫</kbd> Platz leeren</p>
         </div>
     </section>
@@ -339,16 +339,16 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=37"></script>
-<script src="js/noten.js?v=37"></script>
-<script src="js/editor.js?v=37"></script>
-<script src="js/audio.js?v=37"></script>
-<script src="js/generator.js?v=37"></script>
-<script src="js/link.js?v=37"></script>
-<script src="js/vendor/lame.min.js?v=37"></script>
-<script src="js/export.js?v=37"></script>
-<script src="js/pdf.js?v=37"></script>
-<script src="js/app.js?v=37"></script>
-<script src="js/beat.js?v=37"></script>
+<script src="js/version.js?v=38"></script>
+<script src="js/noten.js?v=38"></script>
+<script src="js/editor.js?v=38"></script>
+<script src="js/audio.js?v=38"></script>
+<script src="js/generator.js?v=38"></script>
+<script src="js/link.js?v=38"></script>
+<script src="js/vendor/lame.min.js?v=38"></script>
+<script src="js/export.js?v=38"></script>
+<script src="js/pdf.js?v=38"></script>
+<script src="js/app.js?v=38"></script>
+<script src="js/beat.js?v=38"></script>
 </body>
 </html>

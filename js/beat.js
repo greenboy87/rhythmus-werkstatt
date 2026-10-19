@@ -2,7 +2,8 @@
    BEAT-WERKSTATT: Schlagzeug-Beats aus Hi-Hat/Becken, Bassdrum
    und Snare bauen - eigener Reiter neben der Rhythmus-Werkstatt.
 
-   Zwei Modi:
+   Zwei Modi (intern "easy" = Knopf "Eine Ebene", "profi" = "Zwei Ebenen";
+   die Seite startet immer mit einer Ebene):
    - "profi" (zwei Ebenen): oben die Becken (Hals nach oben), unten
      Bassdrum und Snare zusammen (Hals nach unten) - wie im
      Schlagzeug-Notensatz ueblich.
@@ -138,7 +139,7 @@ const BEAT_VORLAGEN = [
 const BEAT_SCHLUESSEL = 'rw-beat';
 const BEAT_TAKTE_MAX = 8;
 const beat = {
-    modus: 'profi', takte: 2, schlaege: 4, backbeat: true, bpm: 90,
+    modus: 'easy', takte: 2, schlaege: 4, backbeat: true, bpm: 90,
     oben: [], unten: [], easy: [],
     zaehlzeiten: true, farbe: false, metronom: false,
     stumm: { becken: false, bass: false, snare: false },
@@ -188,7 +189,7 @@ function beatLaden() {
     try {
         const x = JSON.parse(localStorage.getItem(BEAT_SCHLUESSEL) || 'null');
         if (!x || typeof x !== 'object') return false;
-        if (x.modus === 'easy' || x.modus === 'profi') beat.modus = x.modus;
+        // Modus wird nicht uebernommen: die Seite startet immer mit einer Ebene
         beat.takte = Math.max(1, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         beat.bpm = Math.max(40, Math.min(200, Math.round(Number(x.bpm) || 90)));
         beat.schlaege = Math.max(1, Math.min(BW_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
@@ -801,7 +802,7 @@ function bwTaste(e) {
     if (fertig) e.preventDefault();
 }
 
-const BW_EBENEN_NAME = { oben: 'Ebene 1 · Hi-Hat / Becken', unten: 'Ebene 2 · Bassdrum & Snare', easy: 'Easy · Becken + Bassdrum/Snare' };
+const BW_EBENEN_NAME = { oben: 'Ebene 1 · Hi-Hat / Becken', unten: 'Ebene 2 · Bassdrum & Snare', easy: 'Eine Ebene · Becken, Snare, Bassdrum' };
 function bwPaletteZeichnen() {
     const eb = bwAktiv.ebene;
     const chip = (gruppe, wert, text, klasse) =>
@@ -906,7 +907,7 @@ function bwModusSetzen(modus) {
             platzKarte(beat.unten[p]).forEach((inst, k) => m.set(k, [...(m.get(k) || []), ...inst]));
             beat.easy[p] = platzAusKarte(m);
         }
-        zeigeToast('Beat in die Easy-Ebene übernommen.', 'info');
+        zeigeToast('Beat in eine Ebene übernommen.', 'info');
     } else if (modus === 'profi' && leer('oben') && leer('unten') && !leer('easy')) {
         for (let p = 0; p < n; p++) {
             const mo = new Map(), mu = new Map();
@@ -1036,6 +1037,13 @@ function bwEinrichten() {
             beat.easy[p] = platzAusKarte(m);
         }
         beat.backbeat = true;
+    }
+    // Start mit einer Ebene: ist die noch leer, aber zwei Ebenen nicht,
+    // wird der Beat dorthin uebernommen
+    const leer = (eb) => beat[eb].slice(0, bwPlaetze()).every(x => !x);
+    if (leer('easy') && !(leer('oben') && leer('unten'))) {
+        beat.modus = 'profi';
+        bwModusSetzen('easy');
     }
     bwAktiv = { ebene: bwEbenen()[0], platz: 0 };
     bwTaktartEigen = ![4, 3, 2].includes(bwS());
