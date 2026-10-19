@@ -228,8 +228,16 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     Begrenzer (`bwSummeBauen`); Stopp blendet sie aus statt Knoten einzeln
     zu stoppen. `BeatSpieler` plant Takt für Takt 0,3 s voraus aus dem
     aktuellen Stand - Änderungen und Tempo wirken im nächsten Takt.
+  - Vollbild (`#bw-anzeige-karte`, Klasse `vollbild`): `bwEinpassen`
+    wählt Takte je Zeile und Maßstab für den freien Platz. Drucken/PDF:
+    eigenes Blatt `#bw-druck` außerhalb von `<main>` (Kopfzeile wie in der
+    Rhythmus-Werkstatt, Titel `bw-titel`), `bwDruckZeichnen` passt es auf
+    A4 ein. Welches Blatt ⌘P druckt, entscheidet die Klasse `druck-beat`
+    am `<body>` (gesetzt von `reiterZeigen`, Regeln in druck.css). Das PDF
+    nutzt `blattPdf` aus pdf.js (gemeinsam mit `notenPdf`); Farben setzt
+    `bwDruckZeichnen` dafür als feste Attribute.
   - Zustand in `localStorage` `rw-beat` (nur dieser Browser). Noch ohne
-    Link, Druck/PDF und Audio-Export.
+    Link und Audio-Export.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über

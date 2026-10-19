@@ -21,7 +21,8 @@ function systemAlsBild(svg, b, h, k) {
     kopie.setAttribute('height', Math.round(h * k));
     kopie.removeAttribute('style');
     kopie.setAttribute('color', '#000');
-    kopie.querySelectorAll('.linien-fuenf').forEach(el => el.setAttribute('color', '#666'));
+    kopie.querySelectorAll('.linien-fuenf, .bw-linie-anzeige').forEach(el => el.setAttribute('color', '#666'));
+    kopie.querySelectorAll('.bw-spiel').forEach(el => el.remove());   // Mitlese-Flaechen der Beat-Werkstatt
     kopie.querySelectorAll('.kopf, .zaehlzeit, .handsatz').forEach(el => el.setAttribute('fill', '#000'));
     kopie.querySelectorAll('.jetzt').forEach(el => el.classList.remove('jetzt'));
     const xml = new XMLSerializer().serializeToString(kopie);
@@ -76,6 +77,12 @@ async function notenPdf() {
     const svgs = [...document.querySelectorAll('#druck-anzeige .anzeige-system')];
     if (!svgs.length) throw new Error('Trage erst einen Rhythmus ein.');
     const titel = document.getElementById('druck-titel').value.trim();
+    return blattPdf(svgs, titel, '🥁 Rhythmus-Werkstatt', 'Rhythmus');
+}
+
+/* Ein A4-Blatt aus fertig eingepassten Notenzeilen (SVGs mit Groesse im
+   style) - gemeinsam fuer Rhythmus- und Beat-Werkstatt (js/beat.js). */
+async function blattPdf(svgs, titel, kopfErsatz, pdfErsatz) {
 
     const k = 2480 / PDF_SEITE_PX.b;            // 300 dpi
     const leinwand = document.createElement('canvas');
@@ -93,7 +100,7 @@ async function notenPdf() {
     g.textBaseline = 'alphabetic';
     g.font = `800 17.6px ${schrift}`;
     g.textAlign = 'left';
-    g.fillText(titel || '🥁 Rhythmus-Werkstatt', PDF_RAND_PX, kopfY);
+    g.fillText(titel || kopfErsatz, PDF_RAND_PX, kopfY);
     g.font = `400 12.8px ${schrift}`;
     g.textAlign = 'right';
     g.fillText('Name: ______________    Klasse: ______    Datum: ________', PDF_SEITE_PX.b - PDF_RAND_PX, kopfY);
@@ -111,7 +118,7 @@ async function notenPdf() {
 
     const jpegBlob = await new Promise(ok => leinwand.toBlob(ok, 'image/jpeg', 0.92));
     const jpeg = new Uint8Array(await jpegBlob.arrayBuffer());
-    return jpegAlsPdf(jpeg, leinwand.width, leinwand.height, titel || 'Rhythmus');
+    return jpegAlsPdf(jpeg, leinwand.width, leinwand.height, titel || pdfErsatz);
 }
 
 function pdfDateiname() {

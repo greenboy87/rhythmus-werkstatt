@@ -4,7 +4,7 @@
    vom gerade gewaehlten Theme, sonst druckt das dunkle Layout
    eine fast schwarze Seite.
    ============================================================ */
-.druck-kopf, .nur-druck { display: none; }
+.druck-kopf, .nur-druck, .bw-nur-druck { display: none; }
 
 @media print {
     @page { size: A4; margin: 16mm; }
@@ -52,4 +52,18 @@
     .anzeige-system .linien-fuenf { color: #666 !important; }
     [data-ab], .handsatz { opacity: 1 !important; }
     .anzeige-system .handsatz { fill: #000 !important; }   /* "Verdecken" soll auf Papier nie greifen */
+
+    /* Beat-Werkstatt (Klasse druck-beat am body, solange der Beat-Reiter
+       offen ist): statt der Rhythmus-Karte das eigene Blatt #bw-druck. */
+    body.druck-beat .anzeige-karte { display: none !important; }
+    body.druck-beat #bw-druck { display: block !important; }
+    #bw-druck, #bw-druck * { visibility: visible; }
+    #bw-druck { position: absolute; top: 0; left: 0; width: 100%; background: #fff; color: #000; }
+    #bw-druck-noten { text-align: center; }
+    #bw-druck .bw-system { display: block; margin: 0 auto 22px; max-width: 100%; }
+    #bw-druck .bw-system, #bw-druck .bw-system line, #bw-druck .bw-system path, #bw-druck .bw-system rect,
+    #bw-druck .bw-system ellipse, #bw-druck .bw-system circle, #bw-druck .bw-system text { color: #000 !important; }
+    #bw-druck .bw-system text { fill: #000 !important; }
+    #bw-druck .bw-linie-anzeige { color: #666 !important; }
+    #bw-druck .bw-spiel { display: none; }
 }

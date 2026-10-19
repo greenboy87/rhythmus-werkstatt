@@ -139,7 +139,7 @@ const BEAT_VORLAGEN = [
 const BEAT_SCHLUESSEL = 'rw-beat';
 const BEAT_TAKTE_MAX = 8;
 const beat = {
-    modus: 'easy', takte: 2, schlaege: 4, backbeat: true, bpm: 90,
+    titel: '', modus: 'easy', takte: 2, schlaege: 4, backbeat: true, bpm: 90,
     oben: [], unten: [], easy: [],
     zaehlzeiten: true, farbe: false, metronom: false,
     stumm: { becken: false, bass: false, snare: false },
@@ -197,6 +197,7 @@ function beatLaden() {
         ['oben', 'unten', 'easy'].forEach(eb => {
             beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * BW_SCHLAEGE_MAX).map(platzGueltig) : [];
         });
+        if (typeof x.titel === 'string') beat.titel = x.titel.slice(0, 80);
         if (x.stumm) Object.keys(beat.stumm).forEach(k => { beat.stumm[k] = !!x.stumm[k]; });
         if (x.stift) {
             if (BEAT_BECKEN[x.stift.becken]) beat.stift.becken = x.stift.becken;
@@ -408,7 +409,8 @@ function bwPlatzSvg(slot, ebene, mitTreffern) {
 }
 
 /* Eine Notenzeile mit den Takten aus taktListe. */
-function bwSystemSvg(taktListe, erstes, letztes) {
+function bwSystemSvg(taktListe, erstes, letztes, skala) {
+    const sk = skala || BW_ANZEIGE_SKALA;
     const vorn = [], teile = [];
     let x = 8;
     teile.push(schluesselSvg(x + 8, 16, 'currentColor'));
@@ -457,7 +459,7 @@ function bwSystemSvg(taktListe, erstes, letztes) {
     }
     const linien = BW_LINIEN.map(y => `<line x1="8" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
     const breite = x + 8, oben = -60, hoehe = 128;
-    return `<svg class="bw-system" viewBox="0 ${oben} ${breite} ${hoehe}" width="${Math.round(breite * BW_ANZEIGE_SKALA)}" height="${Math.round(hoehe * BW_ANZEIGE_SKALA)}">${vorn.join('')}${linien}${teile.join('')}</svg>`;
+    return `<svg class="bw-system" viewBox="0 ${oben} ${breite} ${hoehe}" width="${Math.round(breite * sk)}" height="${Math.round(hoehe * sk)}">${vorn.join('')}${linien}${teile.join('')}</svg>`;
 }
 
 /* ============================================================
@@ -837,18 +839,96 @@ function bwPaletteZeichnen() {
         : '<i class="fa-solid fa-plus"></i> Mehr Bausteine (mit Pausen)';
 }
 
-function bwAnzeigeZeichnen() {
-    const host = document.getElementById('bw-anzeige');
-    const breite = host.clientWidth || 900;
-    const taktBreite = (bwS() * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
-    const proZeile = Math.max(1, Math.floor((breite - 80 * BW_ANZEIGE_SKALA) / taktBreite));
+/* Natuerliche Groesse (Massstab 1) einer Zeile mit p Takten bzw. des
+   ganzen Stuecks - passend zu bwSystemSvg (Schluessel, Taktangabe,
+   Taktstriche, Schluss-Wiederholung). */
+const BW_SYSTEM_HOEHE = 128;
+function bwSystemBreite(p) { return 72 + p * bwS() * BW_SCHLAG + (p - 1) * 6; }
+function bwZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < beat.takte; t += proZeile) {
         const liste = [];
         for (let i = t; i < Math.min(beat.takte, t + proZeile); i++) liste.push(i);
         zeilen.push(liste);
     }
-    host.innerHTML = zeilen.map((z, i) => bwSystemSvg(z, i === 0, i === zeilen.length - 1)).join('');
+    return zeilen;
+}
+/* Takte je Zeile und Massstab so waehlen, dass alles in w × h passt.
+   Erst die meisten Takte je Zeile, die noch mindestens minSkala gross
+   bleiben (Druck: lieber zwei Takte nebeneinander als riesige Noten);
+   gibt es das nicht, die Aufteilung mit den groessten Noten. */
+function bwEinpassen(w, h, abstand, minSkala, maxSkala) {
+    let bestes = null;
+    for (let p = beat.takte; p >= 1; p--) {
+        const n = Math.ceil(beat.takte / p);
+        const skala = Math.min(maxSkala, w / bwSystemBreite(p), (h - (n - 1) * abstand) / (n * BW_SYSTEM_HOEHE));
+        if (skala >= minSkala) return { p, skala };
+        if (!bestes || skala > bestes.skala) bestes = { p, skala };
+    }
+    return bestes;
+}
+function bwSystemeHtml(p, skala) {
+    const zeilen = bwZeilen(p);
+    return zeilen.map((z, i) => bwSystemSvg(z, i === 0, i === zeilen.length - 1, skala)).join('');
+}
+
+function bwAnzeigeZeichnen() {
+    const host = document.getElementById('bw-anzeige');
+    const karte = document.getElementById('bw-anzeige-karte');
+    if (karte.classList.contains('vollbild')) {
+        // Vollbild (Beamer): so gross wie moeglich in den freien Platz
+        const kopf = karte.querySelector('.bw-vollbild-kopf');
+        const w = window.innerWidth * 0.94;
+        const h = window.innerHeight - (kopf ? kopf.offsetHeight : 0) - 60;
+        const { p, skala } = bwEinpassen(w, h, 12, 99, 6);
+        host.innerHTML = bwSystemeHtml(p, skala);
+        return;
+    }
+    const breite = host.clientWidth || 900;
+    const taktBreite = (bwS() * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
+    const proZeile = Math.max(1, Math.floor((breite - 80 * BW_ANZEIGE_SKALA) / taktBreite));
+    host.innerHTML = bwSystemeHtml(proZeile, BW_ANZEIGE_SKALA);
+}
+
+/* ---------- Druckblatt (A4) und PDF ----------
+   Eigenes Blatt #bw-druck ausserhalb von <main>: Kopfzeile wie in der
+   Rhythmus-Werkstatt (Titel, Name/Klasse/Datum), darunter die Notenzeilen,
+   auf eine Seite eingepasst. Farbig nur, wenn "Farbe an" - dann als feste
+   Farben (das Blatt liegt ausserhalb von #reiter-beat, und das PDF hat
+   gar kein Stylesheet). */
+const BW_DRUCKFARBEN = { 'ellipse.bw-bass': '#2563eb', 'ellipse.bw-snare': '#ea580c', 'path.bw-becken': '#a16207' };
+function bwTitel() { return (document.getElementById('bw-titel').value || '').trim(); }
+function bwDruckZeichnen() {
+    document.getElementById('bw-druck-titel').textContent = bwTitel() || '🥁 Beat-Werkstatt';
+    const host = document.getElementById('bw-druck-noten');
+    const { p, skala } = bwEinpassen(DRUCK_BREITE, DRUCK_HOEHE, DRUCK_ZEILENABSTAND, 0.85, 1.3);
+    host.innerHTML = bwSystemeHtml(p, skala);
+    host.querySelectorAll('.bw-system').forEach(svg => {
+        svg.style.width = svg.getAttribute('width') + 'px';
+        svg.style.height = svg.getAttribute('height') + 'px';
+        if (!beat.farbe) return;
+        Object.entries(BW_DRUCKFARBEN).forEach(([sel, farbe]) =>
+            svg.querySelectorAll(sel).forEach(el => el.setAttribute(sel.startsWith('path') ? 'stroke' : 'fill', farbe)));
+    });
+}
+function bwDrucken() {
+    bwDruckZeichnen();
+    window.print();
+}
+async function bwPdfHerunterladen() {
+    const knopf = document.getElementById('bw-pdf');
+    knopf.disabled = true;
+    try {
+        bwDruckZeichnen();
+        const svgs = [...document.querySelectorAll('#bw-druck-noten .bw-system')];
+        const pdf = await blattPdf(svgs, bwTitel(), '🥁 Beat-Werkstatt', 'Beat');
+        const name = exportDateiname(bwTitel() || 'Beat', bwS() + '/4', beat.bpm, 'mp3').replace(/_\d+bpm\.mp3$/, '.pdf');
+        blobHerunterladen(pdf, name);
+    } catch (e) {
+        zeigeToast(e.message, 'danger');
+    } finally {
+        knopf.disabled = false;
+    }
 }
 
 function bwSchalterZeichnen() {
@@ -1150,6 +1230,26 @@ function bwEinrichten() {
 
     // Abspielen
     document.getElementById('bw-abspielen').addEventListener('click', () => BeatSpieler.umschalten());
+    const titel = document.getElementById('bw-titel');
+    titel.value = beat.titel;
+    titel.addEventListener('input', () => { beat.titel = titel.value.slice(0, 80); beatSpeichern(); });
+    document.getElementById('bw-drucken').addEventListener('click', bwDrucken);
+    document.getElementById('bw-pdf').addEventListener('click', bwPdfHerunterladen);
+    window.addEventListener('beforeprint', () => { if (document.body.classList.contains('druck-beat')) bwDruckZeichnen(); });
+    // Vollbild nur fuer das Notenbild samt Abspiel-Leiste (Beamer)
+    const vollKarte = document.getElementById('bw-anzeige-karte');
+    const vollKnopf = document.getElementById('bw-vollbild');
+    vollKnopf.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (vollKarte.requestFullscreen) vollKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
+        else zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger');
+    });
+    document.addEventListener('fullscreenchange', () => {
+        const an = document.fullscreenElement === vollKarte;
+        vollKarte.classList.toggle('vollbild', an);
+        vollKnopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i> Verlassen' : '<i class="fa-solid fa-expand"></i> Vollbild';
+        setTimeout(bwAnzeigeZeichnen, 50);
+    });
     const tempo = (w) => { beat.bpm = Math.max(40, Math.min(200, Math.round(Number(w) || 90))); beatSpeichern(); bwSchalterZeichnen(); };
     document.getElementById('bw-tempo-minus').addEventListener('click', () => tempo(beat.bpm - 5));
     document.getElementById('bw-tempo-plus').addEventListener('click', () => tempo(beat.bpm + 5));
@@ -1176,6 +1276,7 @@ function reiterZeigen(name) {
     const beatAn = name === 'beat';
     document.getElementById('reiter-rhythmus').classList.toggle('hidden', beatAn);
     document.getElementById('reiter-beat').classList.toggle('hidden', !beatAn);
+    document.body.classList.toggle('druck-beat', beatAn);   // Drucken (⌘P) nimmt das Blatt des offenen Reiters
     document.querySelectorAll('[data-reiter]').forEach(b => {
         const an = b.dataset.reiter === name;
         b.classList.toggle('an', an);
