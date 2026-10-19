@@ -462,3 +462,60 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
 }
 #bw-anzeige-karte.vollbild .bw-system { max-width: none; flex-shrink: 0; }
+
+/* ============================================================
+   LEISTE "Metronom & Anzeige": drei Zeilen (Spielen, Notenbild, Blatt),
+   einheitliche Bausteine - Chips zum Umschalten, Regler mit Name und Wert,
+   ein Menue fuer alles zum Speichern.
+   ============================================================ */
+.steuer-zeile { margin-bottom: .6rem; row-gap: .5rem; }
+.steuer-zeile + .steuer-zeile { padding-top: .6rem; border-top: 1px solid var(--rand-schwach); }
+.metronom-gruppen { display: contents; }
+
+/* Chip = Schalter als Knopf: versteckte Checkbox, angezeigt wird der span */
+.chip { display: inline-flex; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.chip span {
+    display: inline-flex; align-items: center; gap: .35rem;
+    border: 1px solid var(--rand); background: var(--bg-erhoben); color: var(--text-gedaempft);
+    border-radius: 999px; padding: .38rem .8rem; font-size: .8rem; font-weight: 700; white-space: nowrap;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.chip:hover span { border-color: var(--akzent); color: var(--text); }
+.chip input:checked + span { background: var(--akzent); border-color: var(--akzent-stark); color: #fff; }
+.chip input:focus-visible + span { outline: 2px solid var(--akzent); outline-offset: 2px; }
+
+/* Umschalter aus zwei Knoepfen */
+.segment { display: inline-flex; }
+.segment .btn { border-radius: 0; }
+.segment .btn:first-child { border-radius: 10px 0 0 10px; }
+.segment .btn:last-child { border-radius: 0 10px 10px 0; border-left: none; }
+
+/* Regler: Name klein, Schieber, Wert in fester Breite */
+.regler {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .25rem .6rem; border: 1px solid var(--rand-schwach); border-radius: 10px; background: var(--bg-erhoben);
+}
+.regler-name { font-size: .72rem; font-weight: 700; color: var(--text-gedaempft); white-space: nowrap; }
+.regler input[type="range"] { width: 6rem; accent-color: var(--akzent); }
+.regler-wert { min-width: 2.4rem; text-align: right; font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.btn-icon { padding: .4rem .55rem; }
+.metronom-feld .btn-icon { padding: .25rem .45rem; font-size: .8rem; }
+
+/* Menue "Speichern" */
+.menue { position: relative; }
+.menue summary { list-style: none; cursor: pointer; }
+.menue summary::-webkit-details-marker { display: none; }
+.menue-liste {
+    position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 12rem;
+    display: flex; flex-direction: column; padding: .3rem;
+    background: var(--bg-erhoben); border: 1px solid var(--rand); border-radius: 10px; box-shadow: var(--schatten);
+}
+.menue-liste button {
+    display: flex; align-items: center; gap: .55rem; text-align: left;
+    border: none; background: transparent; color: var(--text); padding: .5rem .65rem;
+    border-radius: 7px; font-size: .85rem; font-weight: 700;
+}
+.menue-liste button:hover { background: var(--rand-schwach); }
+.menue-liste button i { width: 1.1rem; text-align: center; color: var(--text-gedaempft); }
+.menue-liste button:disabled { opacity: .4; }

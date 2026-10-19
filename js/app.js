@@ -81,10 +81,25 @@ function takteProZeileAnzeigen() {
     document.querySelectorAll('.takte-zeile-anzeige').forEach(el => {
         el.textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
     });
+    document.querySelectorAll('.takte-zeile-regler').forEach(el => { el.value = takteProZeile; });
     if (editor) editor.takteProZeileSetzen(takteProZeile);
 }
 
+/* Regler und Umschalter der Leiste auf den aktuellen Stand bringen - die
+   Werte selbst stehen in anzeigeSkalierung, wiederholungen, opt-wiederholung
+   und abspielen-modus (auch Link und Blatt-Laden setzen nur die). */
+function leisteAnzeigen() {
+    const durchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen + 1 : 1;
+    document.getElementById('wiederholung-regler').value = durchgaenge;
+    document.getElementById('wiederholung-wert').textContent = durchgaenge + '×';
+    document.getElementById('groesse-regler').value = Math.round(anzeigeSkalierung * 100);
+    document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
+    const modus = document.getElementById('abspielen-modus').value;
+    document.querySelectorAll('[data-modus]').forEach(b => b.classList.toggle('an', b.dataset.modus === modus));
+}
+
 function anzeigeNeuZeichnen() {
+    leisteAnzeigen();
     const host = document.getElementById('anzeige');
     // Durch die Skalierung geteilt, nicht die rohe Fensterbreite: Sonst packt
     // die automatische Zeilenaufteilung schon beim Layout so viele Takte hinein,
@@ -403,14 +418,11 @@ function linkUebernehmen(hash) {
     document.getElementById('opt-handsatz').checked = x.handsatz;
     document.getElementById('opt-loop').checked = x.loop;
     document.getElementById('opt-wiederholung').checked = x.durchgaenge > 1;
-    document.getElementById('wiederholungen-feld').classList.toggle('hidden', x.durchgaenge <= 1);
     wiederholungen = Math.max(1, x.durchgaenge - 1);
-    document.getElementById('wiederholungen-anzeige').textContent = wiederholungen + 1;
     document.getElementById('opt-als-uebung').checked = x.alsUebung;
     takteProZeile = x.takteProZeile;
     takteProZeileAnzeigen();
     anzeigeSkalierung = x.groesse / 100;
-    document.getElementById('anzeige-groesse-anzeige').textContent = x.groesse + '%';
 
     // Setzt den Editor und zeichnet ueber aufAenderung alles neu (Anzeige,
     // Titel, Druck). Takte, die nicht aufgehen, kommen trotzdem hinein - der
@@ -482,11 +494,11 @@ a.knopf { display: inline-block; margin: 1rem 0 2rem; padding: .6rem 1rem; borde
     zeigeToast('Gespeichert - Datei öffnen lädt die Übung direkt in die Werkstatt.', 'success');
 }
 
-async function audioHerunterladen() {
-    const knopf = document.getElementById('herunterladen-btn');
+async function audioHerunterladen(e) {
+    const knopf = (e && e.currentTarget) || document.getElementById('herunterladen-btn');
     const stueck = editor.stueck();
     if (stueck.takte.every(t => !t.bausteine.length)) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-    const format = document.getElementById('herunterladen-format').value;
+    const format = knopf.dataset.format === 'wav' ? 'wav' : 'mp3';
     knopf.disabled = true;
     zeigeToast('Erzeuge Audio…', 'info');
     try {
@@ -530,23 +542,14 @@ function init() {
     document.getElementById('opt-handsatz').addEventListener('change', anzeigeNeuZeichnen);
     document.getElementById('opt-als-uebung').addEventListener('change', anzeigeNeuZeichnen);
 
-    // Anzeige/Bedienung zaehlen die Gesamtzahl der Durchgaenge (2,3,4...),
-    // "wiederholungen" selbst bleibt intern die Zusatz-Zahl (1,2,3...) - die
-    // Audio-Planung in Vorklatschen braucht genau diese Differenz von 1.
-    const wiederholungenZeichnen = () => { document.getElementById('wiederholungen-anzeige').textContent = wiederholungen + 1; };
-    document.getElementById('opt-wiederholung').addEventListener('change', (e) => {
-        document.getElementById('wiederholungen-feld').classList.toggle('hidden', !e.target.checked);
-        if (e.target.checked) { wiederholungen = 1; wiederholungenZeichnen(); }   // startet immer bei "2x"
-        anzeigeNeuZeichnen();
-    });
-    document.getElementById('wiederholungen-minus').addEventListener('click', () => {
-        wiederholungen = Math.max(1, wiederholungen - 1);
-        wiederholungenZeichnen();
-        anzeigeNeuZeichnen();
-    });
-    document.getElementById('wiederholungen-plus').addEventListener('click', () => {
-        wiederholungen = Math.min(9, wiederholungen + 1);
-        wiederholungenZeichnen();
+    // Ein Regler "Durchgaenge" (1 = keine Wiederholung) statt Schalter und
+    // Zaehler. Intern bleibt es bei opt-wiederholung + wiederholungen (=
+    // zusaetzliche Durchgaenge) - so brauchen Link, Export und Vorklatschen
+    // nichts Neues.
+    document.getElementById('wiederholung-regler').addEventListener('input', (e) => {
+        const n = Number(e.target.value);
+        document.getElementById('opt-wiederholung').checked = n > 1;
+        wiederholungen = Math.max(1, n - 1);
         anzeigeNeuZeichnen();
     });
 
@@ -569,15 +572,14 @@ function init() {
         takteProZeileAnzeigen();
         takteProZeileVerzoegert();
     }));
+    document.querySelectorAll('.takte-zeile-regler').forEach(r => r.addEventListener('input', () => {
+        takteProZeile = Number(r.value);
+        takteProZeileAnzeigen();
+        takteProZeileVerzoegert();
+    }));
 
-    document.getElementById('anzeige-groesse-minus').addEventListener('click', () => {
-        anzeigeSkalierung = Math.max(0.6, Math.round((anzeigeSkalierung - 0.1) * 10) / 10);
-        document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
-        anzeigeNeuZeichnen();
-    });
-    document.getElementById('anzeige-groesse-plus').addEventListener('click', () => {
-        anzeigeSkalierung = Math.min(3.0, Math.round((anzeigeSkalierung + 0.1) * 10) / 10);
-        document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
+    document.getElementById('groesse-regler').addEventListener('input', (e) => {
+        anzeigeSkalierung = Number(e.target.value) / 100;
         anzeigeNeuZeichnen();
     });
 
@@ -593,6 +595,10 @@ function init() {
     document.getElementById('anzeige').addEventListener('click', anzeigeAngetippt);
     document.getElementById('loop-auswahl-weg').addEventListener('click', () => loopAuswahlSetzen(null));
     document.getElementById('pdf-btn').addEventListener('click', pdfHerunterladen);
+    document.querySelectorAll('details.menue').forEach(m => {
+        m.addEventListener('click', (e) => { if (e.target.closest('.menue-liste button')) m.open = false; });
+        document.addEventListener('click', (e) => { if (!m.contains(e.target)) m.open = false; });
+    });
 
     document.getElementById('druck-titel').addEventListener('input', () => { titelAktualisieren(); druckNeuZeichnen(); });
 
@@ -643,9 +649,15 @@ function init() {
             : '<i class="fa-solid fa-play"></i> Abspielen';
     });
 
+    document.querySelectorAll('[data-modus]').forEach(b => b.addEventListener('click', () => {
+        document.getElementById('abspielen-modus').value = b.dataset.modus;
+        leisteAnzeigen();
+    }));
+
+    // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf)
     const klangWahl = document.getElementById('klatsch-sound-wahl');
-    klangWahl.addEventListener('change', () => klatschSoundSetzen(klangWahl.value));
-    document.getElementById('klatsch-sound-probe').addEventListener('click', () => {
+    klangWahl.addEventListener('change', () => {
+        klatschSoundSetzen(klangWahl.value);
         const probe = () => { const ctx = tonBereit(probe); if (ctx) klatschSoundSpielen(ctx, ctx.currentTime + 0.05); };
         probe();
     });
@@ -661,6 +673,7 @@ function init() {
     document.getElementById('link-kopieren-btn').addEventListener('click', linkKopieren);
     document.getElementById('html-speichern-btn').addEventListener('click', htmlSpeichern);
     document.getElementById('herunterladen-btn').addEventListener('click', audioHerunterladen);
+    document.getElementById('herunterladen-wav-btn').addEventListener('click', audioHerunterladen);
     window.addEventListener('hashchange', () => linkUebernehmen(location.hash));
 
     if (!linkUebernehmen(location.hash)) anzeigeNeuZeichnen();

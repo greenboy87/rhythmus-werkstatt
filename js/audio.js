@@ -290,13 +290,16 @@ const Metronom = (function () {
     function knopfZeichnen() {
         jedeAnsicht((w, teil) => {
             const start = teil('start');
-            if (start) start.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i> Stopp' : '<i class="fa-solid fa-play"></i> Start';
+            if (start) {
+                start.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-play"></i>';
+                start.classList.toggle('an', laeuft);
+            }
         });
     }
     function tempoZeichnen() {
         jedeAnsicht((w, teil) => {
             const anzeige = teil('tempo'), regler = teil('regler');
-            if (anzeige) anzeige.textContent = bpm + ' bpm';
+            if (anzeige) anzeige.textContent = bpm;
             if (regler) regler.value = bpm;
         });
     }
@@ -325,10 +328,9 @@ const Metronom = (function () {
     function vorlaufZeichnen() {
         jedeAnsicht((w, teil) => {
             const anzeige = teil('vorlauf-anzeige');
-            if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? '0' : vorlaufTakte + (vorlaufTakte === 1 ? ' Takt' : ' Takte');
-            const minus = teil('vorlauf-minus'), plus = teil('vorlauf-plus');
-            if (minus) minus.disabled = vorlaufTakte <= 0;
-            if (plus) plus.disabled = vorlaufTakte >= VORLAUF_MAX;
+            if (anzeige) anzeige.textContent = vorlaufTakte;
+            const regler = teil('vorlauf-regler');
+            if (regler) regler.value = vorlaufTakte;
         });
     }
     function vorlaufSetzen(wert) {
@@ -368,31 +370,29 @@ const Metronom = (function () {
 
     function bauen(wurzel, zeichenGetterFn) {
         if (zeichenGetterFn) zeichenGetter = zeichenGetterFn;
+        // Regler statt −/+ - gleicher Aufbau wie die anderen Regler der Leiste
+        // (Name, Schieber, Wert). Steht direkt in der Abspiel-Zeile.
         wurzel.innerHTML = `
-            <div class="leiste">
+            <label class="regler" title="Tempo in Schlägen pro Minute">
+                <span class="regler-name">Tempo</span>
+                <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler">
+                <span class="regler-wert" data-rolle="tempo">90</span>
+            </label>
+            <label class="regler" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
+                <span class="regler-name">Vorlauf</span>
+                <input type="range" min="0" max="${VORLAUF_MAX}" value="1" step="1" data-rolle="vorlauf-regler" style="width:4.5rem">
+                <span class="regler-wert" data-rolle="vorlauf-anzeige">1</span>
+            </label>
+            <span class="regler metronom-feld" title="Metronom: Lautstärke, stumm, frei laufen lassen">
                 <span class="metronom-puls" data-rolle="puls"></span>
-                <button type="button" class="btn" data-rolle="minus">−</button>
-                <span data-rolle="tempo" class="btn" style="min-width:5.2rem; text-align:center">90 bpm</span>
-                <button type="button" class="btn" data-rolle="plus">+</button>
-                <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler" style="width:7rem">
-                <span class="schalter-feld" title="Gilt nur für Vorklatschen/Mitklatschen, nicht für den Start-Knopf hier">Vorlauf</span>
-                <button type="button" class="btn" data-rolle="vorlauf-minus">−</button>
-                <span data-rolle="vorlauf-anzeige" class="btn" style="min-width:6.5rem; text-align:center">1 Takt</span>
-                <button type="button" class="btn" data-rolle="vorlauf-plus">+</button>
-                <button type="button" data-rolle="start" class="btn btn-primär" title="Läuft frei durch (unabhängig vom Vorlauf), bis du stoppst - zum Üben ohne Rhythmus"><i class="fa-solid fa-play"></i> Start</button>
-                <span class="fuellt"></span>
-                <button type="button" class="btn" data-rolle="mute" title="Metronom stummschalten - das Aufleuchten im Notenbild läuft trotzdem immer mit">
-                    <i class="fa-solid fa-volume-high"></i>
-                </button>
-                <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" style="width:6rem" title="Lautstärke des Metronoms">
-            </div>`;
+                <button type="button" class="btn btn-icon" data-rolle="mute" title="Metronom stummschalten - das Aufleuchten im Notenbild läuft trotzdem immer mit"><i class="fa-solid fa-volume-high"></i></button>
+                <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" style="width:4.5rem" aria-label="Lautstärke des Metronoms">
+                <button type="button" data-rolle="start" class="btn btn-icon" title="Metronom frei laufen lassen (ohne Rhythmus), bis du stoppst"><i class="fa-solid fa-play"></i></button>
+            </span>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
-        teil('minus').addEventListener('click', () => tempoSetzen(bpm - 5));
-        teil('plus').addEventListener('click', () => tempoSetzen(bpm + 5));
         teil('regler').addEventListener('input', (e) => tempoSetzen(e.target.value));
         teil('start').addEventListener('click', umschalten);
-        teil('vorlauf-minus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte - 1));
-        teil('vorlauf-plus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte + 1));
+        teil('vorlauf-regler').addEventListener('input', (e) => vorlaufSetzen(e.target.value));
         teil('mute').addEventListener('click', stummUmschalten);
         teil('lautstaerke').addEventListener('input', (e) => lautstaerkeSetzen(e.target.value / 100));
         ansichten = ansichten.filter(a => a.isConnected && a !== wurzel);

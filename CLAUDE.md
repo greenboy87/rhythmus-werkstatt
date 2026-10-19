@@ -242,6 +242,18 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
   `exportDateiname`, Download per Blob-URL + `<a download>`).
+- Leiste „Metronom & Anzeige“: drei Zeilen (`.steuer-zeile`): Spielen,
+  Notenbild, Blatt. Einheitliche Bausteine in stil.css: `.chip` (Checkbox
+  als Knopf - die alten `opt-…`-IDs bleiben, `change` wirkt wie vorher),
+  `.regler` (Name, Schieber, Wert), `.segment`, Menü `details.menue`
+  („Speichern“: PDF, Drucken, MP3, WAV - Format über `data-format`).
+  Intern unverändert und versteckt: `#abspielen-modus` (Umschalter
+  „Vorspielen | Selbst“ setzt den Wert) und `#opt-wiederholung` (Regler
+  „Durchgänge“, 1 = aus). `leisteAnzeigen()` (läuft in jedem
+  `anzeigeNeuZeichnen`) bringt Regler und Umschalter auf den Stand - so
+  stimmen sie auch nach Link oder Blatt laden. Metronom-Teil (Tempo,
+  Vorlauf, Lautstärke, freies Metronom) baut `Metronom.bauen` in audio.js
+  direkt in diese Zeile. Klang wechseln spielt ihn einmal vor.
 - `css/druck.css` - A4-Druckausgabe nur der Anzeige-Karte, siehe
   `@media print`. Der `<link>` auf diese Datei darf **kein**
   `media="print"`-Attribut haben, sonst gilt auch die Regel, die die
