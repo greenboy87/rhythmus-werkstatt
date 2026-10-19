@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=40">
-<link rel="stylesheet" href="css/druck.css?v=40">
+<link rel="stylesheet" href="css/stil.css?v=41">
+<link rel="stylesheet" href="css/druck.css?v=41">
 </head>
 <body>
 
@@ -18,6 +18,7 @@
     <nav class="reiter" role="tablist" aria-label="Werkstatt wählen">
         <button type="button" class="reiter-knopf an" role="tab" aria-selected="true" data-reiter="rhythmus">Rhythmus-Werkstatt</button>
         <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="beat"><i class="fa-solid fa-drum"></i> Beat-Werkstatt</button>
+        <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="drumset"><i class="fa-solid fa-drum-steelpan"></i> Drumset-Werkstatt</button>
     </nav>
     <span class="untertitel" id="kopf-untertitel">Takte bauen · vorklatschen · einüben</span>
     <span class="fuellt"></span>
@@ -310,22 +311,114 @@
     <div id="bw-druck-noten"></div>
 </div>
 
+<!-- ============ Drumset-Werkstatt: ganzes Schlagzeug, zuerst Fills (js/drumset.js) ============ -->
+<main id="reiter-drumset" class="hidden nicht-in-uebung">
+    <section class="karte">
+        <div class="leiste" style="justify-content: space-between; margin-bottom:.8rem;">
+            <h2 style="font-size:1rem;">Fill schreiben</h2>
+            <button type="button" class="btn" id="ds-farbe" title="Becken, Snare, Toms und Bassdrum in eigenen Farben zeigen oder alles schwarz-weiß"><i class="fa-solid fa-palette"></i> Farbe an</button>
+        </div>
+        <div class="leiste" style="margin-bottom:.7rem;">
+            <label class="feld" style="flex-direction:row; align-items:center; gap:.4rem;" title="Zählzeiten je Takt (in Vierteln)">
+                Taktart
+                <select id="ds-taktart">
+                    <option value="4">4/4</option>
+                    <option value="3">3/4</option>
+                    <option value="2">2/4</option>
+                    <option value="eigene">Eigene…</option>
+                </select>
+            </label>
+            <span class="leiste hidden" id="ds-taktart-eigen" style="gap:.3rem;">
+                <input type="number" id="ds-zaehler" min="1" max="12" step="1" value="4" style="width:3.6rem" aria-label="Zählzeiten je Takt">
+                <span class="schalter-feld">/ 4</span>
+            </span>
+            <span class="schalter-feld" style="margin-left:.4rem;">Takte</span>
+            <button type="button" class="btn" id="ds-takte-minus">−</button>
+            <span class="btn" id="ds-takte-anzeige" style="min-width:2.4rem; text-align:center">2</span>
+            <button type="button" class="btn" id="ds-takte-plus">+</button>
+            <select id="ds-vorlage" title="Groove + Fill als Ausgangspunkt laden - ersetzt den aktuellen Stand">
+                <option value="">Vorlage laden…</option>
+            </select>
+            <button type="button" class="btn" id="ds-leeren">Alles löschen</button>
+        </div>
+        <p class="bw-legende">So geht's: <b>1.</b> Instrument wählen. <b>2.</b> Baustein antippen – die markierte Zählzeit bekommt diesen Rhythmus auf dem Instrument, dann geht es zur nächsten. <b>3.</b> Im Notensystem an eine Stelle tippen setzt oder entfernt das Instrument dort. Trommeln ersetzen Trommeln (Snare → Tom), Becken ersetzen Becken; Bassdrum und Becken kommen zu einer Trommel dazu.</p>
+
+        <div id="ds-editor" class="bw-takte"></div>
+
+        <div class="bw-werkzeug">
+            <div class="leiste ds-stifte" id="ds-stifte"></div>
+            <p class="bw-ziel" id="ds-ziel" style="margin:0;"></p>
+            <div class="leiste ds-palette" id="ds-palette"></div>
+            <div class="leiste">
+                <button type="button" class="btn" id="ds-mehr"></button>
+            </div>
+            <p class="anzeige-tipp bw-tastatur" style="text-align:left; margin:0;"><b>Tastatur:</b> <kbd>1</kbd>–<kbd>8</kbd> Instrument · <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>←</kbd><kbd>→</kbd> Zählzeit · <kbd>⌫</kbd> Zählzeit leeren</p>
+        </div>
+    </section>
+
+    <section class="karte anzeige-karte" id="ds-anzeige-karte">
+        <div class="bw-vollbild-kopf">
+        <div class="leiste" style="margin-bottom:.7rem;">
+            <button type="button" class="btn btn-primär" id="ds-abspielen"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <button type="button" class="btn" id="ds-tempo-minus">−</button>
+            <span class="btn" id="ds-tempo-anzeige" style="min-width:5.2rem; text-align:center">90 bpm</span>
+            <button type="button" class="btn" id="ds-tempo-plus">+</button>
+            <input type="range" min="40" max="200" step="1" value="90" id="ds-tempo-regler" style="width:7rem" aria-label="Tempo">
+            <span class="leiste" style="gap:.4rem;" title="Metronom-Klick auf jeder Zählzeit mitspielen">
+                <label class="schalter"><input type="checkbox" id="ds-metronom"><span class="schalter-schieber"></span></label>
+                <span class="schalter-feld">Metronom</span>
+            </span>
+            <span class="leiste" style="gap:.4rem;">
+                <label class="schalter"><input type="checkbox" id="ds-zaehlzeiten"><span class="schalter-schieber"></span></label>
+                <span class="schalter-feld">Zählzeiten</span>
+            </span>
+        </div>
+        <div class="leiste" style="margin-bottom:.6rem; padding-top:.6rem; border-top:1px solid var(--rand-schwach);">
+            <label class="feld bw-nicht-im-vollbild" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift auf dem Ausdruck und im PDF">
+                Titel
+                <input type="text" id="ds-titel" placeholder="Drumset-Werkstatt" maxlength="80" style="width:11rem;">
+            </label>
+            <span class="fuellt" style="flex:1"></span>
+            <button type="button" class="btn" id="ds-vollbild" title="Notenbild groß für den Beamer – Leertaste spielt/stoppt auch im Vollbild"><i class="fa-solid fa-expand"></i> Vollbild</button>
+            <button type="button" class="btn bw-nicht-im-vollbild" id="ds-pdf" title="Das Blatt direkt als PDF-Datei speichern (A4, eine Seite)"><i class="fa-solid fa-file-pdf"></i> Als PDF</button>
+            <button type="button" class="btn bw-nicht-im-vollbild" id="ds-drucken" title="Öffnet den Druckdialog (A4, mit Name/Klasse/Datum)"><i class="fa-solid fa-print"></i> Drucken</button>
+        </div>
+        </div>
+        <div id="ds-anzeige" class="bw-anzeige"></div>
+    </section>
+</main>
+
+<!-- Druckblatt der Drumset-Werkstatt: nur beim Drucken aus dem Drumset-Reiter sichtbar -->
+<div id="ds-druck" class="bw-nur-druck">
+    <div class="druck-kopf">
+        <h1 id="ds-druck-titel">🥁 Drumset-Werkstatt</h1>
+        <div class="druck-felder">
+            <span>Name:</span>
+            <span>Klasse:</span>
+            <span>Datum: ________</span>
+        </div>
+    </div>
+    <div id="ds-druck-noten"></div>
+</div>
+
 <footer class="nicht-in-uebung" style="text-align:center; padding: 1rem; color: var(--text-schwach); font-size: .72rem;">
     <p id="build-stamp"></p>
 </footer>
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=40"></script>
-<script src="js/noten.js?v=40"></script>
-<script src="js/editor.js?v=40"></script>
-<script src="js/audio.js?v=40"></script>
-<script src="js/generator.js?v=40"></script>
-<script src="js/link.js?v=40"></script>
-<script src="js/vendor/lame.min.js?v=40"></script>
-<script src="js/export.js?v=40"></script>
-<script src="js/pdf.js?v=40"></script>
-<script src="js/app.js?v=40"></script>
-<script src="js/beat.js?v=40"></script>
+<script src="js/version.js?v=41"></script>
+<script src="js/noten.js?v=41"></script>
+<script src="js/editor.js?v=41"></script>
+<script src="js/audio.js?v=41"></script>
+<script src="js/generator.js?v=41"></script>
+<script src="js/link.js?v=41"></script>
+<script src="js/vendor/lame.min.js?v=41"></script>
+<script src="js/export.js?v=41"></script>
+<script src="js/pdf.js?v=41"></script>
+<script src="js/app.js?v=41"></script>
+<script src="js/beat.js?v=41"></script>
+<script src="js/drumset.js?v=41"></script>
+<script src="js/reiter.js?v=41"></script>
 </body>
 </html>

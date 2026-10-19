@@ -55,15 +55,16 @@
 
     /* Beat-Werkstatt (Klasse druck-beat am body, solange der Beat-Reiter
        offen ist): statt der Rhythmus-Karte das eigene Blatt #bw-druck. */
-    body.druck-beat .anzeige-karte { display: none !important; }
-    body.druck-beat #bw-druck { display: block !important; }
-    #bw-druck, #bw-druck * { visibility: visible; }
-    #bw-druck { position: absolute; top: 0; left: 0; width: 100%; background: #fff; color: #000; }
-    #bw-druck-noten { text-align: center; }
-    #bw-druck .bw-system { display: block; margin: 0 auto 22px; max-width: 100%; }
-    #bw-druck .bw-system, #bw-druck .bw-system line, #bw-druck .bw-system path, #bw-druck .bw-system rect,
-    #bw-druck .bw-system ellipse, #bw-druck .bw-system circle, #bw-druck .bw-system text { color: #000 !important; }
-    #bw-druck .bw-system text { fill: #000 !important; }
-    #bw-druck .bw-linie-anzeige { color: #666 !important; }
-    #bw-druck .bw-spiel { display: none; }
+    /* Drumset-Werkstatt genauso mit druck-drumset und #ds-druck. */
+    body.druck-beat .anzeige-karte, body.druck-drumset .anzeige-karte { display: none !important; }
+    body.druck-beat #bw-druck, body.druck-drumset #ds-druck { display: block !important; }
+    #bw-druck, #bw-druck *, #ds-druck, #ds-druck * { visibility: visible; }
+    #bw-druck, #ds-druck { position: absolute; top: 0; left: 0; width: 100%; background: #fff; color: #000; }
+    #bw-druck-noten, #ds-druck-noten { text-align: center; }
+    .bw-nur-druck .bw-system { display: block; margin: 0 auto 22px; max-width: 100%; }
+    .bw-nur-druck .bw-system, .bw-nur-druck .bw-system line, .bw-nur-druck .bw-system path, .bw-nur-druck .bw-system rect,
+    .bw-nur-druck .bw-system ellipse, .bw-nur-druck .bw-system circle, .bw-nur-druck .bw-system text { color: #000 !important; }
+    .bw-nur-druck .bw-system text { fill: #000 !important; }
+    .bw-nur-druck .bw-linie-anzeige { color: #666 !important; }
+    .bw-nur-druck .bw-spiel { display: none; }
 }

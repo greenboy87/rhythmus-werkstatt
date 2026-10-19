@@ -24,6 +24,7 @@
     --bass: #60a5fa;
     --snare: #fb923c;
     --becken: #facc15;
+    --tom: #4ade80;
 }
 html[data-theme="light"] {
     --bg: #f8fafc;
@@ -45,6 +46,7 @@ html[data-theme="light"] {
     --bass: #2563eb;
     --snare: #ea580c;
     --becken: #a16207;
+    --tom: #16a34a;
 }
 
 * { box-sizing: border-box; }
@@ -462,6 +464,44 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
 }
 #bw-anzeige-karte.vollbild .bw-system { max-width: none; flex-shrink: 0; }
+
+/* ============================================================
+   DRUMSET-WERKSTATT (js/drumset.js) - nutzt die bw-Bausteine oben,
+   hier nur, was dazukommt.
+   ============================================================ */
+.ds-stifte { gap: .3rem; }
+.ds-stift { padding: .2rem .55rem .2rem .3rem; gap: .3rem; }
+.ds-stift .ds-lage { color: var(--text); flex-shrink: 0; }
+.ds-stift.an .ds-lage { color: #fff; }
+.ds-stift-name { display: inline-flex; align-items: center; gap: .3rem; font-weight: 800; }
+.ds-taste { font-size: .62rem; font-weight: 800; padding: 0 .25rem; border-radius: 4px; background: var(--rand-schwach); color: var(--text-gedaempft); }
+.ds-stift.an .ds-taste { background: rgba(255, 255, 255, .25); color: #fff; }
+.ds-palette { align-items: stretch; gap: .5rem; }
+.ds-palette .palette-gruppe { align-items: center; }
+.ds-gruppe-name { font-size: .68rem; font-weight: 800; color: var(--text-schwach); writing-mode: vertical-rl; transform: rotate(180deg); }
+.ds-baustein svg { width: 76px; }
+.ds-raster-punkt { fill: var(--text-schwach); opacity: .7; }
+.ds-system .ds-tuplet, .bw-platz .ds-tuplet, .ds-baustein .ds-tuplet { fill: currentColor; }
+.bw-punkt.ds-p-becken { background: var(--becken); }
+.bw-punkt.ds-p-snare { background: var(--snare); }
+.bw-punkt.ds-p-tom { background: var(--tom); }
+.bw-punkt.ds-p-bass { background: var(--bass); }
+#reiter-drumset:not(.ds-bunt) .bw-punkt { display: none; }
+.ds-bunt ellipse.ds-bass { fill: var(--bass); }
+.ds-bunt ellipse.ds-snare { fill: var(--snare); }
+.ds-bunt ellipse.ds-tom { fill: var(--tom); }
+.ds-bunt path.ds-becken { stroke: var(--becken); }
+@media print { #reiter-drumset { display: none !important; } }
+#ds-anzeige-karte:fullscreen, #ds-anzeige-karte.vollbild {
+    position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none;
+    margin: 0; border-radius: 0; padding: 1.4rem 3vw; overflow: auto; background: var(--bg-karte);
+    display: flex; flex-direction: column;
+}
+#ds-anzeige-karte.vollbild .bw-nicht-im-vollbild { display: none; }
+#ds-anzeige-karte.vollbild #ds-anzeige {
+    flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
+}
+#ds-anzeige-karte.vollbild .bw-system { max-width: none; flex-shrink: 0; }
 
 /* ============================================================
    LEISTE "Metronom & Anzeige": drei Zeilen (Spielen, Notenbild, Blatt),

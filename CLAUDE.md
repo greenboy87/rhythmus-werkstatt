@@ -158,11 +158,15 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   spielt „Abspielen“ nur diesen Ausschnitt (`Vorklatschen.starten(...,
   taktVersatz)` haelt die Mitlese-Markierung an der richtigen Stelle) und
   schaltet den Loop ein. Nicht im Link gespeichert.
-- `js/beat.js` - **Beat-Werkstatt**, eigener Reiter (Kopfzeile: „Rhythmus-
-  Werkstatt | Beat-Werkstatt“, `<main id="reiter-rhythmus">` bzw.
-  `#reiter-beat`; gewählter Reiter in `localStorage` `rw-reiter`, ein
-  Rhythmus-Link `#…r=…` öffnet immer die Rhythmus-Werkstatt; in den
-  Einbett-Ansichten `?ansicht=` gibt es den Reiter nicht).
+- `js/reiter.js` - Reiter in der Kopfzeile: „Rhythmus-Werkstatt |
+  Beat-Werkstatt | Drumset-Werkstatt“ (`<main id="reiter-rhythmus">`,
+  `#reiter-beat`, `#reiter-drumset`). Wird als letzte Datei geladen, damit
+  beat.js und drumset.js schon eingerichtet sind. Gewählter Reiter in
+  `localStorage` `rw-reiter`, ein Rhythmus-Link `#…r=…` öffnet immer die
+  Rhythmus-Werkstatt; in den Einbett-Ansichten `?ansicht=` gibt es keine
+  Reiter. `reiterZeigen` stoppt die Spieler der anderen Reiter und setzt
+  die Druck-Klasse am `<body>` (`druck-beat` / `druck-drumset`).
+- `js/beat.js` - **Beat-Werkstatt**, eigener Reiter.
   - Bausteine `BEAT_FORMEN`: immer genau eine Zählzeit, alle 16
     Einsatzfolgen im Sechzehntelraster (10 sichtbar, 6 hinter „Mehr“).
     Eigene Liste, nicht `RHYTHMUS_BAUSTEINE` (dort fehlt `pSS`).
@@ -238,6 +242,42 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `bwDruckZeichnen` dafür als feste Attribute.
   - Zustand in `localStorage` `rw-beat` (nur dieser Browser). Noch ohne
     Link und Audio-Export.
+- `js/drumset.js` - **Drumset-Werkstatt** (Reiter `drumset`): das ganze
+  Schlagzeug in EINEM System, eine Stimme, alle Hälse nach oben - zuerst
+  für Fills. Nutzt Notensatz-Teile und Klänge aus beat.js (`bwPause`,
+  `BW_LINIEN`, `bwBecken`, `bwBassdrum`, `bwSummeBauen`, `BEAT_FORMEN`,
+  `FORM_NACH_MUSTER`), die Klassen `bw-…` für Editor und Anzeige.
+  - Instrumente `DS_INST` (Lage): Crash -8 (Hilfslinie), Hi-Hat -4, Ride 0,
+    Tom 1 4, Tom 2 8, Snare 12, Tom 3 20, Bassdrum 28. Familien `becken`,
+    `trommel` (Snare + Toms), `bass`. Tasten 1-8 in dieser Reihenfolge.
+  - Platz = eine Zählzeit = `{r, n}`: Raster `r` 4 (Sechzehntel), 3
+    (Achteltriolen) oder 6 (Sextolen), `n[i]` Instrumente je Rasterstelle
+    (leer = Pause). Das Notenbild ergibt sich erst beim Zeichnen
+    (`dsNotation`): passt alles ins Sechzehntelraster, wird es mit den
+    Beat-Bausteinen notiert (Viertel, punktierte Achtel ...), eine Sextole
+    aus lauter Achteltriolen als Triole; sonst Triole/Sextole mit Zahl
+    (Klammer, sobald Pausen oder getrennte Balken drin sind).
+  - Bausteine `DS_BAUSTEINE`: die 16 geraden aus `BEAT_FORMEN` und Triolen
+    (`T`, `TpT`, `X` sichtbar, Rest hinter „Mehr“). Baustein setzen
+    (`dsBausteinSetzen`): Stift-Instrument bekommt den Rhythmus, dessen
+    Familie wird im Platz ersetzt, andere Instrumente bleiben, soweit sie ins
+    neue Raster passen (sonst Toast). Danach nächster Platz.
+  - Tippen im System (`dsTippen`, Tippflächen `[data-i]` je Rasterstelle,
+    Punkte unten zeigen das Raster): Stift-Instrument an/aus; gleiche
+    Familie wird ersetzt, andere kommt dazu. Über dem System nur Auswahl.
+  - Sekunden im Akkord (z.B. Tom 1 + Tom 2, Hi-Hat + Ride): der obere Kopf
+    rutscht rechts neben den Hals (`dsStimme`).
+  - Zählsilben: Sechzehntel „1 e + e“, Triole „1 ta ti“, Sextole
+    „1 ta ti + ta ti“ (`DS_SILBEN`).
+  - Toms klingen als Sinus mit Tonhöhenabfall + kurzem Fellrauschen
+    (`dsTom`, 210/155/105 Hz). `DrumSpieler` wie `BeatSpieler`.
+  - Vorlagen: Takt 1 Groove mit Crash auf 1, Takt 2 Fill - im Loop landet
+    der Fill auf dem Crash. Erster Besuch startet mit der ersten Vorlage.
+  - Druck/PDF wie in der Beat-Werkstatt: Blatt `#ds-druck` (Klasse
+    `bw-nur-druck`), `dsDruckZeichnen`, `blattPdf`.
+  - Zustand in `localStorage` `rw-drumset`. Noch ohne Link, Audio-Export,
+    Akzente und zweite Stimme (Füße mit Hals nach unten) - später sollen
+    Beats und Fills zusammen in einem Stück stehen.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über

@@ -1270,40 +1270,7 @@ function bwEinrichten() {
     bwZeichnen();
 }
 
-/* ---------- Reiter: Rhythmus-Werkstatt | Beat-Werkstatt ---------- */
-const REITER_SCHLUESSEL = 'rw-reiter';
-function reiterZeigen(name) {
-    const beatAn = name === 'beat';
-    document.getElementById('reiter-rhythmus').classList.toggle('hidden', beatAn);
-    document.getElementById('reiter-beat').classList.toggle('hidden', !beatAn);
-    document.body.classList.toggle('druck-beat', beatAn);   // Drucken (⌘P) nimmt das Blatt des offenen Reiters
-    document.querySelectorAll('[data-reiter]').forEach(b => {
-        const an = b.dataset.reiter === name;
-        b.classList.toggle('an', an);
-        b.setAttribute('aria-selected', an ? 'true' : 'false');
-    });
-    document.getElementById('kopf-untertitel').textContent = beatAn
-        ? 'Hi-Hat · Bassdrum · Snare – Beats bauen'
-        : 'Takte bauen · vorklatschen · einüben';
-    try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ }
-    if (beatAn) {
-        Vorklatschen.stoppen(true);
-        Metronom.stoppen();
-        bwAnzeigeZeichnen();   // Breite stimmt erst, wenn der Reiter sichtbar ist
-    } else {
-        BeatSpieler.stoppen();
-        anzeigeNeuZeichnen();
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     if (ANSICHT) return;   // Einbett-Ansichten zeigen nur die Rhythmus-Uebung
     bwEinrichten();
-    document.querySelectorAll('[data-reiter]').forEach(b => b.addEventListener('click', () => reiterZeigen(b.dataset.reiter)));
-    let start = 'rhythmus';
-    try { start = localStorage.getItem(REITER_SCHLUESSEL) || 'rhythmus'; } catch (e) { /* egal */ }
-    // Ein Rhythmus-Link geht immer in die Rhythmus-Werkstatt
-    if (/(^|[#&])r=/.test(location.hash)) start = 'rhythmus';
-    if (start === 'beat') reiterZeigen('beat');
-    window.addEventListener('hashchange', () => { if (/(^|[#&])r=/.test(location.hash)) reiterZeigen('rhythmus'); });
 });
