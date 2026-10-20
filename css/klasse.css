@@ -93,3 +93,4 @@
 .zk-zeit { font-variant-numeric: tabular-nums; }
 .zk-link { margin-top: 1.2rem; background: none; border: none; color: var(--text-schwach); text-decoration: underline; font: inherit; font-size: .85rem; cursor: pointer; }
 .zk-raumkopf .fuellt { flex: 1; }
+#zurueck-link { text-decoration: none; }

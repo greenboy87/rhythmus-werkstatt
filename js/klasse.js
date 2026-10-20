@@ -404,6 +404,7 @@ async function lSchliessen() {
 
 function lehrerAufbauen() {
     zeigen('lehrer', true);
+    zeigen('zurueck-link', true);   // nur fuer die Lehrkraft - Kinder sollen im Spiel bleiben
     const palette = $('l-palette');
     ZS_BAUSTEINE.forEach(b => {
         const k = document.createElement('button');
