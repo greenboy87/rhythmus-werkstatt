@@ -15,21 +15,16 @@
    = richtige Kaestchen / (richtige + Fehler). Eingebettet (Minispiele)
    geht es per postMessage an die Seite ({typ:'rw-runde', stufe, pct,
    detail}), die daraus den Bestenlisten-Eintrag macht.
-   Notenbild = stueckAnzeigeHtml aus noten.js; die Kaestchen sitzen
-   genau an der Stelle der Zaehlzeiten (ZAEHL_Y), ersetzen sie also.
+   Wuerfeln, Pruefen und Zeichnen kommen aus js/zaehlkern.js (gemeinsam
+   mit dem Klassenspiel); hier nur Seite, Runden, Statistik.
    ============================================================ */
 const ZS_SCHLUESSEL = 'rw-zaehlen';
-// Triolen haben keine deutsche Zaehlsilbe im Sechzehntelraster (siehe
-// stueckAnzeigeHtml) - deshalb nicht im Spiel.
-const ZS_BAUSTEINE = RHYTHMUS_BAUSTEINE.filter(b => !b.triole);
-const ZS_TAKTARTEN = ['2/4', '3/4', '4/4'];
 const ZS_STUFEN = {
     1: 'Jede Eingabe wird sofort geprüft – ein Fehler zählt direkt.',
     2: 'Geprüft wird erst, wenn ein Takt ganz ausgefüllt ist.',
     3: 'Geprüft wird erst, wenn die ganze Zeile ausgefüllt ist.'
 };
 const ZS_RUNDE = 5;   // Aufgaben je Runde
-const ZS_FELD_B = 22, ZS_FELD_H = 24, ZS_FELD_OBEN = ZAEHL_Y - 20;
 
 const zs = {
     auswahl: new Set(['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA']),
@@ -65,73 +60,6 @@ function zsSpeichern() {
     } catch (e) { /* egal */ }
 }
 
-/* ---------- Zaehlsilbe ----------
-   Dieselbe Rechnung wie die Zaehlzeiten in stueckAnzeigeHtml, nur mit "+"
-   statt "und" (passt ins Kaestchen): 1 e + e 2 e + e ... */
-function zsSilbe(v, zeichen) {
-    const pw = pulsWert(zeichen);
-    const puls = Math.floor((v + 1e-6) / pw);
-    const stufe = Math.round((v - puls * pw) / 0.25) % 4;
-    return stufe === 0 ? String(puls + 1) : ['', 'e', '+', 'e'][stufe];
-}
-
-/* ---------- Takte wuerfeln ----------
-   Nicht der einfache Generator (generator.js), der schon den ersten
-   sinnvollen Takt nimmt: Hier werden viele Kandidaten gewuerfelt und einer
-   der "kniffligsten" genommen - Einsaetze neben der Zaehlzeit, Pausen auf
-   dem Schlag, Halbe/Punktierte, die ueber Schlaege reichen, und moeglichst
-   verschiedene Bausteine. Ein Takt darf auch mit einer Pause beginnen. */
-function zsTaktBewerten(takt, zeichen) {
-    let v = 0, punkte = 0, daneben = 0, noten = 0, pausen = 0;
-    takt.forEach(b => b.teile.forEach(t => {
-        const silbe = zsSilbe(v, zeichen);
-        const aufSchlag = /^\d$/.test(silbe);
-        if (t.p) { pausen++; if (aufSchlag) punkte += 1.5; }
-        else {
-            noten++;
-            if (!aufSchlag) daneben += silbe === 'e' ? 1.5 : 1;
-            if (t.d > 1 || istPunktiert(t.d)) punkte += 1.5;   // klingt ueber den naechsten Einsatz hinweg
-        }
-        v += t.d;
-    }));
-    // Einsaetze neben dem Schlag zaehlen nur bis zu einer Grenze - sonst
-    // gewaenne immer der Takt mit den meisten Sechzehnteln. Eine lange Kette
-    // gleicher Sechzehntel ist eher Fleiss als Koennen.
-    const pulse = taktPulse(zeichen);
-    punkte += Math.min(daneben, pulse * 1.5);
-    if (noten > pulse * 3) punkte -= (noten - pulse * 3) * 1.5;
-    // Abwechslung: jeder weitere gleiche Baustein im Takt kostet
-    const arten = new Set(takt.map(b => b.code)).size;
-    punkte += arten * 1.5 - (takt.length - arten) * 1.5;
-    if (pausen > 1) punkte -= (pausen - 1) * 1.5;
-    return { punkte, noten, pausen };
-}
-function zsTaktWuerfeln(erlaubt, zeichen, vorher) {
-    const soll = taktSoll(zeichen);
-    const kandidaten = [];
-    for (let versuch = 0; versuch < 200 && kandidaten.length < 40; versuch++) {
-        const takt = [];
-        let rest = soll;
-        while (rest > 0.001) {
-            const moeglich = erlaubt.filter(b => b.dauer <= rest + 0.001);
-            if (!moeglich.length) break;
-            takt.push(moeglich[Math.floor(Math.random() * moeglich.length)]);
-            rest -= takt[takt.length - 1].dauer;
-        }
-        if (Math.abs(rest) > 0.001) continue;
-        const w = zsTaktBewerten(takt, zeichen);
-        if (w.noten < 2 && soll > 1) continue;
-        if (w.pausen > w.noten) continue;
-        const kuerzel = takt.map(b => b.code).join('-');
-        if (kuerzel === vorher) continue;
-        kandidaten.push({ takt, punkte: w.punkte + Math.random() * 4, kuerzel });
-    }
-    if (!kandidaten.length) return null;
-    kandidaten.sort((a, b) => b.punkte - a.punkte);
-    // nicht immer der allerschwerste - sonst kaeme oft derselbe Takt
-    return kandidaten[Math.floor(Math.random() * Math.min(6, kandidaten.length))];
-}
-
 /* Eingebettet (Minispiele-Seite): der Seite Bescheid geben */
 function zsMelden(nachricht) {
     if (EINGEBETTET) window.parent.postMessage(nachricht, '*');
@@ -155,124 +83,47 @@ function zsWeiter() {
 
 function zsAufgabeErzeugen() {
     const regeln = zsRunde.regeln;
-    const erlaubt = ZS_BAUSTEINE.filter(b => regeln.auswahl.includes(b.code));
-    if (!erlaubt.length) { zeigeToast('Wähle mindestens einen Baustein aus.', 'danger'); return false; }
-    const takte = [];
-    let vorher = null;
-    for (let t = 0; t < regeln.takte; t++) {
-        const k = zsTaktWuerfeln(erlaubt, regeln.zeichen, vorher);
-        if (!k) { zeigeToast('Aus dieser Auswahl geht kein Takt genau auf – nimm noch einen kürzeren Baustein dazu.', 'danger'); return false; }
-        takte.push({ bausteine: k.takt });
-        vorher = k.kuerzel;
-    }
-    const felder = [];
-    takte.forEach((takt, ti) => {
-        let v = 0;
-        takt.bausteine.forEach((b, bi) => b.teile.forEach((teil, tei) => {
-            if (!teil.p) felder.push({ takt: ti, baustein: bi, teil: tei, soll: zsSilbe(v, regeln.zeichen), wert: '', status: '' });
-            v += teil.d;
-        }));
-    });
+    const w = zkTakteWuerfeln(regeln.auswahl, regeln.zeichen, regeln.takte);
+    if (w.fehler) { zeigeToast(w.fehler, 'danger'); return false; }
     zsStoppen();
-    zsAufgabe = { stueck: { zeichen: regeln.zeichen, takte }, felder, aktiv: 0, fehler: 0, start: Date.now(), fertig: false, stufe: regeln.stufe };
+    zsAufgabe = zkAufgabe({ zeichen: regeln.zeichen, takte: w.takte }, regeln.stufe);
     zsStand.nr++;
     zsRunde.nr++;
     zsZeichnen();
     return true;
 }
 
-/* ---------- Eingabe ---------- */
-const zsOffen = (f) => f.status !== 'richtig' && f.status !== 'geloest';
-// Naechstes Kaestchen, das noch etwas braucht (leer oder falsch) - ab "ab",
-// sonst von vorn.
-function zsNaechstes(ab) {
-    const felder = zsAufgabe.felder;
-    const braucht = (f) => zsOffen(f) && (f.wert === '' || f.status === 'falsch');
-    for (let i = ab; i < felder.length; i++) if (braucht(felder[i])) return i;
-    for (let i = 0; i < ab; i++) if (braucht(felder[i])) return i;
-    return -1;
-}
-
+/* ---------- Eingabe (Regeln im Kern, hier Statistik und Anzeige) ---------- */
 function zsEingeben(zeichen) {
     const a = zsAufgabe;
-    if (!a || a.fertig) return;
-    const f = a.felder[a.aktiv];
-    if (!f || !zsOffen(f)) { const n = zsNaechstes(a.aktiv); if (n < 0) return; a.aktiv = n; return zsEingeben(zeichen); }
-    if (a.stufe === 1) {
-        if (zeichen === f.soll) {
-            f.wert = zeichen; f.status = 'richtig'; zsStand.richtig++;
-        } else {
-            a.fehler++; zsStand.fehler++;
-            zsZeichnen({ blitz: a.aktiv, falsch: zeichen });
-            return;
-        }
-    } else {
-        f.wert = zeichen; f.status = '';
-        // Pruefeinheit: der Takt (Stufe 2) bzw. die ganze Aufgabe (Stufe 3)
-        const einheit = a.felder.filter(g => a.stufe === 3 || g.takt === f.takt);
-        if (einheit.every(g => !zsOffen(g) || g.wert !== '' && g.status !== 'falsch')) {
-            let falsch = 0;
-            einheit.forEach(g => {
-                if (!zsOffen(g)) return;
-                if (g.wert === g.soll) { g.status = 'richtig'; zsStand.richtig++; }
-                else { g.status = 'falsch'; falsch++; }
-            });
-            a.fehler += falsch; zsStand.fehler += falsch;
-            if (falsch) {
-                zeigeToast(`${falsch} ${falsch === 1 ? 'Kästchen stimmt' : 'Kästchen stimmen'} nicht – ${a.stufe === 2 ? 'im Takt ' + (f.takt + 1) : 'in der Zeile'}.`, 'danger');
-                a.aktiv = a.felder.indexOf(einheit.find(g => g.status === 'falsch'));
-                return zsFertigPruefen();
-            }
-        }
+    const e = zkEingeben(a, zeichen);
+    if (!e) return;
+    zsStand.richtig += e.richtig; zsStand.fehler += e.falsch;
+    if (e.art === 'falsch') { zsZeichnen({ feld: e.feld, zeichen }); return; }
+    if (e.art === 'geprueft' && e.falsch) {
+        zeigeToast(`${e.falsch} ${e.falsch === 1 ? 'Kästchen stimmt' : 'Kästchen stimmen'} nicht – ${a.stufe === 2 ? 'im Takt ' + (e.takt + 1) : 'in der Zeile'}.`, 'danger');
     }
-    const n = zsNaechstes(a.aktiv + 1);
-    if (n >= 0) a.aktiv = n;
     zsFertigPruefen();
 }
-
-function zsLoeschen() {
-    const a = zsAufgabe;
-    if (!a || a.fertig) return;
-    let f = a.felder[a.aktiv];
-    if (!f || !zsOffen(f) || f.wert === '') {
-        // leeres Kaestchen: eins zurueck und das leeren
-        for (let i = a.aktiv - 1; i >= 0; i--) if (zsOffen(a.felder[i])) { a.aktiv = i; break; }
-        f = a.felder[a.aktiv];
-    }
-    if (f && zsOffen(f)) { f.wert = ''; f.status = ''; }
-    zsZeichnen();
-}
-
-function zsBewegen(schritt) {
-    const a = zsAufgabe;
-    if (!a || a.fertig) return;
-    for (let i = a.aktiv + schritt; i >= 0 && i < a.felder.length; i += schritt) {
-        if (zsOffen(a.felder[i])) { a.aktiv = i; break; }
-    }
-    zsZeichnen();
-}
-
+function zsLoeschen() { zkLoeschen(zsAufgabe); zsZeichnen(); }
+function zsBewegen(schritt) { zkBewegen(zsAufgabe, schritt); zsZeichnen(); }
 function zsLoesungZeigen() {
-    const a = zsAufgabe;
-    if (!a || a.fertig) return;
-    let offen = 0;
-    a.felder.forEach(f => { if (zsOffen(f)) { f.wert = f.soll; f.status = 'geloest'; offen++; } });
-    a.fehler += offen; zsStand.fehler += offen;
+    const offen = zkLoesung(zsAufgabe);
+    zsStand.fehler += offen;
     zsFertigPruefen();
 }
 
 function zsFertigPruefen() {
     const a = zsAufgabe;
-    if (!a.felder.every(f => !zsOffen(f))) { zsZeichnen(); return; }
-    a.fertig = true;
-    a.dauer = Math.round((Date.now() - a.start) / 1000);
+    if (!a.fertig || a.gezaehlt) { zsZeichnen(); return; }
+    a.gezaehlt = true;
     const geloest = a.felder.some(f => f.status === 'geloest');
     if (a.fehler === 0 && !geloest) {
         zsStand.serie++;
         if (zsStand.serie > (zs.beste[a.stufe] || 0)) { zs.beste[a.stufe] = zsStand.serie; zsSpeichern(); }
     } else zsStand.serie = 0;
     const r = zsRunde;
-    r.ergebnisse.push({ richtig: a.felder.filter(f => f.status === 'richtig').length, fehler: a.fehler });
+    r.ergebnisse.push({ richtig: zkRichtige(a), fehler: a.fehler });
     if (r.nr >= ZS_RUNDE) {
         r.fertig = true;
         r.dauer = Math.round((Date.now() - r.start) / 1000);
@@ -288,7 +139,6 @@ function zsFertigPruefen() {
 }
 
 /* ---------- Zeichnen ---------- */
-function zsZeit(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
 function zsZeichnen(blitz) {
     const host = document.getElementById('zs-noten');
@@ -301,48 +151,7 @@ function zsZeichnen(blitz) {
     if (!zsAufgabe) return;
     const a = zsAufgabe;
 
-    // Breite: so gross, dass die Kaestchen auf dem Tablet gut zu treffen sind
-    // (Massstab nach dem breitesten Takt: der soll die Zeile gerade fuellen,
-    // hoechstens aber gut doppelt so gross werden wie die normale Anzeige)
-    const verfuegbar = Math.max(280, (host.clientWidth || 800) - 8);
-    const probe = document.createElement('div');
-    // breite 1 = jeder Takt in eigener Zeile, aber mit denselben (nicht
-    // zeitgetreuen) Abstaenden wie gleich - zeitgetreu waere ein Wink mit dem Zaunpfahl
-    probe.innerHTML = stueckAnzeigeHtml(a.stueck, { zaehlzeiten: true, notenlinien: zs.notenlinien, breite: 1 });
-    const breitester = Math.max(...[...probe.querySelectorAll('svg')].map(s => s.viewBox.baseVal.width));
-    const skal = Math.max(0.7, Math.min(2.2, verfuegbar / breitester));
-    host.innerHTML = stueckAnzeigeHtml(a.stueck, {
-        zaehlzeiten: true, notenlinien: zs.notenlinien, breite: verfuegbar / skal, skalierung: skal
-    });
-    const ns = 'http://www.w3.org/2000/svg';
-    host.querySelectorAll('svg.anzeige-system').forEach(svg => {
-        svg.querySelectorAll('.zaehlzeit, .takt-feld').forEach(el => el.remove());
-        const vb = svg.viewBox.baseVal;
-        const oben = Math.min(vb.y, ZS_FELD_OBEN - 6), plus = vb.y - oben;
-        if (plus > 0) {
-            svg.setAttribute('viewBox', `${vb.x} ${oben} ${vb.width} ${vb.height + plus}`);
-            svg.setAttribute('height', Math.round(vb.height));
-            svg.style.height = Math.round(vb.height * skal) + 'px';
-        }
-        svg.querySelectorAll('.noten-feld').forEach(r => {
-            const i = a.felder.findIndex(f => f.takt === Number(r.dataset.takt) && f.baustein === Number(r.dataset.baustein) && f.teil === Number(r.dataset.teil));
-            if (i < 0) return;
-            r.dataset.feld = i;
-            const f = a.felder[i];
-            const cx = Number(r.getAttribute('x')) + 12;
-            const g = document.createElementNS(ns, 'g');
-            const klassen = ['zs-feld'];
-            if (f.status) klassen.push(f.status);
-            if (i === a.aktiv && !a.fertig && zsOffen(f)) klassen.push('aktiv');
-            if (blitz && blitz.blitz === i) klassen.push('blitz');
-            g.setAttribute('class', klassen.join(' '));
-            g.dataset.feld = i;
-            const zeigen = blitz && blitz.blitz === i ? blitz.falsch : f.wert;
-            g.innerHTML = `<rect x="${cx - ZS_FELD_B / 2}" y="${ZS_FELD_OBEN}" width="${ZS_FELD_B}" height="${ZS_FELD_H}" rx="4"/>` +
-                `<text x="${cx}" y="${ZS_FELD_OBEN + ZS_FELD_H / 2 + 1}" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="800" font-family="DM Sans, sans-serif">${zeigen}</text>`;
-            svg.appendChild(g);
-        });
-    });
+    zkZeichnen(host, a, { notenlinien: zs.notenlinien, blitz });
     if (blitz) setTimeout(() => { if (zsAufgabe === a) zsZeichnen(); }, 650);
 
     // Zahlenfeld: nur so viele Zahlen, wie der Takt Schlaege hat
@@ -354,7 +163,7 @@ function zsZeichnen(blitz) {
     });
     document.querySelectorAll('#zs-pad [data-tat]').forEach(b => { b.disabled = a.fertig; });
 
-    const stufenName = { 1: 'Stufe 1 · sofort', 2: 'Stufe 2 · je Takt', 3: 'Stufe 3 · ganze Zeile' }[a.stufe];
+    const stufenName = ZS_STUFEN_KURZ[a.stufe];
     const versuche = zsStand.richtig + zsStand.fehler;
     const quote = versuche ? Math.round(zsStand.richtig / versuche * 100) + ' %' : '–';
     document.getElementById('zs-stand').innerHTML =
@@ -468,10 +277,7 @@ function zsAufbauen() {
     document.getElementById('zs-noten').addEventListener('click', (e) => {
         const ziel = e.target.closest('[data-feld]');
         if (!ziel || !zsAufgabe || zsAufgabe.fertig) return;
-        const i = Number(ziel.dataset.feld);
-        if (!zsOffen(zsAufgabe.felder[i])) return;
-        zsAufgabe.aktiv = i;
-        zsZeichnen();
+        if (zkWaehlen(zsAufgabe, Number(ziel.dataset.feld))) zsZeichnen();
     });
     document.addEventListener('keydown', zsTaste);
     let warten = null;

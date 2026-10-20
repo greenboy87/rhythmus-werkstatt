@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Zählzeiten-Klassenspiel</title>
+<meta name="description" content="Zählzeiten über die Noten schreiben – als Klassenspiel mit QR-Code, Namen und Punkten.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/stil.css?v=47">
+<link rel="stylesheet" href="css/klasse.css?v=47">
+</head>
+<body>
+
+<header class="kopfzeile">
+    <h1>🥁 Zählzeiten-Klassenspiel</h1>
+    <span class="untertitel" id="kopf-info"></span>
+    <span class="fuellt"></span>
+    <span class="verbindung" id="verbindung" title="Verbindung"></span>
+    <button type="button" class="btn" id="theme-knopf" title="Helles/dunkles Layout umschalten"><i class="fa-solid fa-circle-half-stroke"></i></button>
+</header>
+
+<!-- =================== LEHRKRAFT =================== -->
+<main id="lehrer" class="hidden">
+
+    <!-- Einstellungen -->
+    <section class="karte" id="l-einstellungen">
+        <h2 class="zk-titel">Spiel zusammenstellen</h2>
+        <p class="zs-hinweis" style="margin:.4rem 0 .8rem;">
+            Noten- und Pausenwerte antippen, die vorkommen dürfen. Alle Kinder bekommen in jeder Runde denselben Rhythmus.
+        </p>
+        <div class="leiste" id="l-palette" style="margin-bottom:.8rem;"></div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="schalter-feld">Taktart</span>
+            <span class="segment">
+                <button type="button" class="btn" data-l-zeichen="2/4">2/4</button>
+                <button type="button" class="btn" data-l-zeichen="3/4">3/4</button>
+                <button type="button" class="btn" data-l-zeichen="4/4">4/4</button>
+            </span>
+            <span class="schalter-feld zk-abstand">Takte</span>
+            <button type="button" class="btn" data-l-plus="takte:-1">−</button>
+            <span class="btn zk-zahl" id="l-takte"></span>
+            <button type="button" class="btn" data-l-plus="takte:1">+</button>
+            <span class="schalter-feld zk-abstand">Runden</span>
+            <button type="button" class="btn" data-l-plus="runden:-1">−</button>
+            <span class="btn zk-zahl" id="l-runden"></span>
+            <button type="button" class="btn" data-l-plus="runden:1">+</button>
+        </div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="schalter-feld">Stufe</span>
+            <span class="segment">
+                <button type="button" class="btn" data-l-stufe="1">1 · sofort</button>
+                <button type="button" class="btn" data-l-stufe="2">2 · je Takt</button>
+                <button type="button" class="btn" data-l-stufe="3">3 · ganze Zeile</button>
+            </span>
+            <span class="zs-hinweis" id="l-stufe-text"></span>
+        </div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="schalter-feld">Zeit je Runde</span>
+            <span class="segment" id="l-zeiten">
+                <button type="button" class="btn" data-l-zeit="0">ohne</button>
+                <button type="button" class="btn" data-l-zeit="45">45 s</button>
+                <button type="button" class="btn" data-l-zeit="60">60 s</button>
+                <button type="button" class="btn" data-l-zeit="90">90 s</button>
+                <button type="button" class="btn" data-l-zeit="120">2 min</button>
+            </span>
+            <label class="chip zk-abstand"><input type="checkbox" id="l-notenlinien"><span>Notenlinien</span></label>
+        </div>
+        <details class="zk-eigene">
+            <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
+            <p class="zs-hinweis" style="margin:.5rem 0;">
+                Eine Zeile pro Runde: ein Link aus der Rhythmus-Werkstatt („Link kopieren“) oder Kürzel wie
+                <code>V-AA-Vp-SSSS_H-H</code> (<code>_</code> trennt Takte). Sind hier Zeilen eingetragen, gelten sie –
+                Bausteine, Takte und Runden oben werden dann nicht gebraucht.
+            </p>
+            <textarea id="l-eigene" rows="4" spellcheck="false" placeholder="https://greenboy87.github.io/rhythmus-werkstatt/#t=4/4&r=V-AA-Vp-SSSS&#10;AA-pA-ASS-V_H-Vp-AA"></textarea>
+        </details>
+        <div class="leiste" style="margin-top:.9rem;">
+            <span class="zs-hinweis">Punkte: richtiges Kästchen +2, Fehler −1, wer zuerst fertig ist +5 / +3 / +1.</span>
+            <button type="button" class="btn btn-primär" id="l-oeffnen-btn" style="margin-left:auto;"><i class="fa-solid fa-door-open"></i> Raum öffnen</button>
+        </div>
+    </section>
+
+    <!-- Raum: Lobby, Runde, Auswertung, Ende -->
+    <section class="karte hidden" id="l-raum">
+        <div class="leiste zk-raumkopf">
+            <span class="zk-raumcode">Raum <b id="l-code"></b></span>
+            <span class="zs-hinweis" id="l-phase-info"></span>
+            <span class="fuellt"></span>
+            <span class="zk-timer hidden" id="l-timer"></span>
+            <button type="button" class="btn hidden" id="l-qr-klein-btn" title="QR-Code zeigen"><i class="fa-solid fa-qrcode"></i></button>
+            <button type="button" class="btn" id="l-schliessen-btn" title="Raum schließen"><i class="fa-solid fa-xmark"></i> Schließen</button>
+        </div>
+
+        <!-- Lobby -->
+        <div id="l-lobby">
+            <div class="zk-lobby">
+                <div class="zk-qr-feld">
+                    <div id="l-qr"></div>
+                    <div class="zk-url" id="l-url"></div>
+                </div>
+                <div class="zk-lobby-rechts">
+                    <p class="zk-gross">QR-Code scannen, Namen eingeben – los geht’s!</p>
+                    <p class="zs-hinweis" id="l-anzahl"></p>
+                    <div class="zk-namen" id="l-namen"></div>
+                </div>
+            </div>
+            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
+                <button type="button" class="btn btn-primär zk-gross-knopf" id="l-start-btn"><i class="fa-solid fa-play"></i> Spiel starten</button>
+            </div>
+        </div>
+
+        <!-- Runde -->
+        <div id="l-runde" class="hidden">
+            <div id="l-noten" class="zk-noten"></div>
+            <div class="zk-fortschritt" id="l-fortschritt"></div>
+            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
+                <button type="button" class="btn btn-warnung" id="l-beenden-btn"><i class="fa-solid fa-flag-checkered"></i> Runde beenden</button>
+            </div>
+        </div>
+
+        <!-- Auswertung -->
+        <div id="l-auswertung" class="hidden">
+            <div id="l-loesung" class="zk-noten"></div>
+            <div class="zk-zwei">
+                <div><h3 class="zk-untertitel">Diese Runde</h3><div id="l-rundenliste"></div></div>
+                <div><h3 class="zk-untertitel">Gesamt</h3><div id="l-gesamtliste"></div></div>
+            </div>
+            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
+                <button type="button" class="btn btn-primär zk-gross-knopf" id="l-weiter-btn"></button>
+            </div>
+        </div>
+
+        <!-- Ende -->
+        <div id="l-ende" class="hidden">
+            <div class="zk-podest" id="l-podest"></div>
+            <div id="l-endliste"></div>
+            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
+                <button type="button" class="btn" id="l-nochmal-btn"><i class="fa-solid fa-rotate-right"></i> Noch ein Spiel (gleiche Klasse)</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- QR klein waehrend des Spiels (Nachzuegler) -->
+    <dialog id="l-qr-dialog" class="zk-dialog">
+        <div id="l-qr-gross"></div>
+        <p class="zk-url" id="l-url-gross"></p>
+        <button type="button" class="btn" id="l-qr-zu">Schließen</button>
+    </dialog>
+</main>
+
+<!-- =================== SCHUELER =================== -->
+<main id="schueler" class="hidden">
+    <!-- Beitreten -->
+    <section class="karte zk-mitte" id="s-beitritt">
+        <h2 class="zk-titel">Raum <span id="s-code"></span></h2>
+        <div id="s-code-feld" class="hidden" style="margin:.8rem 0;">
+            <input type="text" id="s-code-eingabe" class="zk-eingabe" maxlength="6" placeholder="Raumcode" autocomplete="off" autocapitalize="characters">
+        </div>
+        <p class="zs-hinweis" style="margin:.6rem 0;">Wie heißt du?</p>
+        <input type="text" id="s-name" class="zk-eingabe" maxlength="12" placeholder="Dein Name" autocomplete="off" autocapitalize="words" enterkeyhint="go">
+        <div class="zk-emojis" id="s-emojis"></div>
+        <button type="button" class="btn btn-primär zk-gross-knopf" id="s-los-btn" style="margin-top:1rem;"><i class="fa-solid fa-right-to-bracket"></i> Mitspielen</button>
+    </section>
+
+    <!-- Warten / Ergebnis / Ende -->
+    <section class="karte zk-mitte hidden" id="s-info">
+        <div class="zk-ich" id="s-ich"></div>
+        <div id="s-info-text" class="zk-gross"></div>
+        <div id="s-loesung" class="zk-noten"></div>
+        <button type="button" class="zk-link" id="s-raus-btn">Anderen Namen wählen</button>
+    </section>
+
+    <!-- Runde -->
+    <section class="karte hidden" id="s-spiel">
+        <div class="zs-stand" id="s-stand"></div>
+        <div id="s-noten" class="zk-noten"></div>
+        <p class="zk-meldung" id="s-meldung"></p>
+        <div class="zs-pad" id="s-pad">
+            <button type="button" data-zeichen="1">1</button>
+            <button type="button" data-zeichen="2">2</button>
+            <button type="button" data-zeichen="3">3</button>
+            <button type="button" data-zeichen="4">4</button>
+            <button type="button" data-tat="loeschen" title="Löschen (⌫)"><i class="fa-solid fa-delete-left"></i></button>
+            <button type="button" data-zeichen="e" class="silbe">e</button>
+            <button type="button" data-zeichen="+" class="silbe" title="und">+</button>
+            <button type="button" data-tat="links" title="Kästchen davor (←)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" data-tat="rechts" title="Kästchen danach (→)"><i class="fa-solid fa-chevron-right"></i></button>
+            <span></span>
+        </div>
+        <div class="zs-fertig hidden" id="s-fertig"></div>
+    </section>
+</main>
+
+<div id="toast-bereich"></div>
+
+<script src="js/version.js?v=47"></script>
+<script src="js/vendor/qrcode.min.js?v=47"></script>
+<script src="js/noten.js?v=47"></script>
+<script src="js/zaehlkern.js?v=47"></script>
+<script type="module" src="js/klasse.js?v=47"></script>
+</body>
+</html>

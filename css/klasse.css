@@ -1,0 +1,95 @@
+/* ============================================================
+   KLASSENSPIEL (klasse.html, js/klasse.js) - ergaenzt stil.css
+   ============================================================ */
+.zk-titel { font-size: 1.15rem; }
+.zk-untertitel { font-size: .95rem; margin: 0 0 .4rem; color: var(--text-gedaempft); }
+.zk-abstand { margin-left: .6rem; }
+.zk-zahl { min-width: 2.6rem; text-align: center; }
+.zk-eigene summary { cursor: pointer; font-weight: 700; font-size: .9rem; }
+.zk-eigene textarea {
+    width: 100%; box-sizing: border-box; font: .85rem/1.4 ui-monospace, monospace; padding: .6rem;
+    border-radius: 10px; border: 1px solid var(--rand); background: var(--bg-erhoben); color: var(--text);
+}
+.zk-eigene code { background: var(--bg-erhoben); padding: 0 .3em; border-radius: 4px; }
+
+.verbindung { width: 10px; height: 10px; border-radius: 50%; background: var(--gefahr); }
+.verbindung.an { background: var(--erfolg); }
+
+/* Raum-Kopf */
+.zk-raumkopf { margin-bottom: 1rem; }
+.zk-raumcode { font-size: 1.1rem; font-weight: 700; }
+.zk-raumcode b { font-size: 1.6rem; letter-spacing: .12em; color: var(--akzent); font-variant-numeric: tabular-nums; }
+.zk-timer { font-size: 2rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.zk-timer.knapp { color: var(--gefahr); }
+
+/* Lobby */
+.zk-lobby { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start; }
+.zk-qr-feld { background: #fff; padding: 14px; border-radius: 16px; text-align: center; }
+.zk-qr-feld img, .zk-qr-feld canvas, #l-qr-gross img, #l-qr-gross canvas { display: block; margin: 0 auto; }
+.zk-url { color: #0f172a; font-size: .85rem; font-weight: 700; margin-top: .5rem; word-break: break-all; }
+.zk-gross { font-size: 1.35rem; font-weight: 800; margin: 0 0 .4rem; }
+.zk-namen { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+.zk-name {
+    display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .5rem .45rem .9rem;
+    border-radius: 999px; background: var(--bg-erhoben); border: 1px solid var(--rand); font-weight: 800; font-size: 1.05rem;
+    animation: toast-ein .2s ease-out;
+}
+.zk-name button { border: none; background: transparent; color: var(--text-schwach); font-size: 1.1rem; line-height: 1; padding: 0 .3rem; cursor: pointer; }
+.zk-name button:hover { color: var(--gefahr); }
+.zk-gross-knopf { font-size: 1.05rem; padding: .75rem 1.3rem; }
+@media (max-width: 760px) { .zk-lobby { grid-template-columns: 1fr; } .zk-qr-feld { justify-self: center; } }
+
+/* Noten */
+.zk-noten { overflow-x: auto; padding: .4rem 0; }
+.zk-noten .anzeige-system { touch-action: manipulation; }
+
+/* Fortschritt waehrend der Runde */
+.zk-fortschritt { margin-top: 1rem; display: grid; gap: .35rem; }
+.zk-balken-zeile { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr 5.5rem; gap: .7rem; align-items: center; }
+.zk-balken-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zk-balken { height: 14px; border-radius: 999px; background: var(--rand-schwach); overflow: hidden; }
+.zk-balken span { display: block; height: 100%; background: var(--akzent); border-radius: 999px; transition: width .3s; }
+.zk-balken-zeile.fertig .zk-balken span { background: var(--erfolg); }
+.zk-balken-wert { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.zk-balken-zeile.fertig .zk-balken-wert { color: var(--erfolg); }
+
+/* Auswertung */
+.zk-zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+@media (max-width: 760px) { .zk-zwei { grid-template-columns: 1fr; } }
+.zk-tabelle { width: 100%; border-collapse: collapse; font-size: 1.05rem; }
+.zk-tabelle td { padding: .4rem .5rem; border-bottom: 1px solid var(--rand-schwach); }
+.zk-tabelle .zk-p { text-align: right; font-weight: 900; color: var(--akzent); white-space: nowrap; }
+.zk-tabelle .zk-klein { color: var(--text-gedaempft); font-size: .85rem; white-space: nowrap; }
+.zk-tabelle .zk-platz { width: 2.5rem; font-weight: 800; color: var(--text-gedaempft); }
+
+/* Podest */
+.zk-podest { display: flex; justify-content: center; align-items: flex-end; gap: 1rem; margin: 1rem 0 1.5rem; }
+.zk-stufe { text-align: center; width: 10rem; }
+.zk-stufe-name { font-weight: 900; font-size: 1.2rem; margin-bottom: .2rem; word-break: break-word; }
+.zk-stufe-p { color: var(--akzent); font-weight: 900; font-size: 1.1rem; margin-bottom: .4rem; }
+.zk-stufe-block { background: var(--bg-erhoben); border: 1px solid var(--rand); border-radius: 12px 12px 0 0; font-size: 2.4rem; display: flex; align-items: flex-start; justify-content: center; padding-top: .6rem; }
+.zk-stufe-1 .zk-stufe-block { height: 9rem; background: color-mix(in srgb, var(--warnung) 25%, var(--bg-erhoben)); }
+.zk-stufe-2 .zk-stufe-block { height: 6.5rem; }
+.zk-stufe-3 .zk-stufe-block { height: 4.5rem; }
+
+.zk-dialog { border: none; border-radius: 18px; padding: 1.2rem; background: #fff; text-align: center; }
+.zk-dialog::backdrop { background: rgba(0,0,0,.6); }
+
+/* Schueler */
+#schueler { max-width: 760px; }
+.zk-mitte { text-align: center; }
+.zk-eingabe {
+    width: 100%; max-width: 20rem; box-sizing: border-box; font: inherit; font-size: 1.3rem; font-weight: 700; text-align: center;
+    padding: .7rem 1rem; border-radius: 12px; border: 2px solid var(--rand); background: var(--bg-erhoben); color: var(--text);
+}
+.zk-eingabe:focus { outline: none; border-color: var(--akzent); }
+.zk-emojis { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; margin-top: .9rem; }
+.zk-emojis button { font-size: 1.5rem; width: 2.8rem; height: 2.8rem; border-radius: 12px; border: 2px solid transparent; background: var(--bg-erhoben); cursor: pointer; }
+.zk-emojis button.an { border-color: var(--akzent); }
+.zk-ich { font-size: 1.05rem; margin-bottom: .8rem; color: var(--text-gedaempft); }
+.zk-ich b { color: var(--text); }
+.zk-plus { color: var(--erfolg); font-size: 1.6rem; }
+.zk-meldung { min-height: 1.3em; text-align: center; color: var(--gefahr); font-weight: 700; margin: .3rem 0 0; }
+.zk-zeit { font-variant-numeric: tabular-nums; }
+.zk-link { margin-top: 1.2rem; background: none; border: none; color: var(--text-schwach); text-decoration: underline; font: inherit; font-size: .85rem; cursor: pointer; }
+.zk-raumkopf .fuellt { flex: 1; }

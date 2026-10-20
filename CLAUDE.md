@@ -334,6 +334,31 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `#reiter-zaehlen`) - eingebettet von den Minispielen
   (`greenboy87/minispiele`, Ordner `zaehlzeiten/`). Änderungen am Spiel also
   nur hier, die Minispiele-Seite ist nur ein Rahmen.
+- `js/zaehlkern.js` - Kern des Zählzeiten-Spiels ohne Seite: Würfeln
+  (`zkTakteWuerfeln`, `zsTaktBewerten`), Aufgabe (`zkAufgabe`), Eingabe und
+  Prüfung je Stufe (`zkEingeben` -> `{art, falsch, richtig}`), `zkLoeschen`,
+  `zkBewegen`, `zkLoesung`, Zeichnen mit Kästchen (`zkZeichnen`),
+  Kürzel hin und zurück (`zkStueckKuerzel`/`zkStueckAusKuerzel`). Gemeinsam
+  für Zähl-Training (zaehlspiel.js: nur Seite, Runden, Statistik) und
+  Klassenspiel. Regeln also nur hier ändern.
+- `klasse.html` + `js/klasse.js` (ES-Modul) + `css/klasse.css` -
+  **Klassenspiel**: ohne Parameter Lehrkraft, `?raum=CODE` Schüler (QR-Code).
+  Firebase wie im Scoreboard (Projekt `greenboys-scoreboard`, SDK 10.13.0
+  modular), Pfad `rooms/zz-<CODE>` - die bestehenden Regeln geben
+  `rooms/$code` frei, das Scoreboard nutzt dort nur Klassennamen. Knoten:
+  `lehrer` (nur Lehrkraft: phase warten|runde|auswertung|ende, runde,
+  runden, stufe, zeichen, aufgabe als Kürzel, start/dauer, spiel, wertung,
+  entfernt), `spieler/<geraet>` ({name, emoji, seit}), `stand/<spiel>_<runde>/
+  <geraet>` (Fortschritt, `fertigAm` als Serverzeit). Die Lehrkraft legt alle
+  Runden vorab fest (`L.plan`: gewürfelt oder eigene Rhythmen - Werkstatt-Link
+  oder Kürzel je Zeile, `eigeneLesen`) und rechnet die Punkte: richtiges
+  Kästchen +2, Fehler -1 (Runde nicht unter 0), die ersten drei Fertigen
+  +5/+3/+1. Runde endet nach der Zeit, per Knopf oder 1,5 s nachdem alle
+  fertig sind. Lehrkraft-Stand in `localStorage` `zk-lehrer` (Neuladen nimmt
+  den Raum wieder auf), Schüler: `zk-geraet` (Kennung), `zk-name`, `zk-raum`,
+  `zk-aufgabe` (eigener Stand der laufenden Runde). „Schließen“ löscht den
+  Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
+  Verlinkt im Zähl-Training („Mit der Klasse spielen“).
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
