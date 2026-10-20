@@ -656,4 +656,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .dk-editor .noten-feld { pointer-events: none; }   /* Akzente spielen im Diktat keine Rolle */
 .editor-takt.dk-richtig { outline: 2px solid var(--erfolg); outline-offset: 2px; }
 .editor-takt.dk-falsch { outline: 2px solid var(--gefahr); outline-offset: 2px; }
+/* Schalter "Zu lange Takte markieren" aus: ein zu voller Takt sieht aus wie jeder andere */
+.dk-editor.ohne-ueberlang .editor-takt.ueberlang { background: var(--bg-erhoben); border-color: var(--rand); }
+.dk-eingabe-titel { font-size: .8rem; font-weight: 700; color: var(--text-gedaempft); margin: .8rem 0 .2rem; }
+.dk-eingabe-titel b { color: var(--erfolg); }
+.dk-eingabe-titel .zs-rot { color: var(--gefahr); }
+#dk-eingabe-noten { overflow-x: auto; }
 #dk-noten { overflow-x: auto; }

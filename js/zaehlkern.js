@@ -100,7 +100,10 @@ function zkTakteWuerfeln(codes, zeichen, anzahl) {
 }
 
 /* ---------- Aufgabe ---------- */
-function zkAufgabe(stueck, stufe) {
+// manuell: Stufe 2/3 pruefen erst auf zkPruefen (Knopf "Pruefen"), nicht von
+// selbst, sobald das letzte Kaestchen gefuellt ist - so kann man vorher noch
+// einmal alles durchsehen. Das Klassenspiel prueft weiter von selbst.
+function zkAufgabe(stueck, stufe, manuell) {
     const felder = [];
     stueck.takte.forEach((takt, ti) => {
         let v = 0;
@@ -109,7 +112,7 @@ function zkAufgabe(stueck, stufe) {
             v += teil.d;
         }));
     });
-    return { stueck, felder, aktiv: 0, fehler: 0, stufe, start: Date.now(), fertig: false };
+    return { stueck, felder, aktiv: 0, fehler: 0, stufe, manuell: !!manuell, start: Date.now(), fertig: false };
 }
 const zsOffen = (f) => f.status !== 'richtig' && f.status !== 'geloest';
 // Naechstes Kaestchen, das noch etwas braucht (leer oder falsch) - ab "ab",
@@ -149,6 +152,11 @@ function zkEingeben(a, zeichen) {
     } else {
         f.wert = zeichen; f.status = '';
         ergebnis = { art: 'gesetzt', falsch: 0, richtig: 0, takt: f.takt };
+        if (a.manuell) {
+            const n = zkNaechstes(a, a.aktiv + 1);
+            if (n >= 0) a.aktiv = n;
+            return ergebnis;
+        }
         // Pruefeinheit: der Takt (Stufe 2) bzw. die ganze Aufgabe (Stufe 3)
         const einheit = a.felder.filter(g => a.stufe === 3 || g.takt === f.takt);
         if (einheit.every(g => !zsOffen(g) || g.wert !== '' && g.status !== 'falsch')) {
@@ -167,6 +175,32 @@ function zkEingeben(a, zeichen) {
     }
     const n = zkNaechstes(a, a.aktiv + 1);
     if (n >= 0) a.aktiv = n;
+    zkFertigPruefen(a);
+    return ergebnis;
+}
+/* Knopf "Pruefen" (manuell, Stufe 2/3): prueft jede Einheit - den Takt
+   (Stufe 2) bzw. die ganze Aufgabe (Stufe 3) -, in der alle offenen
+   Kaestchen gefuellt sind. Gezaehlt werden nur neu eingetragene Werte;
+   ein falsch markiertes, nicht ausgebessertes Kaestchen zaehlt nicht noch
+   einmal. Ergebnis: { art: 'unvollstaendig' | 'unveraendert' | 'geprueft',
+   falsch, richtig } */
+function zkPruefen(a) {
+    if (!a || a.fertig || a.stufe === 1) return null;
+    const einheiten = a.stufe === 3 ? [a.felder]
+        : [...new Set(a.felder.map(f => f.takt))].map(t => a.felder.filter(f => f.takt === t));
+    const pruefbar = einheiten.filter(e => e.every(g => !zsOffen(g) || g.wert !== ''));
+    if (!pruefbar.length) return { art: 'unvollstaendig', falsch: 0, richtig: 0 };
+    const ergebnis = { art: 'geprueft', falsch: 0, richtig: 0 };
+    pruefbar.forEach(e => e.forEach(g => {
+        if (!zsOffen(g) || g.status === 'falsch') return;
+        if (g.wert === g.soll) { g.status = 'richtig'; ergebnis.richtig++; }
+        else { g.status = 'falsch'; ergebnis.falsch++; }
+    }));
+    if (!ergebnis.falsch && !ergebnis.richtig) ergebnis.art = 'unveraendert';
+    a.fehler += ergebnis.falsch;
+    const falsch = a.felder.findIndex(g => g.status === 'falsch');
+    if (falsch >= 0) a.aktiv = falsch;
+    else { const n = zkNaechstes(a, 0); if (n >= 0) a.aktiv = n; }
     zkFertigPruefen(a);
     return ergebnis;
 }

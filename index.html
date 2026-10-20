@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=51">
-<link rel="stylesheet" href="css/druck.css?v=51">
+<link rel="stylesheet" href="css/stil.css?v=52">
+<link rel="stylesheet" href="css/druck.css?v=52">
 </head>
 <body>
 
@@ -506,8 +506,11 @@
             <span></span>
         </div>
         <div class="leiste" style="justify-content:space-between; margin-top:.8rem;">
-            <span class="zs-hinweis">Tastatur: 1–4, E, + oder U, ⌫, ← →, Enter = weiter · eine Runde = <span class="zs-runde-zahl">5</span> Aufgaben</span>
-            <button type="button" class="btn" id="zs-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
+            <span class="zs-hinweis">Tastatur: 1–4, E, + oder U, ⌫, ← →, Enter = prüfen bzw. weiter · eine Runde = <span class="zs-runde-zahl">5</span> Aufgaben</span>
+            <span class="leiste">
+                <button type="button" class="btn" id="zs-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
+                <button type="button" class="btn btn-primär" id="zs-pruefen-btn"><i class="fa-solid fa-check"></i> Prüfen</button>
+            </span>
         </div>
     </section>
     </div>
@@ -533,6 +536,7 @@
             <span id="dk-takte-anzeige" class="btn" style="min-width:2.6rem; text-align:center">1</span>
             <button type="button" class="btn" id="dk-takte-plus">+</button>
             <label class="chip" style="margin-left:.6rem;" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="dk-klatsch"><span>Klatschmodus</span></label>
+            <label class="chip" title="Aus: Ein zu voller Takt wird beim Eingeben nicht rot markiert und beim Prüfen nicht verraten – schwieriger"><input type="checkbox" id="dk-ueberlang"><span>Zu lange Takte markieren</span></label>
         </div>
         <div class="leiste">
             <div class="leiste" id="dk-metronom"></div>
@@ -546,6 +550,11 @@
             <button type="button" class="btn btn-primär dk-hoeren" id="dk-hoeren-btn"><i class="fa-solid fa-play"></i> Anhören</button>
         </div>
         <div id="dk-noten" class="hidden"></div>
+        <!-- nach dem Loesen: was man selbst eingegeben hat, unter der Loesung -->
+        <div id="dk-eingabe" class="hidden">
+            <div class="dk-eingabe-titel" id="dk-eingabe-titel"></div>
+            <div id="dk-eingabe-noten"></div>
+        </div>
         <div class="dk-editor" id="dk-editor"></div>
         <div class="leiste" id="dk-palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
         <p class="zk-meldung" id="dk-meldung"></p>
@@ -569,21 +578,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=51"></script>
-<script src="js/noten.js?v=51"></script>
-<script src="js/editor.js?v=51"></script>
-<script src="js/audio.js?v=51"></script>
-<script src="js/generator.js?v=51"></script>
-<script src="js/link.js?v=51"></script>
-<script src="js/vendor/lame.min.js?v=51"></script>
-<script src="js/export.js?v=51"></script>
-<script src="js/pdf.js?v=51"></script>
-<script src="js/app.js?v=51"></script>
-<script src="js/beat.js?v=51"></script>
-<script src="js/drumset.js?v=51"></script>
-<script src="js/zaehlkern.js?v=51"></script>
-<script src="js/zaehlspiel.js?v=51"></script>
-<script src="js/spiele.js?v=51"></script>
-<script src="js/reiter.js?v=51"></script>
+<script src="js/version.js?v=52"></script>
+<script src="js/noten.js?v=52"></script>
+<script src="js/editor.js?v=52"></script>
+<script src="js/audio.js?v=52"></script>
+<script src="js/generator.js?v=52"></script>
+<script src="js/link.js?v=52"></script>
+<script src="js/vendor/lame.min.js?v=52"></script>
+<script src="js/export.js?v=52"></script>
+<script src="js/pdf.js?v=52"></script>
+<script src="js/app.js?v=52"></script>
+<script src="js/beat.js?v=52"></script>
+<script src="js/drumset.js?v=52"></script>
+<script src="js/zaehlkern.js?v=52"></script>
+<script src="js/zaehlspiel.js?v=52"></script>
+<script src="js/spiele.js?v=52"></script>
+<script src="js/reiter.js?v=52"></script>
 </body>
 </html>

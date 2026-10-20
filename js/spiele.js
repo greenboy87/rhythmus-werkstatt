@@ -16,8 +16,9 @@ const SPIELE_TEXT = {
     zaehlen: 'Zählzeiten über die Noten schreiben.',
     diktat: 'Zuhören und den Rhythmus aus Bausteinen nachbauen.'
 };
-const dk = { auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'], zeichen: '4/4', takte: 1, klatsch: true };
-let dkAufgabe = null;   // { loesung: stueck, versuche, gehoert, fertig, geloest }
+// ueberlang: zu volle Takte rot markieren und beim Pruefen benennen (aus = schwieriger)
+const dk = { auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'], zeichen: '4/4', takte: 1, klatsch: true, ueberlang: true };
+let dkAufgabe = null;   // { loesung: stueck, versuche, gehoert, fertig, geloest, eingabe, stimmt }
 let dkRunde = null;     // { regeln, nr, ergebnisse: [{erster}], fertig }
 let dkEditor = null, dkSpielt = false;
 
@@ -52,7 +53,7 @@ function dkTakteVergleichen(eingabe, loesung, klatsch) {
 function dkRundeStarten() {
     if (!dk.auswahl.some(c => ZS_BAUSTEINE.some(b => b.code === c))) { zeigeToast('Wähle mindestens einen Baustein aus.', 'danger'); return; }
     const vorher = dkRunde;
-    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch }, nr: 0, ergebnisse: [], fertig: false };
+    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang }, nr: 0, ergebnisse: [], fertig: false };
     if (!dkAufgabeErzeugen()) dkRunde = vorher;
 }
 function dkWeiter() {
@@ -70,6 +71,7 @@ function dkAufgabeErzeugen() {
     dkEditor = rhythmusEditor(document.getElementById('dk-editor'), document.getElementById('dk-palette'), r.zeichen, r.auswahl);
     dkEditor.setzen(r.zeichen, w.takte.map(() => ({ bausteine: [] })));
     dkEditor.aufAenderung(() => { document.getElementById('dk-meldung').textContent = ''; });
+    dkUeberlangZeigen();
     dkZeichnen();
     return true;
 }
@@ -93,7 +95,13 @@ function dkPruefen() {
     if (!a || a.fertig) return;
     const eingabe = dkEditor.stueck();
     const soll = taktSoll(a.loesung.zeichen);
-    const offen = eingabe.takte.findIndex(t => Math.abs(rhythmusDauer(t.bausteine) - soll) > 0.001);
+    // Ohne Markierung verraet auch das Pruefen nicht, dass ein Takt zu voll ist -
+    // er zaehlt dann einfach als falsch. Zu leere Takte meldet es immer.
+    const zeigeZuLang = dkRunde.regeln.ueberlang !== false;
+    const offen = eingabe.takte.findIndex(t => {
+        const d = rhythmusDauer(t.bausteine);
+        return d < soll - 0.001 || (zeigeZuLang && d > soll + 0.001);
+    });
     const meldung = document.getElementById('dk-meldung');
     if (offen >= 0) {
         const zuViel = rhythmusDauer(eingabe.takte[offen].bausteine) > soll;
@@ -102,6 +110,7 @@ function dkPruefen() {
     }
     const stimmt = dkTakteVergleichen(eingabe, a.loesung, dkRunde.regeln.klatsch);
     a.versuche++;
+    a.eingabe = eingabe; a.stimmt = stimmt;   // fuer die Anzeige nach dem Loesen
     document.querySelectorAll('#dk-editor .editor-takt').forEach((box, i) => {
         box.classList.toggle('dk-richtig', !!stimmt[i]);
         box.classList.toggle('dk-falsch', !stimmt[i]);
@@ -113,6 +122,12 @@ function dkPruefen() {
 }
 function dkLoesungZeigen() {
     if (!dkAufgabe || dkAufgabe.fertig) return;
+    // Was gerade im Feld steht, gilt als letzte Eingabe - auch ungeprueft
+    const eingabe = dkEditor.stueck();
+    if (eingabe.takte.some(t => t.bausteine.length)) {
+        dkAufgabe.eingabe = eingabe;
+        dkAufgabe.stimmt = dkTakteVergleichen(eingabe, dkAufgabe.loesung, dkRunde.regeln.klatsch);
+    }
     dkFertig(true);
 }
 function dkFertig(geloest) {
@@ -124,11 +139,17 @@ function dkFertig(geloest) {
 }
 
 /* ---------- Diktat: Zeichnen ---------- */
+function dkUeberlangZeigen() {
+    // Eine laufende Runde behaelt ihre Regel; ohne Runde gilt der Schalter
+    const an = dkRunde ? dkRunde.regeln.ueberlang !== false : dk.ueberlang;
+    document.getElementById('dk-editor').classList.toggle('ohne-ueberlang', !an);
+}
 function dkEinstellungenZeichnen() {
     document.querySelectorAll('#dk-palette-wahl .gen-baustein').forEach(k => k.classList.toggle('an', dk.auswahl.includes(k.dataset.code)));
     document.querySelectorAll('[data-dk-zeichen]').forEach(b => b.classList.toggle('an', b.dataset.dkZeichen === dk.zeichen));
     document.getElementById('dk-takte-anzeige').textContent = dk.takte;
     document.getElementById('dk-klatsch').checked = dk.klatsch;
+    document.getElementById('dk-ueberlang').checked = dk.ueberlang;
 }
 function dkGeaendert() {
     if (dkRunde && !dkRunde.fertig) zeigeToast('Gilt ab der nächsten Runde – „Neue Runde“ startet sie sofort.', 'info');
@@ -160,9 +181,25 @@ function dkZeichnen() {
     // Erst nach dem Loesen steht der Rhythmus als Noten da - vorher waere das die Antwort
     if (a.fertig) {
         const breite = Math.max(280, (noten.clientWidth || spiel.clientWidth) - 40);
-        noten.innerHTML = stueckAnzeigeHtml(a.loesung, { zaehlzeiten: true, breite: breite / 1.6, skalierung: 1.6 });
+        const mitEigen = a.eingabe && a.eingabe.takte.some(t => t.bausteine.length);
+        noten.innerHTML = (mitEigen ? '<div class="dk-eingabe-titel">Lösung</div>' : '') +
+            stueckAnzeigeHtml(a.loesung, { zaehlzeiten: true, breite: breite / 1.6, skalierung: 1.6 });
     }
     else noten.innerHTML = '';
+    // Darunter die eigene (zuletzt gepruefte) Eingabe, Takt fuer Takt bewertet
+    const eigen = document.getElementById('dk-eingabe');
+    const zeigeEigen = a.fertig && a.eingabe && a.eingabe.takte.some(t => t.bausteine.length);
+    eigen.classList.toggle('hidden', !zeigeEigen);
+    if (zeigeEigen) {
+        const falsch = a.stimmt.map((s, i) => s ? null : i + 1).filter(Boolean);
+        document.getElementById('dk-eingabe-titel').innerHTML = 'Deine Eingabe' + (a.eingabe.takte.length > 1
+            ? ' · ' + a.stimmt.map((s, i) => `Takt ${i + 1} ${s ? '<b>✓</b>' : '<span class="zs-rot">✗</span>'}`).join(' · ')
+            : (falsch.length ? ' · <span class="zs-rot">✗</span>' : ' · <b>✓</b>'));
+        const breite = Math.max(280, (noten.clientWidth || spiel.clientWidth) - 40);
+        const takte = a.eingabe.takte.filter(t => t.bausteine.length);
+        document.getElementById('dk-eingabe-noten').innerHTML =
+            stueckAnzeigeHtml({ zeichen: a.eingabe.zeichen, takte }, { zaehlzeiten: true, breite: breite / 1.6, skalierung: 1.6 });
+    } else document.getElementById('dk-eingabe-noten').innerHTML = '';
     ['dk-editor', 'dk-palette', 'dk-knoepfe'].forEach(id => document.getElementById(id).classList.toggle('hidden', a.fertig));
     document.getElementById('dk-fertig').classList.toggle('hidden', !a.fertig);
     if (a.fertig) {
@@ -213,6 +250,7 @@ function spieleAufbauen() {
     document.getElementById('dk-takte-minus').addEventListener('click', () => { dk.takte = Math.max(1, dk.takte - 1); dkGeaendert(); });
     document.getElementById('dk-takte-plus').addEventListener('click', () => { dk.takte = Math.min(4, dk.takte + 1); dkGeaendert(); });
     document.getElementById('dk-klatsch').addEventListener('change', e => { dk.klatsch = e.target.checked; dkGeaendert(); });
+    document.getElementById('dk-ueberlang').addEventListener('change', e => { dk.ueberlang = e.target.checked; dkGeaendert(); dkUeberlangZeigen(); });
     document.getElementById('dk-start-btn').addEventListener('click', dkRundeStarten);
     document.getElementById('dk-weiter-btn').addEventListener('click', dkWeiter);
     document.getElementById('dk-hoeren-btn').addEventListener('click', dkHoeren);
