@@ -9,7 +9,7 @@ const REITER = {
     drumset:  { main: 'reiter-drumset',  untertitel: 'Snare · Toms · Bassdrum · Becken – Fills schreiben', druck: 'druck-drumset' },
     zaehlen:  { main: 'reiter-zaehlen',  untertitel: 'Zählzeiten über die Noten schreiben' }
 };
-function reiterZeigen(name) {
+function reiterZeigen(name, nichtMerken) {
     if (!REITER[name]) name = 'rhythmus';
     Object.entries(REITER).forEach(([n, r]) => {
         document.getElementById(r.main).classList.toggle('hidden', n !== name);
@@ -22,7 +22,7 @@ function reiterZeigen(name) {
         b.setAttribute('aria-selected', an ? 'true' : 'false');
     });
     document.getElementById('kopf-untertitel').textContent = REITER[name].untertitel;
-    try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ }
+    if (!nichtMerken) { try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ } }
     if (name !== 'beat') BeatSpieler.stoppen();
     if (name !== 'drumset') DrumSpieler.stoppen();
     if (name !== 'zaehlen') zsStoppen();
@@ -38,10 +38,15 @@ function reiterZeigen(name) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Minispiele-Seite: nur das Zaehl-Training, ohne den gemerkten Reiter zu aendern
+    if (ANSICHT === 'zaehlen') { reiterZeigen('zaehlen', true); return; }
     if (ANSICHT) return;   // Einbett-Ansichten zeigen nur die Rhythmus-Uebung
     document.querySelectorAll('[data-reiter]').forEach(b => b.addEventListener('click', () => reiterZeigen(b.dataset.reiter)));
     let start = 'rhythmus';
     try { start = localStorage.getItem(REITER_SCHLUESSEL) || 'rhythmus'; } catch (e) { /* egal */ }
+    // Direktlink auf einen Reiter: ?reiter=zaehlen (bzw. beat, drumset)
+    const gewuenscht = new URLSearchParams(location.search).get('reiter');
+    if (REITER[gewuenscht]) start = gewuenscht;
     // Ein Rhythmus-Link geht immer in die Rhythmus-Werkstatt
     if (/(^|[#&])r=/.test(location.hash)) start = 'rhythmus';
     if (start !== 'rhythmus') reiterZeigen(start);

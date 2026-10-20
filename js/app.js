@@ -4,12 +4,15 @@
 
 /* ---------- Ansicht ----------
    ?ansicht=uebung  schlanke Übungsansicht zum Einbetten (z.B. in Beat Vault)
+   ?ansicht=zaehlen nur das Zaehl-Training (fuer die Minispiele-Seite),
+                    ohne Kopfzeile und Reiter, meldet eingebettet seine Hoehe
    ?ansicht=pdf     baut nur das PDF und schickt es per postMessage an die
                     einbettende Seite ({typ:'rw-pdf', pdf: ArrayBuffer, name})
    Steht im Suchteil, nicht im Hash - so bleibt das Link-Format unberuehrt. */
 const ANSICHT = new URLSearchParams(location.search).get('ansicht') || '';
 const EINGEBETTET = window.parent !== window;
 if (ANSICHT === 'uebung' || ANSICHT === 'pdf') document.documentElement.classList.add('ansicht-uebung');
+if (ANSICHT === 'zaehlen') document.documentElement.classList.add('ansicht-zaehlen');
 
 /* ---------- Theme ---------- */
 (function () {
@@ -729,12 +732,13 @@ function einbettungMelden() {
             .catch(e => an({ typ: 'rw-pdf', fehler: e.message }));
         return;
     }
-    if (ANSICHT !== 'uebung' || !window.ResizeObserver) return;
+    if ((ANSICHT !== 'uebung' && ANSICHT !== 'zaehlen') || !window.ResizeObserver) return;
+    const bereich = document.getElementById(ANSICHT === 'zaehlen' ? 'reiter-zaehlen' : 'reiter-rhythmus');
     let zuletzt = 0;
     new ResizeObserver(() => {
-        const hoehe = Math.ceil(document.querySelector('main').getBoundingClientRect().height);
+        const hoehe = Math.ceil(bereich.getBoundingClientRect().height);
         if (hoehe !== zuletzt) { zuletzt = hoehe; an({ typ: 'rw-hoehe', hoehe }); }
-    }).observe(document.querySelector('main'));
+    }).observe(bereich);
 }
 
 document.addEventListener('DOMContentLoaded', init);

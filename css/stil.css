@@ -614,3 +614,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     background: color-mix(in srgb, var(--erfolg) 12%, transparent); border: 1px solid color-mix(in srgb, var(--erfolg) 40%, transparent);
 }
 .zs-fertig b { color: var(--erfolg); }
+
+/* ---------- Spielansicht (?ansicht=zaehlen): nur das Zähl-Training, z.B. eingebettet in die Minispiele ---------- */
+.ansicht-zaehlen .kopfzeile, .ansicht-zaehlen footer { display: none !important; }
+.ansicht-zaehlen body { min-height: 0; padding-bottom: 0; }
+.ansicht-zaehlen main { padding: .5rem; }

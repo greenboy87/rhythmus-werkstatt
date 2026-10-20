@@ -323,6 +323,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   (1-4, E, +/U, ⌫, ←/→, Enter). „Lösung zeigen“ zählt den Rest als Fehler.
   Fertig: „Anhören“ über `Vorklatschen.starten` mit `#zs-noten` als Host.
   Einstellungen und Bestwert-Serie je Stufe in `localStorage` `rw-zaehlen`.
+  Direktlink auf den Reiter: `?reiter=zaehlen` (geht auch mit `beat`,
+  `drumset`). Spielansicht ohne Kopfzeile/Reiter: `?ansicht=zaehlen` (ändert
+  den gemerkten Reiter nicht, meldet eingebettet `rw-hoehe` von
+  `#reiter-zaehlen`) - eingebettet von den Minispielen
+  (`greenboy87/minispiele`, Ordner `zaehlzeiten/`). Änderungen am Spiel also
+  nur hier, die Minispiele-Seite ist nur ein Rahmen.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
