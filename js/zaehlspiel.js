@@ -24,7 +24,8 @@ const ZS_STUFEN = {
     2: 'Geprüft wird erst, wenn ein Takt ganz ausgefüllt ist.',
     3: 'Geprüft wird erst, wenn die ganze Zeile ausgefüllt ist.'
 };
-const ZS_RUNDE = 5;   // Aufgaben je Runde
+// Aufgaben je Runde - eingebettet per &runden=N einstellbar (Beat Vault: 10)
+const ZS_RUNDE = Math.min(20, Math.max(1, Math.round(Number(new URLSearchParams(location.search).get('runden'))) || 5));
 
 const zs = {
     auswahl: new Set(['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA']),
@@ -242,6 +243,7 @@ function zsTaste(e) {
 function zsAufbauen() {
     if (!document.getElementById('reiter-zaehlen')) return;
     zsLaden();
+    document.querySelectorAll('.zs-runde-zahl').forEach(el => { el.textContent = ZS_RUNDE; });
     const palette = document.getElementById('zs-palette');
     ZS_BAUSTEINE.forEach(b => {
         const knopf = document.createElement('button');

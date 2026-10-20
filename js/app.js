@@ -6,6 +6,10 @@
    ?ansicht=uebung  schlanke Übungsansicht zum Einbetten (z.B. in Beat Vault)
    ?ansicht=zaehlen nur das Zaehl-Training (fuer die Minispiele-Seite),
                     ohne Kopfzeile und Reiter, meldet eingebettet seine Hoehe
+   ?ansicht=spiele  beide Spiele (Zaehlzeiten und Rhythmus-Diktat) mit der
+                    Wahl dazwischen, dunkel, fuer Beat Vault; meldet Hoehe
+                    und jedes Antippen ({typ:'rw-aktiv'}, fuer die Uebezeit)
+   &runden=N        Aufgaben je Runde in beiden Spielen (sonst 5)
    ?ansicht=pdf     baut nur das PDF und schickt es per postMessage an die
                     einbettende Seite ({typ:'rw-pdf', pdf: ArrayBuffer, name})
    Steht im Suchteil, nicht im Hash - so bleibt das Link-Format unberuehrt. */
@@ -13,11 +17,12 @@ const ANSICHT = new URLSearchParams(location.search).get('ansicht') || '';
 const EINGEBETTET = window.parent !== window;
 if (ANSICHT === 'uebung' || ANSICHT === 'pdf') document.documentElement.classList.add('ansicht-uebung');
 if (ANSICHT === 'zaehlen') document.documentElement.classList.add('ansicht-zaehlen');
+if (ANSICHT === 'spiele') document.documentElement.classList.add('ansicht-spiele');
 
 /* ---------- Theme ---------- */
 (function () {
     // Eingebettet immer dunkel - passt zu Beat Vault, egal was das Geraet eingestellt hat
-    if (ANSICHT === 'uebung') return;
+    if (ANSICHT === 'uebung' || ANSICHT === 'spiele') return;
     const gespeichert = localStorage.getItem('rw-theme');
     const hell = gespeichert ? gespeichert === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
     if (hell) document.documentElement.setAttribute('data-theme', 'light');
@@ -737,8 +742,16 @@ function einbettungMelden() {
             .catch(e => an({ typ: 'rw-pdf', fehler: e.message }));
         return;
     }
-    if ((ANSICHT !== 'uebung' && ANSICHT !== 'zaehlen') || !window.ResizeObserver) return;
-    const bereich = document.getElementById(ANSICHT === 'zaehlen' ? 'reiter-zaehlen' : 'reiter-rhythmus');
+    if (ANSICHT === 'spiele') {
+        // Klicks im Rahmen erreichen die einbettende Seite nicht - sie soll trotzdem wissen, dass geuebt wird
+        let zuletztAktiv = 0;
+        ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => {
+            const jetzt = Date.now();
+            if (jetzt - zuletztAktiv > 5000) { zuletztAktiv = jetzt; an({ typ: 'rw-aktiv' }); }
+        }, { passive: true, capture: true }));
+    }
+    if (!['uebung', 'zaehlen', 'spiele'].includes(ANSICHT) || !window.ResizeObserver) return;
+    const bereich = document.getElementById(ANSICHT === 'uebung' ? 'reiter-rhythmus' : 'reiter-zaehlen');
     let zuletzt = 0;
     new ResizeObserver(() => {
         const hoehe = Math.ceil(bereich.getBoundingClientRect().height);

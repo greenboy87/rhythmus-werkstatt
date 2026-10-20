@@ -634,6 +634,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .ansicht-zaehlen .kopfzeile, .ansicht-zaehlen footer { display: none !important; }
 .ansicht-zaehlen body { min-height: 0; padding-bottom: 0; }
 .ansicht-zaehlen main { padding: .5rem; }
+/* ?ansicht=spiele (Beat Vault): wie oben, aber mit der Wahl zwischen beiden Spielen */
+.ansicht-spiele .kopfzeile, .ansicht-spiele footer, .ansicht-spiele .zs-klasse-link { display: none !important; }
+.ansicht-spiele body { min-height: 0; padding-bottom: 0; background: transparent; }
+.ansicht-spiele main { padding: .5rem; max-width: none; }
 .zs-fertig .zs-runde { display: inline-block; margin-top: .3rem; font-size: 1.1rem; }
 .ansicht-zaehlen .zs-klasse-link { display: none; }
 
