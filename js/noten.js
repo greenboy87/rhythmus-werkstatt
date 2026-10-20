@@ -188,6 +188,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     const gruppe = [];
     const einsaetze = [];   // x und Dauer je Teil - fuer den Handsatz darunter
     const treffer = [];     // Tippflaeche je Note (fuer Akzente per Klick)
+    const pausenTreffer = [];   // dasselbe fuer Pausen kuerzer als eine Viertel (Zaehl-Training)
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
@@ -251,6 +252,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
                 ink(px - 5, px + 6, Y - 12, Y + 11);
                 if (istPunktiert(t.d)) punktSetzen(px + 9);
             }
+            if (t.d < 1) pausenTreffer.push({ teil: teilNr, x0: px - 10, x1: px + 13, y0: H - 16, y1: Y + 9 });
             gruppeAbschliessen();
             return;
         }
@@ -277,7 +279,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();
-    return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze, treffer };
+    return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze, treffer, pausenTreffer };
 }
 
 /* Handsatz (R/L) fuer die Einsaetze eines Taktes. Grundsatz: rechts, links,
@@ -377,7 +379,10 @@ function schluesselSvg(x, mitteY, tinte) {
    Grosse, mehrzeilige Anzeige eines ganzen Stuecks - fuer den
    Beamer. "stueck" = { zeichen, takte: [{ bausteine: [...] }] }.
    optionen: { notenlinien, zaehlzeiten, wiederholung, breite,
-               takteProZeile, skalierung }
+               takteProZeile, skalierung, pausenFelder }
+   pausenFelder: auch Pausen kuerzer als eine Viertel bekommen eine
+   (unsichtbare) Flaeche .pausen-feld - dort setzt das Zaehl-Training sein
+   Kaestchen hin.
    takteProZeile (Zahl oder 0/undefined): statt so viele Takte pro Zeile
    zu nehmen, wie in "breite" passen, immer genau so viele - fuer den
    Druck, wo Takte untereinander stehen sollen statt ineinander zu
@@ -386,7 +391,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null, pausenFelder: false }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     const zaehlY = hatAkzente(stueck) ? ZAEHL_Y_AKZENT : ZAEHL_Y;
@@ -565,6 +570,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
                 merge(r);
                 r.treffer.forEach(f => notenFelder.push(`<rect class="noten-feld" data-takt="${index}" data-baustein="${bausteinNr}" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
+                if (opt.pausenFelder) r.pausenTreffer.forEach(f => notenFelder.push(`<rect class="pausen-feld" data-takt="${index}" data-baustein="${bausteinNr}" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
                 let v = gelaufen;
                 r.einsaetze.forEach(e => { taktEinsaetze.push({ v, px: e.px, pause: e.pause }); v += e.d; });
                 x = r.x;

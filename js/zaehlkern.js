@@ -20,12 +20,13 @@ const ZS_FELD_B = 22, ZS_FELD_H = 24, ZS_FELD_OBEN = ZAEHL_Y - 20;
 
 /* ---------- Zaehlsilbe ----------
    Dieselbe Rechnung wie die Zaehlzeiten in stueckAnzeigeHtml, nur mit "+"
-   statt "und" (passt ins Kaestchen): 1 e + e 2 e + e ... */
+   statt "und" (passt ins Kaestchen) und "te" fuer die vierte Sechzehntel,
+   damit man sie von der zweiten unterscheidet: 1 e + te 2 e + te ... */
 function zsSilbe(v, zeichen) {
     const pw = pulsWert(zeichen);
     const puls = Math.floor((v + 1e-6) / pw);
     const stufe = Math.round((v - puls * pw) / 0.25) % 4;
-    return stufe === 0 ? String(puls + 1) : ['', 'e', '+', 'e'][stufe];
+    return stufe === 0 ? String(puls + 1) : ['', 'e', '+', 'te'][stufe];
 }
 
 /* ---------- Takte wuerfeln ----------
@@ -99,7 +100,10 @@ function zkTakteWuerfeln(codes, zeichen, anzahl) {
     return { takte };
 }
 
-/* ---------- Aufgabe ---------- */
+/* ---------- Aufgabe ----------
+   Kaestchen ueber jeder Note und ueber jeder Pause kuerzer als eine Viertel:
+   Bei Achtelpause + Achtel weiss man sonst nicht, welches "+" gemeint ist -
+   die Pause bekommt ihre Zaehlzeit (z.B. 4), die Note das "+". */
 // manuell: Stufe 2/3 pruefen erst auf zkPruefen (Knopf "Pruefen"), nicht von
 // selbst, sobald das letzte Kaestchen gefuellt ist - so kann man vorher noch
 // einmal alles durchsehen. Das Klassenspiel prueft weiter von selbst.
@@ -108,7 +112,7 @@ function zkAufgabe(stueck, stufe, manuell) {
     stueck.takte.forEach((takt, ti) => {
         let v = 0;
         takt.bausteine.forEach((b, bi) => b.teile.forEach((teil, tei) => {
-            if (!teil.p) felder.push({ takt: ti, baustein: bi, teil: tei, soll: zsSilbe(v, stueck.zeichen), wert: '', status: '' });
+            if (!teil.p || teil.d < 1) felder.push({ takt: ti, baustein: bi, teil: tei, soll: zsSilbe(v, stueck.zeichen), wert: '', status: '' });
             v += teil.d;
         }));
     });
@@ -236,7 +240,7 @@ function zkLoesung(a) {
 }
 
 /* ---------- Zeichnen ----------
-   Notenbild mit Kaestchen ueber jeder Note in host. Breite: so gross,
+   Notenbild mit Kaestchen ueber jeder Note (und kurzen Pause) in host. Breite: so gross,
    dass die Kaestchen auf dem Tablet gut zu treffen sind (Massstab nach dem
    breitesten Takt: der soll die Zeile gerade fuellen, hoechstens aber gut
    doppelt so gross werden wie die normale Anzeige).
@@ -251,7 +255,7 @@ function zkZeichnen(host, a, opt) {
     const breitester = Math.max(...[...probe.querySelectorAll('svg')].map(s => s.viewBox.baseVal.width));
     const skal = Math.max(0.7, Math.min(opt.maxSkal || 2.2, verfuegbar / breitester));
     host.innerHTML = stueckAnzeigeHtml(a.stueck, {
-        zaehlzeiten: true, notenlinien: opt.notenlinien, breite: verfuegbar / skal, skalierung: skal
+        zaehlzeiten: true, notenlinien: opt.notenlinien, breite: verfuegbar / skal, skalierung: skal, pausenFelder: true
     });
     const ns = 'http://www.w3.org/2000/svg';
     const blitz = opt.blitz;
@@ -264,7 +268,7 @@ function zkZeichnen(host, a, opt) {
             svg.setAttribute('height', Math.round(vb.height));
             svg.style.height = Math.round(vb.height * skal) + 'px';
         }
-        svg.querySelectorAll('.noten-feld').forEach(r => {
+        svg.querySelectorAll('.noten-feld, .pausen-feld').forEach(r => {
             const i = a.felder.findIndex(f => f.takt === Number(r.dataset.takt) && f.baustein === Number(r.dataset.baustein) && f.teil === Number(r.dataset.teil));
             if (i < 0) return;
             r.dataset.feld = i;

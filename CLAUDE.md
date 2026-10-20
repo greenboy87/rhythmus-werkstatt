@@ -361,15 +361,19 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   gedeckelt, damit nicht immer der Sechzehntel-Takt gewinnt -, Pausen auf dem
   Schlag, Halbe/Punktierte, verschiedene Bausteine; Abzug für Wiederholung).
   Notenbild = `stueckAnzeigeHtml` mit Zählzeiten, deren Texte dann entfernt
-  und durch Kästchen (`.zs-feld[data-feld]`, an den `.noten-feld`-Stellen,
-  nur Noten) ersetzt werden; nicht zeitgetreu (sonst verrät der Abstand die
+  und durch Kästchen (`.zs-feld[data-feld]`, an den `.noten-feld`-Stellen)
+  ersetzt werden. Auch Pausen kürzer als eine Viertel bekommen ein Kästchen
+  (`stueckAnzeigeHtml(…, {pausenFelder: true})` zeichnet dafür `.pausen-feld`):
+  bei Achtelpause + Achtel steht die Zählzeit über der Pause, sonst wüsste
+  man nicht, welches „+“ gemeint ist; nicht zeitgetreu (sonst verrät der Abstand die
   Zählzeit). Maßstab: breitester Takt füllt die Zeile (max. 2,2).
-  Antwort `zsSilbe` = dieselbe Rechnung wie die Zählzeiten, immer „+“.
+  Antwort `zsSilbe` = dieselbe Rechnung wie die Zählzeiten, immer „+“ und
+  „te“ für die vierte Sechzehntel (1 e + te), Knopf/Taste T.
   Stufen: 1 sofort prüfen (falsch = Fehler, Kästchen bleibt leer), 2 wenn
   ein Takt voll ist, 3 wenn die ganze Aufgabe voll ist; falsche Kästchen
   werden überschrieben und neu geprüft, jede falsche Prüfung zählt.
   Zahlenfeld `#zs-pad` (Zahlen nur bis Schläge je Takt), Tastatur `zsTaste`
-  (1-4, E, +/U, ⌫, ←/→, Enter). „Lösung zeigen“ zählt den Rest als Fehler.
+  (1-4, E, +/U, T, ⌫, ←/→, Enter). „Lösung zeigen“ zählt den Rest als Fehler.
   Fertig: „Anhören“ über `Vorklatschen.starten` mit `#zs-noten` als Host.
   Einstellungen und Bestwert-Serie je Stufe in `localStorage` `rw-zaehlen`.
   Runden zu `ZS_RUNDE` (5) Aufgaben, Regeln je Runde eingefroren
@@ -417,7 +421,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `rhythmusEditor(…, erlaubt)` (Palette nur aus den gewählten Bausteinen),
   Prüfen je Takt mit `rhythmusGleich` (Klatschmodus), Runden zu `ZS_RUNDE`.
   Tempo/Vorlauf über eine zweite `Metronom.bauen`-Leiste (geteilter Stand).
-  Einstellungen in `rw-diktat`. Im Klassenspiel: `lehrer.art = 'diktat'`
+  Einstellungen in `rw-diktat`. Spielansicht nur fürs Diktat: `?ansicht=diktat`
+  (gleiche CSS-Klasse `ansicht-zaehlen`, ändert `rw-spiel` nicht, meldet
+  `rw-hoehe`), eingebettet von den Minispielen (Ordner `diktat/`). Meldet je
+  Runde `{typ:'rw-runde-start'}` und `{typ:'rw-runde', spiel:'diktat', takte,
+  pct, detail}`; pct: 1 je Aufgabe beim ersten Versuch, 0,5 später, 0 mit
+  „Lösung zeigen“. Im Klassenspiel: `lehrer.art = 'diktat'`
   (Beamer spielt vor, Kinder bauen nach, +4 je richtigem Takt, `zk-diktat`).
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der

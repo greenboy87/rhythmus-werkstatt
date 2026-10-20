@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=55">
-<link rel="stylesheet" href="css/druck.css?v=55">
+<link rel="stylesheet" href="css/stil.css?v=56">
+<link rel="stylesheet" href="css/druck.css?v=56">
 </head>
 <body>
 
@@ -455,7 +455,7 @@
         <summary>Spiel einstellen</summary>
         <p style="font-size:.78rem; color:var(--text-gedaempft); margin:.6rem 0;">
             Bausteine antippen, die im Spiel vorkommen dürfen. Das Spiel würfelt daraus Takte –
-            über jede Note gehört ihre Zählzeit (1, e, +, e …). Pausen bekommen kein Kästchen.
+            über jede Note gehört ihre Zählzeit (1, e, +, te …). Pausen kürzer als eine Viertel bekommen auch ein Kästchen.
         </p>
         <div class="leiste" id="zs-palette" style="margin-bottom:.8rem;"></div>
         <div class="leiste" style="margin-bottom:.6rem;">
@@ -501,12 +501,12 @@
             <button type="button" data-tat="loeschen" title="Löschen (⌫)"><i class="fa-solid fa-delete-left"></i></button>
             <button type="button" data-zeichen="e" class="silbe">e</button>
             <button type="button" data-zeichen="+" class="silbe" title="und">+</button>
+            <button type="button" data-zeichen="te" class="silbe" title="te (T)">te</button>
             <button type="button" data-tat="links" title="Kästchen davor (←)"><i class="fa-solid fa-chevron-left"></i></button>
             <button type="button" data-tat="rechts" title="Kästchen danach (→)"><i class="fa-solid fa-chevron-right"></i></button>
-            <span></span>
         </div>
         <div class="leiste" style="justify-content:space-between; margin-top:.8rem;">
-            <span class="zs-hinweis">Tastatur: 1–4, E, + oder U, ⌫, ← →, Enter = prüfen bzw. weiter · eine Runde = <span class="zs-runde-zahl">5</span> Aufgaben</span>
+            <span class="zs-hinweis">Tastatur: 1–4, E, + oder U, T (te), ⌫, ← →, Enter = prüfen bzw. weiter · eine Runde = <span class="zs-runde-zahl">5</span> Aufgaben</span>
             <span class="leiste">
                 <button type="button" class="btn" id="zs-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
                 <button type="button" class="btn btn-primär" id="zs-pruefen-btn"><i class="fa-solid fa-check"></i> Prüfen</button>
@@ -578,21 +578,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=55"></script>
-<script src="js/noten.js?v=55"></script>
-<script src="js/editor.js?v=55"></script>
-<script src="js/audio.js?v=55"></script>
-<script src="js/generator.js?v=55"></script>
-<script src="js/link.js?v=55"></script>
-<script src="js/vendor/lame.min.js?v=55"></script>
-<script src="js/export.js?v=55"></script>
-<script src="js/pdf.js?v=55"></script>
-<script src="js/app.js?v=55"></script>
-<script src="js/beat.js?v=55"></script>
-<script src="js/drumset.js?v=55"></script>
-<script src="js/zaehlkern.js?v=55"></script>
-<script src="js/zaehlspiel.js?v=55"></script>
-<script src="js/spiele.js?v=55"></script>
-<script src="js/reiter.js?v=55"></script>
+<script src="js/version.js?v=56"></script>
+<script src="js/noten.js?v=56"></script>
+<script src="js/editor.js?v=56"></script>
+<script src="js/audio.js?v=56"></script>
+<script src="js/generator.js?v=56"></script>
+<script src="js/link.js?v=56"></script>
+<script src="js/vendor/lame.min.js?v=56"></script>
+<script src="js/export.js?v=56"></script>
+<script src="js/pdf.js?v=56"></script>
+<script src="js/app.js?v=56"></script>
+<script src="js/beat.js?v=56"></script>
+<script src="js/drumset.js?v=56"></script>
+<script src="js/zaehlkern.js?v=56"></script>
+<script src="js/zaehlspiel.js?v=56"></script>
+<script src="js/spiele.js?v=56"></script>
+<script src="js/reiter.js?v=56"></script>
 </body>
 </html>

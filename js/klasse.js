@@ -766,6 +766,7 @@ function schuelerAufbauen() {
         if (/^[1-9]$/.test(k) && Number(k) <= taktPulse(sAufgabe.stueck.zeichen)) sEingeben(k);
         else if (k === 'e' || k === 'E') sEingeben('e');
         else if (k === '+' || k === 'u' || k === 'U') sEingeben('+');
+        else if (k === 't' || k === 'T') sEingeben('te');
         else if (k === 'Backspace' || k === 'Delete') { zkLoeschen(sAufgabe); sSpielZeichnen(); }
         else if (k === 'ArrowLeft') { zkBewegen(sAufgabe, -1); sSpielZeichnen(); }
         else if (k === 'ArrowRight') { zkBewegen(sAufgabe, 1); sSpielZeichnen(); }

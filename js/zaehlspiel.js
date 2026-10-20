@@ -1,7 +1,7 @@
 /* ============================================================
    ZAEHL-TRAINING (Reiter "zaehlen"): Zaehlzeiten ueber die Noten
    schreiben. Das Spiel wuerfelt Takte aus den gewaehlten Bausteinen,
-   ueber jeder Note (nicht ueber Pausen) steht ein leeres Kaestchen,
+   ueber jeder Note und jeder Pause kuerzer als eine Viertel steht ein leeres Kaestchen,
    eingetragen wird mit dem Zahlenfeld (Tippen, Maus oder Tastatur).
    Stufen = wann geprueft wird:
      1  sofort - jede falsche Eingabe zaehlt als Fehler, das Kaestchen
@@ -233,7 +233,7 @@ function zsStoppen() {
     zsSpielt = false;
 }
 
-/* Tastatur: nur bei sichtbarem Reiter. Ziffern, e, + (oder u fuer "und"),
+/* Tastatur: nur bei sichtbarem Reiter. Ziffern, e, + (oder u fuer "und"), t fuer "te",
    Rueckschritt, Pfeile; Enter = pruefen (Stufe 2/3) bzw. naechste Aufgabe
    oder neue Runde, wenn fertig. */
 function zsTaste(e) {
@@ -250,6 +250,7 @@ function zsTaste(e) {
     else if (/^[1-9]$/.test(k) && Number(k) <= taktPulse(a.stueck.zeichen)) { zsEingeben(k); }
     else if (k === 'e' || k === 'E') zsEingeben('e');
     else if (k === '+' || k === 'u' || k === 'U') zsEingeben('+');
+    else if (k === 't' || k === 'T') zsEingeben('te');
     else if (k === 'Backspace' || k === 'Delete') zsLoeschen();
     else if (k === 'ArrowLeft') zsBewegen(-1);
     else if (k === 'ArrowRight') zsBewegen(1);

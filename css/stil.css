@@ -590,7 +590,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .zs-stand small { color: var(--text-schwach); }
 #zs-noten { overflow-x: auto; padding: .4rem 0; }
 #zs-noten .anzeige-system { touch-action: manipulation; }
-#zs-noten .noten-feld { cursor: pointer; }
+#zs-noten .noten-feld, #zs-noten .pausen-feld { cursor: pointer; }
 .zs-feld { cursor: pointer; }
 .zs-feld rect { fill: var(--bg-erhoben); stroke: var(--rand); stroke-width: 1.4; }
 .zs-feld text { fill: var(--text); pointer-events: none; }
