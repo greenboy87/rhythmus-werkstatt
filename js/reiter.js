@@ -1,4 +1,4 @@
-/* ---------- Reiter: Rhythmus-Werkstatt | Beat-Werkstatt | Drumset-Werkstatt ----------
+/* ---------- Reiter: Rhythmus-Werkstatt | Beat-Werkstatt | Drumset-Werkstatt | Zähl-Training ----------
    Eigene Datei, die als letzte geladen wird: so sind beat.js und
    drumset.js schon eingerichtet, wenn der zuletzt gewaehlte Reiter
    aufgeht. */
@@ -6,7 +6,8 @@ const REITER_SCHLUESSEL = 'rw-reiter';
 const REITER = {
     rhythmus: { main: 'reiter-rhythmus', untertitel: 'Takte bauen · vorklatschen · einüben' },
     beat:     { main: 'reiter-beat',     untertitel: 'Hi-Hat · Bassdrum · Snare – Beats bauen', druck: 'druck-beat' },
-    drumset:  { main: 'reiter-drumset',  untertitel: 'Snare · Toms · Bassdrum · Becken – Fills schreiben', druck: 'druck-drumset' }
+    drumset:  { main: 'reiter-drumset',  untertitel: 'Snare · Toms · Bassdrum · Becken – Fills schreiben', druck: 'druck-drumset' },
+    zaehlen:  { main: 'reiter-zaehlen',  untertitel: 'Zählzeiten über die Noten schreiben' }
 };
 function reiterZeigen(name) {
     if (!REITER[name]) name = 'rhythmus';
@@ -24,6 +25,7 @@ function reiterZeigen(name) {
     try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ }
     if (name !== 'beat') BeatSpieler.stoppen();
     if (name !== 'drumset') DrumSpieler.stoppen();
+    if (name !== 'zaehlen') zsStoppen();
     if (name !== 'rhythmus') {
         Vorklatschen.stoppen(true);
         Metronom.stoppen();
@@ -31,6 +33,7 @@ function reiterZeigen(name) {
     // Breite stimmt erst, wenn der Reiter sichtbar ist
     if (name === 'beat') bwAnzeigeZeichnen();
     else if (name === 'drumset') dsAnzeigeZeichnen();
+    else if (name === 'zaehlen') zsZeichnen();
     else anzeigeNeuZeichnen();
 }
 

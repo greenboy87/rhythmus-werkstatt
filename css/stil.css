@@ -352,6 +352,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 @media (max-width: 760px) {
     .kopfzeile { flex-wrap: wrap; }
     .kopfzeile .untertitel { display: none; }
+    /* vier Reiter passen aufs Handy nicht nebeneinander - Leiste scrollt */
+    .reiter { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 }
 
 /* ============================================================
@@ -562,3 +564,53 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .menue-liste button:hover { background: var(--rand-schwach); }
 .menue-liste button i { width: 1.1rem; text-align: center; color: var(--text-gedaempft); }
 .menue-liste button:disabled { opacity: .4; }
+
+/* ============================================================
+   ZÄHL-TRAINING (js/zaehlspiel.js)
+   ============================================================ */
+.zs-hinweis { font-size: .78rem; color: var(--text-gedaempft); }
+.zs-stand { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-size: .85rem; color: var(--text-gedaempft); margin-bottom: .6rem; }
+.zs-stand b { color: var(--text); font-variant-numeric: tabular-nums; }
+.zs-stand b.zs-rot { color: var(--gefahr); }
+.zs-stand small { color: var(--text-schwach); }
+#zs-noten { overflow-x: auto; padding: .4rem 0; }
+#zs-noten .anzeige-system { touch-action: manipulation; }
+#zs-noten .noten-feld { cursor: pointer; }
+.zs-feld { cursor: pointer; }
+.zs-feld rect { fill: var(--bg-erhoben); stroke: var(--rand); stroke-width: 1.4; }
+.zs-feld text { fill: var(--text); pointer-events: none; }
+.zs-feld.aktiv rect { stroke: var(--akzent); stroke-width: 2.6; fill: color-mix(in srgb, var(--akzent) 16%, var(--bg-erhoben)); }
+.zs-feld.richtig rect { stroke: var(--erfolg); fill: color-mix(in srgb, var(--erfolg) 16%, var(--bg-erhoben)); }
+.zs-feld.richtig text { fill: var(--erfolg); }
+.zs-feld.falsch rect { stroke: var(--gefahr); stroke-width: 2.2; fill: color-mix(in srgb, var(--gefahr) 16%, var(--bg-erhoben)); }
+.zs-feld.falsch text { fill: var(--gefahr); }
+.zs-feld.falsch.aktiv rect { stroke-width: 3; }
+.zs-feld.geloest rect { stroke: var(--warnung); stroke-dasharray: 3 2; }
+.zs-feld.geloest text { fill: var(--warnung); }
+.zs-feld.blitz rect { stroke: var(--gefahr); stroke-width: 3; fill: color-mix(in srgb, var(--gefahr) 28%, var(--bg-erhoben)); }
+.zs-feld.blitz text { fill: var(--gefahr); }
+.zs-feld.blitz { animation: zs-wackeln .35s; transform-box: fill-box; transform-origin: center; }
+@keyframes zs-wackeln { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+.zs-pad {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem;
+    max-width: 440px; margin: .8rem auto 0;
+}
+.zs-pad button {
+    min-height: 3.6rem; border: 1px solid var(--rand); background: var(--bg-erhoben); color: var(--text);
+    border-radius: 12px; font-size: 1.5rem; font-weight: 800;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+    transition: transform .06s, background .12s;
+}
+.zs-pad button:hover { background: var(--rand-schwach); }
+.zs-pad button:active { transform: scale(.94); background: var(--akzent); color: #fff; }
+.zs-pad button.silbe { color: var(--akzent); }
+.zs-pad button[data-tat] { font-size: 1.1rem; color: var(--text-gedaempft); }
+.zs-pad button.unsichtbar { visibility: hidden; }
+.zs-pad button:disabled { opacity: .4; }
+.zs-fertig {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .8rem 1.2rem;
+    margin: .8rem 0 0; padding: .8rem; border-radius: 12px; font-size: 1rem;
+    background: color-mix(in srgb, var(--erfolg) 12%, transparent); border: 1px solid color-mix(in srgb, var(--erfolg) 40%, transparent);
+}
+.zs-fertig b { color: var(--erfolg); }

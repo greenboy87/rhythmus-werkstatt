@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=43">
-<link rel="stylesheet" href="css/druck.css?v=43">
+<link rel="stylesheet" href="css/stil.css?v=44">
+<link rel="stylesheet" href="css/druck.css?v=44">
 </head>
 <body>
 
@@ -19,6 +19,7 @@
         <button type="button" class="reiter-knopf an" role="tab" aria-selected="true" data-reiter="rhythmus">Rhythmus-Werkstatt</button>
         <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="beat"><i class="fa-solid fa-drum"></i> Beat-Werkstatt</button>
         <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="drumset"><i class="fa-solid fa-drum-steelpan"></i> Drumset-Werkstatt</button>
+        <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="zaehlen"><i class="fa-solid fa-keyboard"></i> Zähl-Training</button>
     </nav>
     <span class="untertitel" id="kopf-untertitel">Takte bauen · vorklatschen · einüben</span>
     <span class="fuellt"></span>
@@ -425,24 +426,88 @@
     <div id="ds-druck-noten"></div>
 </div>
 
+<!-- ============ Zähl-Training: Zählzeiten über die Noten schreiben (js/zaehlspiel.js) ============ -->
+<main id="reiter-zaehlen" class="hidden nicht-in-uebung">
+    <details class="karte" id="zs-einstellungen" open>
+        <summary>Spiel einstellen</summary>
+        <p style="font-size:.78rem; color:var(--text-gedaempft); margin:.6rem 0;">
+            Bausteine antippen, die im Spiel vorkommen dürfen. Das Spiel würfelt daraus Takte –
+            über jede Note gehört ihre Zählzeit (1, e, +, e …). Pausen bekommen kein Kästchen.
+        </p>
+        <div class="leiste" id="zs-palette" style="margin-bottom:.8rem;"></div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="schalter-feld">Taktart</span>
+            <span class="segment">
+                <button type="button" class="btn" data-zs-zeichen="2/4">2/4</button>
+                <button type="button" class="btn" data-zs-zeichen="3/4">3/4</button>
+                <button type="button" class="btn" data-zs-zeichen="4/4">4/4</button>
+            </span>
+            <span class="schalter-feld" style="margin-left:.6rem;">Takte je Aufgabe</span>
+            <button type="button" class="btn" id="zs-takte-minus">−</button>
+            <span id="zs-takte-anzeige" class="btn" style="min-width:2.6rem; text-align:center">2</span>
+            <button type="button" class="btn" id="zs-takte-plus">+</button>
+            <label class="chip" style="margin-left:.6rem;"><input type="checkbox" id="zs-notenlinien"><span>Notenlinien</span></label>
+        </div>
+        <div class="leiste">
+            <span class="schalter-feld">Stufe</span>
+            <span class="segment zs-stufen">
+                <button type="button" class="btn" data-zs-stufe="1">1 · sofort</button>
+                <button type="button" class="btn" data-zs-stufe="2">2 · je Takt</button>
+                <button type="button" class="btn" data-zs-stufe="3">3 · ganze Zeile</button>
+            </span>
+            <span id="zs-stufe-text" class="zs-hinweis"></span>
+            <button type="button" class="btn btn-primär" id="zs-start-btn" style="margin-left:auto;"></button>
+        </div>
+    </details>
+
+    <section class="karte hidden" id="zs-spiel">
+        <div class="zs-stand" id="zs-stand"></div>
+        <div id="zs-noten"></div>
+        <div class="zs-fertig hidden" id="zs-fertig">
+            <span id="zs-fertig-text"></span>
+            <span class="leiste">
+                <button type="button" class="btn" id="zs-anhoeren-btn"><i class="fa-solid fa-volume-high"></i> Anhören</button>
+                <button type="button" class="btn btn-primär" id="zs-weiter-btn"><i class="fa-solid fa-arrow-right"></i> Nächste Aufgabe</button>
+            </span>
+        </div>
+        <div class="zs-pad" id="zs-pad">
+            <button type="button" data-zeichen="1">1</button>
+            <button type="button" data-zeichen="2">2</button>
+            <button type="button" data-zeichen="3">3</button>
+            <button type="button" data-zeichen="4">4</button>
+            <button type="button" data-tat="loeschen" title="Löschen (⌫)"><i class="fa-solid fa-delete-left"></i></button>
+            <button type="button" data-zeichen="e" class="silbe">e</button>
+            <button type="button" data-zeichen="+" class="silbe" title="und">+</button>
+            <button type="button" data-tat="links" title="Kästchen davor (←)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" data-tat="rechts" title="Kästchen danach (→)"><i class="fa-solid fa-chevron-right"></i></button>
+            <span></span>
+        </div>
+        <div class="leiste" style="justify-content:space-between; margin-top:.8rem;">
+            <span class="zs-hinweis">Tastatur: 1–4, E, + oder U, ⌫, ← →, Enter = nächste Aufgabe</span>
+            <button type="button" class="btn" id="zs-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
+        </div>
+    </section>
+</main>
+
 <footer class="nicht-in-uebung" style="text-align:center; padding: 1rem; color: var(--text-schwach); font-size: .72rem;">
     <p id="build-stamp"></p>
 </footer>
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=43"></script>
-<script src="js/noten.js?v=43"></script>
-<script src="js/editor.js?v=43"></script>
-<script src="js/audio.js?v=43"></script>
-<script src="js/generator.js?v=43"></script>
-<script src="js/link.js?v=43"></script>
-<script src="js/vendor/lame.min.js?v=43"></script>
-<script src="js/export.js?v=43"></script>
-<script src="js/pdf.js?v=43"></script>
-<script src="js/app.js?v=43"></script>
-<script src="js/beat.js?v=43"></script>
-<script src="js/drumset.js?v=43"></script>
-<script src="js/reiter.js?v=43"></script>
+<script src="js/version.js?v=44"></script>
+<script src="js/noten.js?v=44"></script>
+<script src="js/editor.js?v=44"></script>
+<script src="js/audio.js?v=44"></script>
+<script src="js/generator.js?v=44"></script>
+<script src="js/link.js?v=44"></script>
+<script src="js/vendor/lame.min.js?v=44"></script>
+<script src="js/export.js?v=44"></script>
+<script src="js/pdf.js?v=44"></script>
+<script src="js/app.js?v=44"></script>
+<script src="js/beat.js?v=44"></script>
+<script src="js/drumset.js?v=44"></script>
+<script src="js/zaehlspiel.js?v=44"></script>
+<script src="js/reiter.js?v=44"></script>
 </body>
 </html>

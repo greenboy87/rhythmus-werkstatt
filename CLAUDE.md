@@ -168,8 +168,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   taktVersatz)` haelt die Mitlese-Markierung an der richtigen Stelle) und
   schaltet den Loop ein. Nicht im Link gespeichert.
 - `js/reiter.js` - Reiter in der Kopfzeile: „Rhythmus-Werkstatt |
-  Beat-Werkstatt | Drumset-Werkstatt“ (`<main id="reiter-rhythmus">`,
-  `#reiter-beat`, `#reiter-drumset`). Wird als letzte Datei geladen, damit
+  Beat-Werkstatt | Drumset-Werkstatt | Zähl-Training“ (`<main id="reiter-rhythmus">`,
+  `#reiter-beat`, `#reiter-drumset`, `#reiter-zaehlen`). Wird als letzte Datei geladen, damit
   beat.js und drumset.js schon eingerichtet sind. Gewählter Reiter in
   `localStorage` `rw-reiter`, ein Rhythmus-Link `#…r=…` öffnet immer die
   Rhythmus-Werkstatt; in den Einbett-Ansichten `?ansicht=` gibt es keine
@@ -304,6 +304,25 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - Zustand in `localStorage` `rw-drumset`. Noch ohne Link, Audio-Export,
     Akzente und zweite Stimme (Füße mit Hals nach unten) - später sollen
     Beats und Fills zusammen in einem Stück stehen.
+- `js/zaehlspiel.js` - **Zähl-Training** (Reiter `zaehlen`): Zählzeiten
+  über die Noten schreiben. Bausteine wählen (`ZS_BAUSTEINE` = alle ohne
+  Triolen - die haben keine Silbe im Sechzehntelraster), Taktart 2/4 3/4 4/4,
+  1-4 Takte je Aufgabe. `zsTaktWuerfeln` würfelt viele Kandidaten und nimmt
+  einen der kniffligsten (`zsTaktBewerten`: Einsätze neben dem Schlag -
+  gedeckelt, damit nicht immer der Sechzehntel-Takt gewinnt -, Pausen auf dem
+  Schlag, Halbe/Punktierte, verschiedene Bausteine; Abzug für Wiederholung).
+  Notenbild = `stueckAnzeigeHtml` mit Zählzeiten, deren Texte dann entfernt
+  und durch Kästchen (`.zs-feld[data-feld]`, an den `.noten-feld`-Stellen,
+  nur Noten) ersetzt werden; nicht zeitgetreu (sonst verrät der Abstand die
+  Zählzeit). Maßstab: breitester Takt füllt die Zeile (max. 2,2).
+  Antwort `zsSilbe` = dieselbe Rechnung wie die Zählzeiten, immer „+“.
+  Stufen: 1 sofort prüfen (falsch = Fehler, Kästchen bleibt leer), 2 wenn
+  ein Takt voll ist, 3 wenn die ganze Aufgabe voll ist; falsche Kästchen
+  werden überschrieben und neu geprüft, jede falsche Prüfung zählt.
+  Zahlenfeld `#zs-pad` (Zahlen nur bis Schläge je Takt), Tastatur `zsTaste`
+  (1-4, E, +/U, ⌫, ←/→, Enter). „Lösung zeigen“ zählt den Rest als Fehler.
+  Fertig: „Anhören“ über `Vorklatschen.starten` mit `#zs-noten` als Host.
+  Einstellungen und Bestwert-Serie je Stufe in `localStorage` `rw-zaehlen`.
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
