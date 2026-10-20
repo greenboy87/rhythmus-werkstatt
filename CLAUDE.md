@@ -323,6 +323,11 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   (1-4, E, +/U, ⌫, ←/→, Enter). „Lösung zeigen“ zählt den Rest als Fehler.
   Fertig: „Anhören“ über `Vorklatschen.starten` mit `#zs-noten` als Host.
   Einstellungen und Bestwert-Serie je Stufe in `localStorage` `rw-zaehlen`.
+  Runden zu `ZS_RUNDE` (5) Aufgaben, Regeln je Runde eingefroren
+  (`zsRunde.regeln`; Änderungen gelten ab der nächsten Runde). Ergebnis =
+  richtige Kästchen / (richtige + Fehler). Eingebettet meldet `zsMelden`
+  `{typ:'rw-runde-start'}` und am Ende `{typ:'rw-runde', stufe, pct,
+  detail}` - die Minispiele-Seite trägt das in ihre Bestenliste ein.
   Direktlink auf den Reiter: `?reiter=zaehlen` (geht auch mit `beat`,
   `drumset`). Spielansicht ohne Kopfzeile/Reiter: `?ansicht=zaehlen` (ändert
   den gemerkten Reiter nicht, meldet eingebettet `rw-hoehe` von
