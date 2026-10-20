@@ -66,7 +66,7 @@ function zsTaktWuerfeln(erlaubt, zeichen, vorher) {
         const takt = [];
         let rest = soll;
         while (rest > 0.001) {
-            const moeglich = erlaubt.filter(b => b.dauer <= rest + 0.001);
+            const moeglich = erlaubt.filter(b => b.dauer <= rest + 0.001 && bausteinPasstAn(b, soll - rest, zeichen));
             if (!moeglich.length) break;
             takt.push(moeglich[Math.floor(Math.random() * moeglich.length)]);
             rest -= takt[takt.length - 1].dauer;

@@ -4,14 +4,15 @@
    im Vorbild (musik-quiz rhythmusZufall): so lange neu versuchen,
    bis der Takt genau aufgeht und sich nicht wie Unsinn anhoert -
    nicht nur ein einziges Zeichen, nicht mehr Pause als Klang, und
-   der erste Schlag muss hoerbar sein.
+   der erste Schlag muss hoerbar sein. Balken bleiben in ihrer Zaehlzeit
+   (bausteinPasstAn in noten.js).
    ============================================================ */
-function taktWuerfeln(erlaubt, soll) {
+function taktWuerfeln(erlaubt, soll, zeichen) {
     for (let versuch = 0; versuch < 400; versuch++) {
         const takt = [];
         let rest = soll, steckt = false;
         while (rest > 0.001 && !steckt) {
-            const moeglich = erlaubt.filter(b => b.dauer <= rest + 0.001);
+            const moeglich = erlaubt.filter(b => b.dauer <= rest + 0.001 && bausteinPasstAn(b, soll - rest, zeichen));
             if (!moeglich.length) { steckt = true; break; }
             takt.push(moeglich[Math.floor(Math.random() * moeglich.length)]);
             rest = soll - takt.reduce((a, b) => a + b.dauer, 0);
@@ -36,7 +37,7 @@ function uebungErzeugen(erlaubteCodes, anzahlTakte, zeichen) {
     const soll = taktSoll(zeichen);
     const takte = [];
     for (let t = 0; t < anzahlTakte; t++) {
-        const takt = taktWuerfeln(erlaubt, soll);
+        const takt = taktWuerfeln(erlaubt, soll, zeichen);
         if (!takt) return { fehler: 'Aus dieser Auswahl geht kein Takt genau auf - nimm noch einen kürzeren Baustein dazu.' };
         takte.push({ bausteine: takt });
     }

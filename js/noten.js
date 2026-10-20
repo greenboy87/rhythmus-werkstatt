@@ -121,6 +121,27 @@ function taktSoll(zeichen) {
 function pulsWert(zeichen) { return /\/8$/.test(String(zeichen)) ? 0.5 : 1; }
 function taktPulse(zeichen) { return Math.round(taktSoll(zeichen) / pulsWert(zeichen)); }
 
+/* Grenzen der Zaehlzeiten im Takt (in Vierteln), ueber die kein Balken
+   laufen darf: x/4 jede Viertel, 6/8 und 9/8 nach je drei Achteln, 5/8 und
+   7/8 als 2+(2+)3 Achtel, 3/8 keine. */
+function taktGrenzen(zeichen) {
+    const soll = taktSoll(zeichen), r = [];
+    if (pulsWert(zeichen) === 1) { for (let g = 1; g < soll - 0.001; g++) r.push(g); return r; }
+    const achtel = Math.round(soll * 2);
+    if (achtel % 3 === 0) { for (let g = 1.5; g < soll - 0.001; g += 1.5) r.push(g); return r; }
+    for (let g = 1; g < soll - 1.5 + 0.001; g++) r.push(g);
+    return r;
+}
+/* Passt Baustein b an Stelle pos (Viertel ab Taktanfang)? Bausteine mit
+   Balken/Faehnchen (irgendein Teil kuerzer als eine Viertel) muessen
+   innerhalb einer Zaehlzeit bleiben - eine einzelne Achtel davor darf sie
+   nicht auf "und" schieben, sonst laeuft der Balken in die naechste
+   Zaehlzeit. Viertel, Halbe und Pausen duerfen synkopiert stehen. */
+function bausteinPasstAn(b, pos, zeichen) {
+    if (b.teile.every(t => t.d >= 1 - 0.001)) return true;
+    return !taktGrenzen(zeichen).some(g => g > pos + 0.001 && g < pos + b.dauer - 0.001);
+}
+
 /* ============================================================
    ZEICHNEN
    ============================================================ */

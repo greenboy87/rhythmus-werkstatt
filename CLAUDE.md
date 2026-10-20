@@ -70,6 +70,14 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   sonst laufen Live und Datei auseinander. `metronomKlick` nimmt optional
   einen eigenen Ziel-Knoten (Export), sonst den Live-Knoten `metronomZiel`.
 - `js/generator.js` - würfelt Übungen aus den ausgewählten Bausteinen.
+- Balken bleiben in ihrer Zählzeit (noten.js `bausteinPasstAn`,
+  `taktGrenzen`): beide Würfel (generator.js und `zsTaktWuerfeln` für
+  Zählzeiten/Diktat) setzen einen Baustein mit Balken/Fähnchen nur so, dass
+  er keine Zählzeitgrenze überquert - sonst schob eine einzelne Achtel
+  (`A`, `P`) z.B. „punktierte Achtel + Sechzehntel“ auf „und“, und der
+  Balken lief in die nächste Zählzeit. Grenzen: x/4 jede Viertel, 6/8 und
+  9/8 nach drei Achteln, 5/8 und 7/8 als 2+(2+)3. Viertel/Halbe/Pausen
+  dürfen synkopiert stehen.
 - `js/link.js` - Rhythmus als Link, DOM-frei: `linkLesen(hash)` -> Objekt
   (oder `null` ohne `r=`), `linkBauen(objekt)` -> Hash ohne `#`.
   `linkLesen(linkBauen(x))` ergibt wieder `x`. Format (alles im Hash, damit
