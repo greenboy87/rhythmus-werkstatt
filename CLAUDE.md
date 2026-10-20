@@ -249,6 +249,18 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     am `<body>` (gesetzt von `reiterZeigen`, Regeln in druck.css). Das PDF
     nutzt `blattPdf` aus pdf.js (gemeinsam mit `notenPdf`); Farben setzt
     `bwDruckZeichnen` dafür als feste Attribute.
+  - Wie in der Rhythmus-Werkstatt: `beat.proZeile` (Takte/Zeile, 0 =
+    auto; gilt auch für Vollbild/Druck über `bwEinpassen`), `beat.alsUebung`
+    (Nummer, Taktangabe und Doppelstriche je Zeile), `beat.durchgaenge`
+    (ab 2 Wiederholungszeichen, ab 3 mit Zahl), `beat.loop` (nach dem Ende
+    von vorn, sonst stoppt `BeatSpieler`). Gespielt wird `bwTaktFolge()`:
+    Loop-Bereich oder ganzes Stück bzw. jede Zeile einzeln, je
+    `durchgaenge`-mal; im Loop wird die Folge bei jedem Neubeginn neu
+    berechnet. Loop-Bereich `bwLoopAuswahl` (nicht gespeichert): Takt im
+    Notenbild antippen (`.takt-feld[data-takt]`), Übungsnummer
+    (`.uebung-nr`) wählt die Zeile - Regeln wie `anzeigeAngetippt`.
+  - Jede Notenzeile (Rhythmus, Beat, Drumset) beginnt mit einem
+    Anfangsstrich; bei „Als Übung“ mit Doppelstrich.
   - Zustand in `localStorage` `rw-beat` (nur dieser Browser). Noch ohne
     Link und Audio-Export.
 - `js/drumset.js` - **Drumset-Werkstatt** (Reiter `drumset`): das ganze

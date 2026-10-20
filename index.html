@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=42">
-<link rel="stylesheet" href="css/druck.css?v=42">
+<link rel="stylesheet" href="css/stil.css?v=43">
+<link rel="stylesheet" href="css/druck.css?v=43">
 </head>
 <body>
 
@@ -291,6 +291,18 @@
                 <label class="schalter"><input type="checkbox" id="bw-zaehlzeiten"><span class="schalter-schieber"></span></label>
                 <span class="schalter-feld">Zählzeiten</span>
             </span>
+            <label class="chip" title="Endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst"><input type="checkbox" id="bw-loop"><span><i class="fa-solid fa-repeat"></i> Loop</span></label>
+            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="bw-als-uebung"><span>Als Übung</span></label>
+            <label class="regler" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
+                <span class="regler-name">Durchgänge</span>
+                <input type="range" id="bw-durchgaenge" min="1" max="10" step="1" value="1">
+                <span class="regler-wert" id="bw-durchgaenge-wert">1×</span>
+            </label>
+            <label class="regler" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
+                <span class="regler-name">Takte/Zeile</span>
+                <input type="range" id="bw-pro-zeile" min="0" max="8" step="1" value="0">
+                <span class="regler-wert" id="bw-pro-zeile-wert">auto</span>
+            </label>
             <label class="feld bw-nicht-im-vollbild" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift auf dem Ausdruck und im PDF">
                 Titel
                 <input type="text" id="bw-titel" placeholder="Beat-Werkstatt" maxlength="80" style="width:11rem;">
@@ -301,6 +313,11 @@
             <button type="button" class="btn bw-nicht-im-vollbild" id="bw-drucken" title="Öffnet den Druckdialog (A4, mit Name/Klasse/Datum)"><i class="fa-solid fa-print"></i> Drucken</button>
         </div>
         </div>
+        <div class="leiste hidden" id="bw-loop-info" style="margin-bottom:.5rem;">
+            <span><i class="fa-solid fa-repeat"></i> <b id="bw-loop-text"></b> – nur dieser Teil wird abgespielt</span>
+            <button type="button" class="btn" id="bw-loop-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
+        </div>
+        <p class="anzeige-tipp bw-nicht-im-vollbild" style="margin:0 0 .4rem;">Tipp: In einen Takt im Notenbild tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.</p>
         <div id="bw-anzeige" class="bw-anzeige"></div>
     </section>
 </main>
@@ -414,18 +431,18 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=42"></script>
-<script src="js/noten.js?v=42"></script>
-<script src="js/editor.js?v=42"></script>
-<script src="js/audio.js?v=42"></script>
-<script src="js/generator.js?v=42"></script>
-<script src="js/link.js?v=42"></script>
-<script src="js/vendor/lame.min.js?v=42"></script>
-<script src="js/export.js?v=42"></script>
-<script src="js/pdf.js?v=42"></script>
-<script src="js/app.js?v=42"></script>
-<script src="js/beat.js?v=42"></script>
-<script src="js/drumset.js?v=42"></script>
-<script src="js/reiter.js?v=42"></script>
+<script src="js/version.js?v=43"></script>
+<script src="js/noten.js?v=43"></script>
+<script src="js/editor.js?v=43"></script>
+<script src="js/audio.js?v=43"></script>
+<script src="js/generator.js?v=43"></script>
+<script src="js/link.js?v=43"></script>
+<script src="js/vendor/lame.min.js?v=43"></script>
+<script src="js/export.js?v=43"></script>
+<script src="js/pdf.js?v=43"></script>
+<script src="js/app.js?v=43"></script>
+<script src="js/beat.js?v=43"></script>
+<script src="js/drumset.js?v=43"></script>
+<script src="js/reiter.js?v=43"></script>
 </body>
 </html>

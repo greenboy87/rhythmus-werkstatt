@@ -522,10 +522,9 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const taktFelder = [];   // Flaeche je Takt: zum Antippen (Loop-Bereich) und Markieren
         const notenFelder = [];  // Flaeche je Note: Antippen = Akzent an/aus (liegt ueber den Taktflaechen)
         system.forEach(({ takt, index }, posInSystem) => {
-            // Taktstrich vor jedem Takt, ausser ganz am Anfang des ersten Systems -
-            // im Spalten-Modus gilt das fuer den ersten Takt JEDER Zeile, sonst
-            // begaenne Spalte 1 der zweiten Zeile 13px spaeter als die der ersten.
-            if (!((istErstesSystem || spaltenBreite) && posInSystem === 0)) {
+            // Taktstrich zwischen den Takten - am Zeilenanfang steht stattdessen
+            // der Anfangsstrich (siehe unten), in jeder Zeile an derselben Stelle.
+            if (posInSystem > 0) {
                 teileSvg.push(`<line x1="${x}" y1="${LINIE_Y - 17}" x2="${x}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="2"/>`);
                 inkVon = Math.min(inkVon, x - 2); inkBis = Math.max(inkBis, x + 2);
                 x += 13;
@@ -620,6 +619,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
             teileSvg.push(`<rect class="takt-feld" data-takt="${f.index}" x="${f.von}" y="${feldOben}" width="${f.bis - f.von}" height="${feldHoehe}" fill="transparent"/>`);
         });
         teileSvg.push(...notenFelder);
+
+        // Anfangsstrich: jede Zeile beginnt mit einem Strich ueber das System -
+        // ausser dort, wo schon ein Doppelstrich bzw. Wiederholungszeichen steht.
+        const hatAnfangszeichen = zeigtVollenKopf && (opt.alsUebung || (istErstesSystem && WDH_ANFANG && !WDH_NACH_KOPF));
+        if (!hatAnfangszeichen) {
+            teileSvg.push(`<line x1="${linksAnschlag}" y1="${LINIE_Y - 17}" x2="${linksAnschlag}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="2"/>`);
+        }
 
         const rechts = x + 6;
         if ((istLetztesSystem || opt.alsUebung) && opt.wiederholung) {

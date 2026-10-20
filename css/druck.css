@@ -66,5 +66,5 @@
     .bw-nur-druck .bw-system ellipse, .bw-nur-druck .bw-system circle, .bw-nur-druck .bw-system text { color: #000 !important; }
     .bw-nur-druck .bw-system text { fill: #000 !important; }
     .bw-nur-druck .bw-linie-anzeige { color: #666 !important; }
-    .bw-nur-druck .bw-spiel { display: none; }
+    .bw-nur-druck .bw-spiel, .bw-nur-druck .takt-auswahl { display: none; }
 }

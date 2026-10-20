@@ -450,6 +450,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .bw-system .bw-linie-anzeige { color: var(--text-schwach); }
 .bw-system .bw-spiel { fill: transparent; }
 .bw-system .bw-spiel.jetzt { fill: var(--warnung); opacity: .28; }
+.bw-system .takt-feld, .bw-system .uebung-nr { cursor: pointer; }
+.bw-system .takt-auswahl { fill: var(--akzent); opacity: .22; }
 @media print { #reiter-beat { display: none !important; } }
 
 /* Vollbild (Beamer): Notenbild so gross wie moeglich, bwAnzeigeZeichnen

@@ -304,8 +304,9 @@ function dsSystemSvg(taktListe, erstes, letztes, skala) {
     const sk = skala || DS_ANZEIGE_SKALA;
     const vorn = [], teile = [];
     let x = 8;
-    teile.push(schluesselSvg(x + 8, 16, 'currentColor'));
-    x += 22;
+    teile.push(`<line x1="${x}" y1="0" x2="${x}" y2="32" stroke="currentColor" stroke-width="1.6"/>`);   // Anfangsstrich
+    teile.push(schluesselSvg(x + 10, 16, 'currentColor'));
+    x += 24;
     if (erstes) {
         teile.push(`<text class="kopf" x="${x + 8}" y="8" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${dsS()}</text>`);
         teile.push(`<text class="kopf" x="${x + 8}" y="25" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">4</text>`);
@@ -570,7 +571,7 @@ function dsWerkzeugZeichnen() {
 }
 
 /* ---------- Notenbild, Vollbild, Druck ---------- */
-function dsSystemBreite(p) { return 72 + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
+function dsSystemBreite(p) { return 74 + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
 function dsZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < ds.takte; t += proZeile) {

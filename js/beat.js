@@ -144,8 +144,16 @@ const beat = {
     zaehlzeiten: true, farbe: false, metronom: false,
     stumm: { becken: false, bass: false, snare: false },
     stift: { becken: 'hh', trommel: 'b', dazu: '' },
-    mehr: false
+    mehr: false,
+    // Wie in der Rhythmus-Werkstatt: Takte je Zeile (0 = so viele, wie
+    // passen), jede Zeile als eigene Uebung, Durchgaenge (ab 2 mit
+    // Wiederholungszeichen), Loop = nach dem Ende wieder von vorn.
+    proZeile: 0, alsUebung: false, durchgaenge: 1, loop: true
 };
+/* Loop-Bereich {von, bis} (Taktnummern): Takt im Notenbild antippen -
+   nur dieser Teil wird abgespielt. Nicht gespeichert. */
+let bwLoopAuswahl = null;
+let bwAnzeigeProZeile = 4;   // zuletzt gezeichnete Takte je Zeile (fuer "Als Uebung" im auto-Modus)
 let bwAktiv = { ebene: 'oben', platz: 0 };
 let bwGhostModus = false;
 let bwOffenModus = false;   // an: Hi-Hat antippen = offen/zu (nicht gespeichert)
@@ -193,7 +201,9 @@ function beatLaden() {
         beat.takte = Math.max(1, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         beat.bpm = Math.max(40, Math.min(200, Math.round(Number(x.bpm) || 90)));
         beat.schlaege = Math.max(1, Math.min(BW_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
-        ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
+        ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr', 'alsUebung', 'loop'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
+        beat.proZeile = Math.max(0, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.proZeile) || 0)));
+        beat.durchgaenge = Math.max(1, Math.min(10, Math.round(Number(x.durchgaenge) || 1)));
         ['oben', 'unten', 'easy'].forEach(eb => {
             beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * BW_SCHLAEGE_MAX).map(platzGueltig) : [];
         });
@@ -408,25 +418,47 @@ function bwPlatzSvg(slot, ebene, mitTreffern) {
     return `<svg viewBox="0 ${y0} ${BW_SCHLAG} ${h}" width="${BW_SCHLAG}" height="${h}" class="bw-platz-svg">${inhalt}</svg>`;
 }
 
-/* Eine Notenzeile mit den Takten aus taktListe. */
-function bwSystemSvg(taktListe, erstes, letztes, skala) {
+/* Eine Notenzeile mit den Takten aus taktListe. nr = Zeilennummer (0-basiert).
+   Wie in der Rhythmus-Werkstatt: Anfangsstrich in jeder Zeile, Taktangabe in
+   der ersten (bei "Als Uebung" in jeder, dazu Nummer und Doppelstriche),
+   ab 2 Durchgaengen Wiederholungszeichen (bei "Als Uebung" je Zeile).
+   Je Takt eine Tippflaeche (data-takt) fuer den Loop-Bereich. */
+function bwSystemSvg(taktListe, erstes, letztes, skala, nr) {
     const sk = skala || BW_ANZEIGE_SKALA;
-    const vorn = [], teile = [];
+    const vorn = [], teile = [], felder = [];
+    const wdh = beat.durchgaenge > 1;
+    const uebung = beat.alsUebung;
+    const strich = (x, breite) => `<line x1="${x}" y1="0" x2="${x}" y2="32" stroke="currentColor" stroke-width="${breite}"/>`;
+    const punkte = (x) => `<circle cx="${x}" cy="12" r="2.2" fill="currentColor"/><circle cx="${x}" cy="20" r="2.2" fill="currentColor"/>`;
     let x = 8;
-    teile.push(schluesselSvg(x + 8, 16, 'currentColor'));
-    x += 22;
-    if (erstes) {
+    // Zeilenanfang: Doppelstrich bei "Als Uebung", sonst einfacher Anfangsstrich
+    if (uebung) teile.push(strich(x - 4, 1.5), strich(x, 4));
+    else teile.push(strich(x, 1.6));
+    teile.push(schluesselSvg(x + 10, 16, 'currentColor'));
+    x += 24;
+    if (erstes || uebung) {
         teile.push(`<text class="kopf" x="${x + 8}" y="8" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${bwS()}</text>`);
         teile.push(`<text class="kopf" x="${x + 8}" y="25" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">4</text>`);
         x += 22;
     }
+    if (uebung) {
+        const von = taktListe[0], bis = taktListe[taktListe.length - 1];
+        teile.push(`<text class="kopf uebung-nr" data-von="${von}" data-bis="${bis}" x="4" y="-16" font-size="13" font-weight="800" font-family="DM Sans, sans-serif">${(nr || 0) + 1}.</text>`);
+    }
+    if (erstes && wdh && !uebung) {
+        // Wiederholung ab hier: Zeichen nach Schluessel und Taktangabe
+        teile.push(strich(x + 2, 4), strich(x + 7, 1.5), punkte(x + 13));
+        x += 16;
+    }
     x += 4;
     const ebenen = bwEbenen();
+    const aus = bwLoopAuswahl;
     taktListe.forEach((t, i) => {
         if (i > 0) {
-            teile.push(`<line x1="${x}" y1="0" x2="${x}" y2="32" stroke="currentColor" stroke-width="1.6"/>`);
+            teile.push(strich(x, 1.6));
             x += 6;
         }
+        const tx = x;
         for (let s = 0; s < bwS(); s++) {
             const platz = t * bwS() + s, sx = x + s * BW_SCHLAG;
             vorn.push(`<rect class="bw-spiel" data-spiel="${platz}" x="${sx + 2}" y="-44" width="${BW_SCHLAG - 4}" height="108" rx="6"/>`);
@@ -446,20 +478,24 @@ function bwSystemSvg(taktListe, erstes, letztes, skala) {
             }
         }
         x += bwS() * BW_SCHLAG;
+        if (aus && t >= aus.von && t <= aus.bis) vorn.unshift(`<rect class="takt-auswahl" x="${tx - 3}" y="-56" width="${x - tx + 6}" height="122" rx="6"/>`);
+        felder.push(`<rect class="takt-feld" data-takt="${t}" x="${tx - 3}" y="-56" width="${x - tx + 6}" height="122" fill="transparent"/>`);
     });
-    if (letztes) {
-        // Wiederholungszeichen am Schluss: ein Beat laeuft im Kreis
-        teile.push(`<circle cx="${x + 1}" cy="12" r="2.2" fill="currentColor"/><circle cx="${x + 1}" cy="20" r="2.2" fill="currentColor"/>`);
-        teile.push(`<line x1="${x + 7}" y1="0" x2="${x + 7}" y2="32" stroke="currentColor" stroke-width="1.5"/>`);
-        teile.push(`<line x1="${x + 12}" y1="0" x2="${x + 12}" y2="32" stroke="currentColor" stroke-width="4"/>`);
-        x += 14;
+    if ((letztes || uebung) && wdh) {
+        // Wiederholungszeichen am Ende, ab 3 Durchgaengen mit Zahl
+        teile.push(punkte(x + 1), strich(x + 7, 4), strich(x + 12, 1.5));
+        if (beat.durchgaenge > 2) teile.push(`<text class="kopf" x="${x + 15}" y="-6" font-size="12" font-weight="800" font-family="DM Sans, sans-serif">${beat.durchgaenge}×</text>`);
+        x += beat.durchgaenge > 2 ? 34 : 14;
+    } else if (letztes || uebung) {
+        teile.push(strich(x + 2, 1.5), strich(x + 8, 4));
+        x += 10;
     } else {
-        teile.push(`<line x1="${x + 2}" y1="0" x2="${x + 2}" y2="32" stroke="currentColor" stroke-width="1.6"/>`);
+        teile.push(strich(x + 2, 1.6));
         x += 2;
     }
     const linien = BW_LINIEN.map(y => `<line x1="8" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
     const breite = x + 8, oben = -60, hoehe = 128;
-    return `<svg class="bw-system" viewBox="0 ${oben} ${breite} ${hoehe}" width="${Math.round(breite * sk)}" height="${Math.round(hoehe * sk)}">${vorn.join('')}${linien}${teile.join('')}</svg>`;
+    return `<svg class="bw-system" data-takte="${taktListe.length}" viewBox="0 ${oben} ${breite} ${hoehe}" width="${Math.round(breite * sk)}" height="${Math.round(hoehe * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
 }
 
 /* ============================================================
@@ -582,7 +618,7 @@ function bwVorhoeren(slot) {
    ============================================================ */
 const BeatSpieler = (function () {
     let laeuft = false, ctx = null, summe = null, uhr = null;
-    let naechsteZeit = 0, taktZaehler = 0, anzeigeTimer = [];
+    let naechsteZeit = 0, folge = [], folgePos = 0, endeTimer = null, anzeigeTimer = [];
 
     function markieren(platz) {
         document.querySelectorAll('[data-spiel].jetzt').forEach(el => el.classList.remove('jetzt'));
@@ -607,10 +643,18 @@ const BeatSpieler = (function () {
         if (!laeuft) return;
         if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - Beat gestoppt.', 'danger'); return; }
         audioCtxZeitmarke = ctx.currentTime; audioCtxWanduhr = Date.now();
-        while (naechsteZeit < ctx.currentTime + 0.3) {
-            taktPlanen(taktZaehler % beat.takte, naechsteZeit);
+        while (naechsteZeit < ctx.currentTime + 0.3 && !endeTimer) {
+            if (folgePos >= folge.length) {
+                // Ende des Durchlaufs: im Loop von vorn (mit dem aktuellen Stand), sonst Schluss
+                if (!beat.loop) {
+                    endeTimer = setTimeout(stoppen, Math.max(0, (naechsteZeit - ctx.currentTime) * 1000) + 150);
+                    break;
+                }
+                folge = bwTaktFolge(); folgePos = 0;
+            }
+            taktPlanen(Math.min(folge[folgePos], beat.takte - 1), naechsteZeit);
             naechsteZeit += bwS() * 60 / beat.bpm;
-            taktZaehler++;
+            folgePos++;
         }
     }
     function starten() {
@@ -620,7 +664,9 @@ const BeatSpieler = (function () {
         Metronom.stoppen();
         ctx = c;
         summe = bwSummeBauen(ctx);
-        laeuft = true; taktZaehler = 0;
+        laeuft = true;
+        folge = bwTaktFolge(); folgePos = 0;
+        if (endeTimer) { clearTimeout(endeTimer); endeTimer = null; }
         naechsteZeit = ctx.currentTime + 0.12;
         uhr = setInterval(tick, 25);
         tick();
@@ -630,6 +676,7 @@ const BeatSpieler = (function () {
         if (!laeuft) return;
         laeuft = false;
         if (uhr) { clearInterval(uhr); uhr = null; }
+        if (endeTimer) { clearTimeout(endeTimer); endeTimer = null; }
         anzeigeTimer.forEach(clearTimeout); anzeigeTimer = [];
         // Schon geplante Schlaege nicht einzeln jagen - die ganze Summe
         // kurz ausblenden und abhaengen, beim naechsten Start gibt es eine neue.
@@ -843,7 +890,7 @@ function bwPaletteZeichnen() {
    ganzen Stuecks - passend zu bwSystemSvg (Schluessel, Taktangabe,
    Taktstriche, Schluss-Wiederholung). */
 const BW_SYSTEM_HOEHE = 128;
-function bwSystemBreite(p) { return 72 + p * bwS() * BW_SCHLAG + (p - 1) * 6; }
+function bwSystemBreite(p) { return 110 + p * bwS() * BW_SCHLAG + (p - 1) * 6; }
 function bwZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < beat.takte; t += proZeile) {
@@ -859,7 +906,9 @@ function bwZeilen(proZeile) {
    gibt es das nicht, die Aufteilung mit den groessten Noten. */
 function bwEinpassen(w, h, abstand, minSkala, maxSkala) {
     let bestes = null;
-    for (let p = beat.takte; p >= 1; p--) {
+    // Feste Takte je Zeile: nur noch der Massstab wird gesucht
+    const fest = beat.proZeile ? Math.min(beat.proZeile, beat.takte) : 0;
+    for (let p = fest || beat.takte; p >= (fest || 1); p--) {
         const n = Math.ceil(beat.takte / p);
         const skala = Math.min(maxSkala, w / bwSystemBreite(p), (h - (n - 1) * abstand) / (n * BW_SYSTEM_HOEHE));
         if (skala >= minSkala) return { p, skala };
@@ -869,7 +918,7 @@ function bwEinpassen(w, h, abstand, minSkala, maxSkala) {
 }
 function bwSystemeHtml(p, skala) {
     const zeilen = bwZeilen(p);
-    return zeilen.map((z, i) => bwSystemSvg(z, i === 0, i === zeilen.length - 1, skala)).join('');
+    return zeilen.map((z, i) => bwSystemSvg(z, i === 0, i === zeilen.length - 1, skala, i)).join('');
 }
 
 function bwAnzeigeZeichnen() {
@@ -881,13 +930,63 @@ function bwAnzeigeZeichnen() {
         const w = window.innerWidth * 0.94;
         const h = window.innerHeight - (kopf ? kopf.offsetHeight : 0) - 60;
         const { p, skala } = bwEinpassen(w, h, 12, 99, 6);
+        bwAnzeigeProZeile = p;
         host.innerHTML = bwSystemeHtml(p, skala);
         return;
     }
     const breite = host.clientWidth || 900;
     const taktBreite = (bwS() * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
-    const proZeile = Math.max(1, Math.floor((breite - 80 * BW_ANZEIGE_SKALA) / taktBreite));
+    const proZeile = beat.proZeile || Math.max(1, Math.floor((breite - 120 * BW_ANZEIGE_SKALA) / taktBreite));
+    bwAnzeigeProZeile = proZeile;
     host.innerHTML = bwSystemeHtml(proZeile, BW_ANZEIGE_SKALA);
+    bwLoopInfoZeichnen();
+}
+function bwLoopInfoZeichnen() {
+    const info = document.getElementById('bw-loop-info');
+    if (!info) return;
+    info.classList.toggle('hidden', !bwLoopAuswahl);
+    if (bwLoopAuswahl) {
+        const { von, bis } = bwLoopAuswahl;
+        document.getElementById('bw-loop-text').textContent = von === bis ? `Takt ${von + 1}` : `Takte ${von + 1}–${bis + 1}`;
+    }
+}
+/* Takt im Notenbild antippen: allein waehlen, ausserhalb der Auswahl bis
+   dorthin erweitern, innerhalb aufheben; Uebungsnummer = ganze Zeile.
+   Mit Auswahl spielt nur dieser Teil, und der Loop geht an. */
+function bwAnzeigeAngetippt(e) {
+    const nrEl = e.target.closest('.uebung-nr');
+    const feld = e.target.closest('.takt-feld');
+    let neu;
+    if (nrEl) {
+        const von = Number(nrEl.dataset.von), bis = Number(nrEl.dataset.bis);
+        neu = bwLoopAuswahl && bwLoopAuswahl.von === von && bwLoopAuswahl.bis === bis ? null : { von, bis };
+    } else if (feld) {
+        const i = Number(feld.dataset.takt), a = bwLoopAuswahl;
+        if (!a) neu = { von: i, bis: i };
+        else if (i >= a.von && i <= a.bis) neu = null;
+        else neu = { von: Math.min(a.von, i), bis: Math.max(a.bis, i) };
+    } else return;
+    bwLoopAuswahl = neu;
+    if (neu) beat.loop = true;
+    bwAenderung();
+}
+/* Reihenfolge der Takte fuer einen Durchlauf: Loop-Bereich oder ganzes
+   Stueck, jeweils "durchgaenge"-mal - bei "Als Uebung" jede Zeile fuer sich. */
+function bwTaktFolge() {
+    const n = beat.durchgaenge;
+    const abschnitte = [];
+    if (bwLoopAuswahl && bwLoopAuswahl.bis < beat.takte) {
+        const liste = [];
+        for (let t = bwLoopAuswahl.von; t <= bwLoopAuswahl.bis; t++) liste.push(t);
+        abschnitte.push(liste);
+    } else if (beat.alsUebung) {
+        abschnitte.push(...bwZeilen(bwAnzeigeProZeile));
+    } else {
+        abschnitte.push(Array.from({ length: beat.takte }, (_, t) => t));
+    }
+    const folge = [];
+    abschnitte.forEach(a => { for (let d = 0; d < n; d++) folge.push(...a); });
+    return folge;
 }
 
 /* ---------- Druckblatt (A4) und PDF ----------
@@ -951,6 +1050,13 @@ function bwSchalterZeichnen() {
     document.getElementById('bw-tempo-regler').value = beat.bpm;
     document.getElementById('bw-metronom').checked = beat.metronom;
     document.getElementById('bw-zaehlzeiten').checked = beat.zaehlzeiten;
+    document.getElementById('bw-loop').checked = beat.loop;
+    document.getElementById('bw-als-uebung').checked = beat.alsUebung;
+    document.getElementById('bw-durchgaenge').value = beat.durchgaenge;
+    document.getElementById('bw-durchgaenge-wert').textContent = beat.durchgaenge + '×';
+    document.getElementById('bw-pro-zeile').value = beat.proZeile;
+    document.getElementById('bw-pro-zeile').max = BEAT_TAKTE_MAX;
+    document.getElementById('bw-pro-zeile-wert').textContent = beat.proZeile || 'auto';
     document.getElementById('reiter-beat').classList.toggle('bw-bunt', beat.farbe);
     document.getElementById('bw-farbe').innerHTML = beat.farbe
         ? '<i class="fa-solid fa-palette"></i> Farbe aus' : '<i class="fa-solid fa-palette"></i> Farbe an';
@@ -969,6 +1075,7 @@ function bwSchalterZeichnen() {
 }
 
 function bwZeichnen() {
+    if (bwLoopAuswahl && bwLoopAuswahl.bis >= beat.takte) bwLoopAuswahl = null;
     bwSchalterZeichnen();
     bwEditorZeichnen();
     bwPaletteZeichnen();
@@ -1256,6 +1363,12 @@ function bwEinrichten() {
     document.getElementById('bw-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
     document.getElementById('bw-metronom').addEventListener('change', (e) => { beat.metronom = e.target.checked; beatSpeichern(); });
     document.getElementById('bw-zaehlzeiten').addEventListener('change', (e) => { beat.zaehlzeiten = e.target.checked; bwAenderung(); });
+    document.getElementById('bw-loop').addEventListener('change', (e) => { beat.loop = e.target.checked; beatSpeichern(); });
+    document.getElementById('bw-als-uebung').addEventListener('change', (e) => { beat.alsUebung = e.target.checked; bwAenderung(); });
+    document.getElementById('bw-durchgaenge').addEventListener('input', (e) => { beat.durchgaenge = Number(e.target.value); bwAenderung(); });
+    document.getElementById('bw-pro-zeile').addEventListener('input', (e) => { beat.proZeile = Number(e.target.value); bwAenderung(); });
+    document.getElementById('bw-anzeige').addEventListener('click', bwAnzeigeAngetippt);
+    document.getElementById('bw-loop-weg').addEventListener('click', () => { bwLoopAuswahl = null; bwAenderung(); });
     document.getElementById('bw-farbe').addEventListener('click', () => { beat.farbe = !beat.farbe; bwAenderung(); });
     document.querySelectorAll('[data-bw-stumm]').forEach(b => b.addEventListener('click', () => {
         beat.stumm[b.dataset.bwStumm] = !beat.stumm[b.dataset.bwStumm];
