@@ -51,8 +51,8 @@ const CODE_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // ohne 0/O, 1/I
 const EMOJIS = ['🥁', '🎸', '🎹', '🎺', '🎷', '🎻', '🪇', '🎤', '🦊', '🐼', '🐸', '🦄', '🐙', '🚀', '⚡', '🌈'];
 const STUFEN_TEXT = {
     1: 'Jede Eingabe wird sofort geprüft – ein Fehler zählt direkt.',
-    2: 'Geprüft wird, wenn ein Takt ganz ausgefüllt ist.',
-    3: 'Geprüft wird erst, wenn die ganze Zeile ausgefüllt ist.'
+    2: 'Geprüft wird jeder ganz ausgefüllte Takt – wenn die Teams auf „Prüfen“ tippen.',
+    3: 'Geprüft wird die ganze Zeile auf einmal – wenn die Teams auf „Prüfen“ tippen.'
 };
 
 let zeitVersatz = 0;   // Serverzeit - Geraetezeit
@@ -574,7 +574,7 @@ function sZeichnen() {
         const schluessel = sRundenSchluessel();
         if (sAufgabeSchluessel !== schluessel) {
             sAufgabeSchluessel = schluessel;
-            sAufgabe = zkAufgabe(zkStueckAusKuerzel(st.aufgabe, st.zeichen), st.stufe);
+            sAufgabe = zkAufgabe(zkStueckAusKuerzel(st.aufgabe, st.zeichen), st.stufe, true);
             // nach Neuladen mitten in der Runde: eigenen Stand wiederherstellen
             const alt = lesen('zk-aufgabe', null);
             if (alt && alt.schluessel === schluessel && alt.felder.length === sAufgabe.felder.length) {
@@ -613,6 +613,7 @@ function sSpielZeichnen(blitz) {
         b.classList.toggle('unsichtbar', /^\d$/.test(b.dataset.zeichen) && Number(b.dataset.zeichen) > pulse);
     });
     zeigen('s-pad', !a.fertig);
+    zeigen('s-pruefen-leiste', !a.fertig && a.stufe > 1);
     zeigen('s-fertig', a.fertig);
     if (a.fertig) $('s-fertig').innerHTML = '<b>Fertig!</b> Warte auf die anderen …';
     sStandZeile();
@@ -714,6 +715,19 @@ function sEingeben(zeichen) {
     sSpielZeichnen();
 }
 
+// Stufe 2/3: Knopf "Pruefen" (oder Enter) - vorher wird nichts bewertet
+function sPruefen() {
+    if (sStand.phase !== 'runde' || !sAufgabe) return;
+    const e = zkPruefen(sAufgabe);
+    if (!e) return;
+    const stufe = sAufgabe.stufe;
+    $('s-meldung').textContent = e.art === 'unvollstaendig' ? (stufe === 2 ? 'Füll erst einen Takt ganz aus.' : 'Füll erst alle Kästchen aus.')
+        : e.art === 'unveraendert' ? 'Bessere erst die roten Kästchen aus.'
+        : e.falsch ? `${e.falsch} ${e.falsch === 1 ? 'Kästchen stimmt' : 'Kästchen stimmen'} nicht – bessere ${e.falsch === 1 ? 'es' : 'sie'} aus.` : '';
+    if (e.art === 'geprueft') sMelden();
+    sSpielZeichnen();
+}
+
 function schuelerAufbauen() {
     zeigen('schueler', true);
     const p = new URLSearchParams(location.search).get('raum');
@@ -741,6 +755,7 @@ function schuelerAufbauen() {
         if (z && zkWaehlen(sAufgabe, Number(z.dataset.feld))) sSpielZeichnen();
     });
     $('s-dk-pruefen').addEventListener('click', sDkPruefen);
+    $('s-pruefen').addEventListener('click', sPruefen);
     $('s-dk-zurueck').addEventListener('click', () => { if (sDk && !sDk.fertig) sDk.editor.zurueck(); });
     $('s-dk-leeren').addEventListener('click', () => { if (sDk && !sDk.fertig) sDk.editor.leeren(); });
     document.addEventListener('keydown', e => {
@@ -754,6 +769,7 @@ function schuelerAufbauen() {
         else if (k === 'Backspace' || k === 'Delete') { zkLoeschen(sAufgabe); sSpielZeichnen(); }
         else if (k === 'ArrowLeft') { zkBewegen(sAufgabe, -1); sSpielZeichnen(); }
         else if (k === 'ArrowRight') { zkBewegen(sAufgabe, 1); sSpielZeichnen(); }
+        else if (k === 'Enter' && sAufgabe.stufe > 1) sPruefen();
         else ok = false;
         if (ok) e.preventDefault();
     });
