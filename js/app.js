@@ -6,6 +6,7 @@
    ?ansicht=uebung  schlanke Übungsansicht zum Einbetten (z.B. in Beat Vault)
    ?ansicht=zaehlen nur das Zaehl-Training (fuer die Minispiele-Seite),
                     ohne Kopfzeile und Reiter, meldet eingebettet seine Hoehe
+   ?ansicht=diktat  dasselbe fuer das Rhythmus-Diktat (Minispiele, Ordner diktat/)
    ?ansicht=spiele  beide Spiele (Zaehlzeiten und Rhythmus-Diktat) mit der
                     Wahl dazwischen, dunkel, fuer Beat Vault; meldet Hoehe
                     und jedes Antippen ({typ:'rw-aktiv'}, fuer die Uebezeit)
@@ -16,7 +17,8 @@
 const ANSICHT = new URLSearchParams(location.search).get('ansicht') || '';
 const EINGEBETTET = window.parent !== window;
 if (ANSICHT === 'uebung' || ANSICHT === 'pdf') document.documentElement.classList.add('ansicht-uebung');
-if (ANSICHT === 'zaehlen') document.documentElement.classList.add('ansicht-zaehlen');
+// ?ansicht=diktat nutzt dieselben Regeln wie ?ansicht=zaehlen (ohne Kopfzeile, ohne Spielwahl)
+if (ANSICHT === 'zaehlen' || ANSICHT === 'diktat') document.documentElement.classList.add('ansicht-zaehlen');
 if (ANSICHT === 'spiele') document.documentElement.classList.add('ansicht-spiele');
 
 /* ---------- Theme ---------- */
@@ -750,7 +752,7 @@ function einbettungMelden() {
             if (jetzt - zuletztAktiv > 5000) { zuletztAktiv = jetzt; an({ typ: 'rw-aktiv' }); }
         }, { passive: true, capture: true }));
     }
-    if (!['uebung', 'zaehlen', 'spiele'].includes(ANSICHT) || !window.ResizeObserver) return;
+    if (!['uebung', 'zaehlen', 'diktat', 'spiele'].includes(ANSICHT) || !window.ResizeObserver) return;
     const bereich = document.getElementById(ANSICHT === 'uebung' ? 'reiter-rhythmus' : 'reiter-zaehlen');
     let zuletzt = 0;
     new ResizeObserver(() => {

@@ -9,6 +9,10 @@
    Viertel mit folgender Pause wie eine Halbe). Runden zu ZS_RUNDE
    Aufgaben wie im Zaehl-Training. Gewuerfelt wird mit zkTakteWuerfeln
    (js/zaehlkern.js). Mit der Klasse: klasse.html (Spielart "diktat").
+   ?ansicht=diktat zeigt nur das Diktat (Minispiele) und meldet eingebettet
+   jede Runde wie das Zaehl-Training: {typ:'rw-runde-start'} und am Ende
+   {typ:'rw-runde', spiel:'diktat', takte, pct, detail}. pct: je Aufgabe
+   1 beim ersten Versuch, 0,5 spaeter, 0 mit "Loesung zeigen".
    ============================================================ */
 const SPIEL_SCHLUESSEL = 'rw-spiel';
 const DK_SCHLUESSEL = 'rw-diktat';
@@ -27,12 +31,15 @@ const dkSpeichern = () => { try { localStorage.setItem(DK_SCHLUESSEL, JSON.strin
 
 /* ---------- Spiel waehlen ---------- */
 function spielZeigen(name) {
-    if (!SPIELE_TEXT[name] || ANSICHT === 'zaehlen') name = 'zaehlen';
+    // Die Einbett-Ansichten zeigen fest ein Spiel und aendern die gemerkte Wahl nicht
+    const fest = ANSICHT === 'zaehlen' ? 'zaehlen' : ANSICHT === 'diktat' ? 'diktat' : null;
+    if (fest) name = fest;
+    else if (!SPIELE_TEXT[name]) name = 'zaehlen';
     document.querySelectorAll('[data-spiel]').forEach(b => b.classList.toggle('an', b.dataset.spiel === name));
     document.getElementById('spiel-zaehlen').classList.toggle('hidden', name !== 'zaehlen');
     document.getElementById('spiel-diktat').classList.toggle('hidden', name !== 'diktat');
     document.getElementById('spiele-text').textContent = SPIELE_TEXT[name];
-    try { localStorage.setItem(SPIEL_SCHLUESSEL, name); } catch (e) { /* egal */ }
+    if (!fest) try { localStorage.setItem(SPIEL_SCHLUESSEL, name); } catch (e) { /* egal */ }
     if (name !== 'diktat') dkStoppen();
     if (name !== 'zaehlen') zsStoppen();
     if (name === 'zaehlen') zsZeichnen(); else dkZeichnen();
@@ -53,8 +60,9 @@ function dkTakteVergleichen(eingabe, loesung, klatsch) {
 function dkRundeStarten() {
     if (!dk.auswahl.some(c => ZS_BAUSTEINE.some(b => b.code === c))) { zeigeToast('Wähle mindestens einen Baustein aus.', 'danger'); return; }
     const vorher = dkRunde;
-    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang }, nr: 0, ergebnisse: [], fertig: false };
-    if (!dkAufgabeErzeugen()) dkRunde = vorher;
+    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang }, nr: 0, ergebnisse: [], fertig: false, start: Date.now() };
+    if (!dkAufgabeErzeugen()) { dkRunde = vorher; return; }
+    zsMelden({ typ: 'rw-runde-start' });
 }
 function dkWeiter() {
     if (!dkRunde || dkRunde.fertig) dkRundeStarten();
@@ -133,8 +141,16 @@ function dkLoesungZeigen() {
 function dkFertig(geloest) {
     const a = dkAufgabe;
     a.fertig = true; a.geloest = geloest;
-    dkRunde.ergebnisse.push({ erster: !geloest && a.versuche === 1 });
-    if (dkRunde.nr >= ZS_RUNDE) dkRunde.fertig = true;
+    dkRunde.ergebnisse.push({ erster: !geloest && a.versuche === 1, geschafft: !geloest });
+    if (dkRunde.nr >= ZS_RUNDE) {
+        const r = dkRunde, erg = r.ergebnisse;
+        r.fertig = true;
+        const punkte = erg.reduce((s, e) => s + (e.erster ? 1 : e.geschafft ? 0.5 : 0), 0);
+        zsMelden({
+            typ: 'rw-runde', spiel: 'diktat', takte: r.regeln.takte, pct: Math.round(punkte / erg.length * 100),
+            detail: `${erg.filter(e => e.erster).length}/${erg.length} sofort · ${r.regeln.zeichen} · ${zsZeit(Math.round((Date.now() - r.start) / 1000))}`
+        });
+    }
     dkZeichnen();
 }
 

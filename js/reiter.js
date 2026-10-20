@@ -39,7 +39,7 @@ function reiterZeigen(name, nichtMerken) {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Minispiele-Seite: nur das Zaehl-Training, ohne den gemerkten Reiter zu aendern
-    if (ANSICHT === 'zaehlen' || ANSICHT === 'spiele') { reiterZeigen('zaehlen', true); return; }
+    if (ANSICHT === 'zaehlen' || ANSICHT === 'diktat' || ANSICHT === 'spiele') { reiterZeigen('zaehlen', true); return; }
     if (ANSICHT) return;   // Einbett-Ansichten zeigen nur die Rhythmus-Uebung
     document.querySelectorAll('[data-reiter]').forEach(b => b.addEventListener('click', () => reiterZeigen(b.dataset.reiter)));
     let start = 'rhythmus';
