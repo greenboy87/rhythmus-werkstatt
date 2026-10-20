@@ -7,7 +7,7 @@ const REITER = {
     rhythmus: { main: 'reiter-rhythmus', untertitel: 'Takte bauen · vorklatschen · einüben' },
     beat:     { main: 'reiter-beat',     untertitel: 'Hi-Hat · Bassdrum · Snare – Beats bauen', druck: 'druck-beat' },
     drumset:  { main: 'reiter-drumset',  untertitel: 'Snare · Toms · Bassdrum · Becken – Fills schreiben', druck: 'druck-drumset' },
-    zaehlen:  { main: 'reiter-zaehlen',  untertitel: 'Zählzeiten über die Noten schreiben' }
+    zaehlen:  { main: 'reiter-zaehlen',  untertitel: 'Zählzeiten & Rhythmus-Diktat – allein oder mit der Klasse' }
 };
 function reiterZeigen(name, nichtMerken) {
     if (!REITER[name]) name = 'rhythmus';
@@ -25,7 +25,7 @@ function reiterZeigen(name, nichtMerken) {
     if (!nichtMerken) { try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ } }
     if (name !== 'beat') BeatSpieler.stoppen();
     if (name !== 'drumset') DrumSpieler.stoppen();
-    if (name !== 'zaehlen') zsStoppen();
+    if (name !== 'zaehlen') { zsStoppen(); dkStoppen(); }
     if (name !== 'rhythmus') {
         Vorklatschen.stoppen(true);
         Metronom.stoppen();
@@ -33,7 +33,7 @@ function reiterZeigen(name, nichtMerken) {
     // Breite stimmt erst, wenn der Reiter sichtbar ist
     if (name === 'beat') bwAnzeigeZeichnen();
     else if (name === 'drumset') dsAnzeigeZeichnen();
-    else if (name === 'zaehlen') zsZeichnen();
+    else if (name === 'zaehlen') { zsZeichnen(); dkZeichnen(); }
     else anzeigeNeuZeichnen();
 }
 

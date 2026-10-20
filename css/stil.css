@@ -621,3 +621,20 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .ansicht-zaehlen main { padding: .5rem; }
 .zs-fertig .zs-runde { display: inline-block; margin-top: .3rem; font-size: 1.1rem; }
 .ansicht-zaehlen .zs-klasse-link { display: none; }
+
+/* ============================================================
+   SPIELE-REITER: Wahl Zaehlzeiten | Rhythmus-Diktat (js/spiele.js)
+   ============================================================ */
+.spiele-wahl { gap: .6rem; }
+.spiele-symbol { font-weight: 900; letter-spacing: .02em; }
+.ansicht-zaehlen .spiele-wahl { display: none; }
+.spiel-bereich { display: flex; flex-direction: column; gap: 1.2rem; }
+.spiel-bereich.hidden { display: none !important; }
+.zk-meldung { min-height: 1.3em; text-align: center; color: var(--gefahr); font-weight: 700; margin: .3rem 0 0; }
+.dk-hoeren { font-size: 1.1rem; padding: .75rem 1.6rem; }
+.dk-editor { margin-bottom: .7rem; }
+.dk-editor .takt-entfernen { display: none; }
+.dk-editor .noten-feld { pointer-events: none; }   /* Akzente spielen im Diktat keine Rolle */
+.editor-takt.dk-richtig { outline: 2px solid var(--erfolg); outline-offset: 2px; }
+.editor-takt.dk-falsch { outline: 2px solid var(--gefahr); outline-offset: 2px; }
+#dk-noten { overflow-x: auto; }

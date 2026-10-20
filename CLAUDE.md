@@ -359,6 +359,17 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `zk-aufgabe` (eigener Stand der laufenden Runde). „Schließen“ löscht den
   Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
   Verlinkt im Zähl-Training („Mit der Klasse spielen“).
+- `js/spiele.js` - Reiter „Spiele“ (intern weiter `zaehlen`, damit
+  `?reiter=zaehlen` und `?ansicht=zaehlen` gültig bleiben): Wahl
+  Zählzeiten | Rhythmus-Diktat (`spielZeigen`, `localStorage` `rw-spiel`; in
+  `?ansicht=zaehlen` immer Zählzeiten, Wahl ausgeblendet). **Rhythmus-Diktat**
+  = die Rhythmus-Runde aus dem Scoreboard für allein: `zkTakteWuerfeln`,
+  Vorspielen mit `Vorklatschen` (Host ohne Notenbild), Nachbauen mit
+  `rhythmusEditor(…, erlaubt)` (Palette nur aus den gewählten Bausteinen),
+  Prüfen je Takt mit `rhythmusGleich` (Klatschmodus), Runden zu `ZS_RUNDE`.
+  Tempo/Vorlauf über eine zweite `Metronom.bauen`-Leiste (geteilter Stand).
+  Einstellungen in `rw-diktat`. Im Klassenspiel: `lehrer.art = 'diktat'`
+  (Beamer spielt vor, Kinder bauen nach, +4 je richtigem Takt, `zk-diktat`).
 - `js/app.js` - Verdrahtung mit der Seite, Theme, Toasts, Generator-UI,
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über

@@ -8,8 +8,10 @@
    nicht) an eine bestimmte Stelle innerhalb eines Taktes.
    wurzel: Kasten fuer die Takte. paletteWurzel: Kasten fuer die
    ziehbaren Bausteine - beide zusammen bilden ein Eingabefeld.
+   erlaubt (optional): Liste von Baustein-Kuerzeln - nur die stehen dann
+   in der Palette (Rhythmus-Diktat: nur die Werte, die vorkommen duerfen).
    ============================================================ */
-function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
+function rhythmusEditor(wurzel, paletteWurzel, zeichenStart, erlaubt) {
     let zeichen = zeichenStart || '4/4';
     let takte = [{ bausteine: [] }];
     let onAenderung = null;
@@ -155,7 +157,7 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart) {
 
     if (paletteWurzel) {
         paletteWurzel.innerHTML = '';
-        RHYTHMUS_BAUSTEINE.forEach(b => {
+        RHYTHMUS_BAUSTEINE.filter(b => !erlaubt || erlaubt.includes(b.code)).forEach(b => {
             const knopf = document.createElement('button');
             knopf.type = 'button';
             knopf.className = 'palette-baustein';

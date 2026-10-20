@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=48">
-<link rel="stylesheet" href="css/druck.css?v=48">
+<link rel="stylesheet" href="css/stil.css?v=49">
+<link rel="stylesheet" href="css/druck.css?v=49">
 </head>
 <body>
 
@@ -19,7 +19,7 @@
         <button type="button" class="reiter-knopf an" role="tab" aria-selected="true" data-reiter="rhythmus">Rhythmus-Werkstatt</button>
         <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="beat"><i class="fa-solid fa-drum"></i> Beat-Werkstatt</button>
         <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="drumset"><i class="fa-solid fa-drum-steelpan"></i> Drumset-Werkstatt</button>
-        <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="zaehlen"><i class="fa-solid fa-keyboard"></i> Zähl-Training</button>
+        <button type="button" class="reiter-knopf" role="tab" aria-selected="false" data-reiter="zaehlen"><i class="fa-solid fa-gamepad"></i> Spiele</button>
     </nav>
     <span class="untertitel" id="kopf-untertitel">Takte bauen · vorklatschen · einüben</span>
     <span class="fuellt"></span>
@@ -428,6 +428,17 @@
 
 <!-- ============ Zähl-Training: Zählzeiten über die Noten schreiben (js/zaehlspiel.js) ============ -->
 <main id="reiter-zaehlen" class="hidden nicht-in-uebung">
+    <!-- Spiel waehlen (js/spiele.js); in der Minispiele-Ansicht ?ansicht=zaehlen ausgeblendet -->
+    <div class="leiste spiele-wahl">
+        <span class="segment">
+            <button type="button" class="btn" data-spiel="zaehlen"><span class="spiele-symbol">1 e +</span> Zählzeiten</button>
+            <button type="button" class="btn" data-spiel="diktat"><i class="fa-solid fa-ear-listen"></i> Rhythmus-Diktat</button>
+        </span>
+        <span class="zs-hinweis" id="spiele-text"></span>
+        <a class="btn zs-klasse-link" href="klasse.html" style="margin-left:auto; text-decoration:none;" title="Klassenspiel mit QR-Code, Namen und Punkten (öffnet die Lehrkraft-Ansicht)"><i class="fa-solid fa-users"></i> Mit der Klasse spielen</a>
+    </div>
+
+    <div id="spiel-zaehlen" class="spiel-bereich">
     <details class="karte" id="zs-einstellungen" open>
         <summary>Spiel einstellen</summary>
         <p style="font-size:.78rem; color:var(--text-gedaempft); margin:.6rem 0;">
@@ -456,8 +467,7 @@
                 <button type="button" class="btn" data-zs-stufe="3">3 · ganze Zeile</button>
             </span>
             <span id="zs-stufe-text" class="zs-hinweis"></span>
-            <a class="btn zs-klasse-link" href="klasse.html" style="margin-left:auto; text-decoration:none;" title="Klassenspiel mit QR-Code, Namen und Punkten (öffnet die Lehrkraft-Ansicht)"><i class="fa-solid fa-users"></i> Mit der Klasse spielen</a>
-            <button type="button" class="btn btn-primär" id="zs-start-btn"></button>
+            <button type="button" class="btn btn-primär" id="zs-start-btn" style="margin-left:auto;"></button>
         </div>
     </details>
 
@@ -488,6 +498,57 @@
             <button type="button" class="btn" id="zs-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
         </div>
     </section>
+    </div>
+
+    <!-- Rhythmus-Diktat: die Werkstatt spielt vor, man baut den Rhythmus nach -->
+    <div id="spiel-diktat" class="spiel-bereich hidden">
+    <details class="karte" id="dk-einstellungen" open>
+        <summary>Diktat einstellen</summary>
+        <p style="font-size:.78rem; color:var(--text-gedaempft); margin:.6rem 0;">
+            Bausteine antippen, die vorkommen dürfen – nur die stehen dann auch zum Nachbauen bereit.
+            Die Werkstatt spielt einen Rhythmus vor (so oft du willst), du baust ihn nach und prüfst.
+        </p>
+        <div class="leiste" id="dk-palette-wahl" style="margin-bottom:.8rem;"></div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="schalter-feld">Taktart</span>
+            <span class="segment">
+                <button type="button" class="btn" data-dk-zeichen="2/4">2/4</button>
+                <button type="button" class="btn" data-dk-zeichen="3/4">3/4</button>
+                <button type="button" class="btn" data-dk-zeichen="4/4">4/4</button>
+            </span>
+            <span class="schalter-feld" style="margin-left:.6rem;">Takte je Aufgabe</span>
+            <button type="button" class="btn" id="dk-takte-minus">−</button>
+            <span id="dk-takte-anzeige" class="btn" style="min-width:2.6rem; text-align:center">1</span>
+            <button type="button" class="btn" id="dk-takte-plus">+</button>
+            <label class="chip" style="margin-left:.6rem;" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="dk-klatsch"><span>Klatschmodus</span></label>
+        </div>
+        <div class="leiste">
+            <div class="leiste" id="dk-metronom"></div>
+            <button type="button" class="btn btn-primär" id="dk-start-btn" style="margin-left:auto;"></button>
+        </div>
+    </details>
+
+    <section class="karte hidden" id="dk-spiel">
+        <div class="zs-stand" id="dk-stand"></div>
+        <div class="leiste" style="justify-content:center; margin:.4rem 0 1rem;">
+            <button type="button" class="btn btn-primär dk-hoeren" id="dk-hoeren-btn"><i class="fa-solid fa-play"></i> Anhören</button>
+        </div>
+        <div id="dk-noten" class="hidden"></div>
+        <div class="dk-editor" id="dk-editor"></div>
+        <div class="leiste" id="dk-palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
+        <p class="zk-meldung" id="dk-meldung"></p>
+        <div class="leiste" id="dk-knoepfe" style="justify-content:center; margin-top:.6rem;">
+            <button type="button" class="btn" id="dk-zurueck-btn" title="Letzten Baustein weg"><i class="fa-solid fa-rotate-left"></i> Zurück</button>
+            <button type="button" class="btn" id="dk-leeren-btn"><i class="fa-solid fa-eraser"></i> Leeren</button>
+            <button type="button" class="btn btn-primär" id="dk-pruefen-btn"><i class="fa-solid fa-check"></i> Prüfen</button>
+            <button type="button" class="btn" id="dk-loesung-btn"><i class="fa-solid fa-eye"></i> Lösung zeigen</button>
+        </div>
+        <div class="zs-fertig hidden" id="dk-fertig">
+            <span id="dk-fertig-text"></span>
+            <button type="button" class="btn btn-primär" id="dk-weiter-btn"></button>
+        </div>
+    </section>
+    </div>
 </main>
 
 <footer class="nicht-in-uebung" style="text-align:center; padding: 1rem; color: var(--text-schwach); font-size: .72rem;">
@@ -496,20 +557,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=48"></script>
-<script src="js/noten.js?v=48"></script>
-<script src="js/editor.js?v=48"></script>
-<script src="js/audio.js?v=48"></script>
-<script src="js/generator.js?v=48"></script>
-<script src="js/link.js?v=48"></script>
-<script src="js/vendor/lame.min.js?v=48"></script>
-<script src="js/export.js?v=48"></script>
-<script src="js/pdf.js?v=48"></script>
-<script src="js/app.js?v=48"></script>
-<script src="js/beat.js?v=48"></script>
-<script src="js/drumset.js?v=48"></script>
-<script src="js/zaehlkern.js?v=48"></script>
-<script src="js/zaehlspiel.js?v=48"></script>
-<script src="js/reiter.js?v=48"></script>
+<script src="js/version.js?v=49"></script>
+<script src="js/noten.js?v=49"></script>
+<script src="js/editor.js?v=49"></script>
+<script src="js/audio.js?v=49"></script>
+<script src="js/generator.js?v=49"></script>
+<script src="js/link.js?v=49"></script>
+<script src="js/vendor/lame.min.js?v=49"></script>
+<script src="js/export.js?v=49"></script>
+<script src="js/pdf.js?v=49"></script>
+<script src="js/app.js?v=49"></script>
+<script src="js/beat.js?v=49"></script>
+<script src="js/drumset.js?v=49"></script>
+<script src="js/zaehlkern.js?v=49"></script>
+<script src="js/zaehlspiel.js?v=49"></script>
+<script src="js/spiele.js?v=49"></script>
+<script src="js/reiter.js?v=49"></script>
 </body>
 </html>

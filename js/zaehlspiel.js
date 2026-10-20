@@ -221,6 +221,7 @@ function zsStoppen() {
 function zsTaste(e) {
     const reiter = document.getElementById('reiter-zaehlen');
     if (!reiter || reiter.classList.contains('hidden')) return;
+    if (document.getElementById('spiel-zaehlen').classList.contains('hidden')) return;   // Diktat offen
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'checkbox') return;
     const a = zsAufgabe;

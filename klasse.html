@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Zählzeiten-Klassenspiel</title>
-<meta name="description" content="Zählzeiten über die Noten schreiben – als Klassenspiel mit QR-Code, Namen und Punkten.">
+<title>Rhythmus-Klassenspiel</title>
+<meta name="description" content="Zählzeiten und Rhythmus-Diktat als Klassenspiel mit QR-Code, Namen und Punkten.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=48">
-<link rel="stylesheet" href="css/klasse.css?v=48">
+<link rel="stylesheet" href="css/stil.css?v=49">
+<link rel="stylesheet" href="css/klasse.css?v=49">
 </head>
 <body>
 
 <header class="kopfzeile">
     <a class="btn hidden" id="zurueck-link" href="./?reiter=zaehlen" title="Zurück zur Rhythmus-Werkstatt (ein offener Raum bleibt bestehen)"><i class="fa-solid fa-arrow-left"></i> Werkstatt</a>
-    <h1>🥁 Zählzeiten-Klassenspiel</h1>
+    <h1>🥁 Klassenspiel</h1>
     <span class="untertitel" id="kopf-info"></span>
     <span class="fuellt"></span>
     <span class="verbindung" id="verbindung" title="Verbindung"></span>
@@ -27,7 +27,14 @@
 
     <!-- Einstellungen -->
     <section class="karte" id="l-einstellungen">
-        <h2 class="zk-titel">Spiel zusammenstellen</h2>
+        <div class="leiste" style="justify-content:space-between;">
+            <h2 class="zk-titel">Spiel zusammenstellen</h2>
+            <span class="segment">
+                <button type="button" class="btn" data-l-art="zaehlen"><span class="spiele-symbol">1 e +</span> Zählzeiten</button>
+                <button type="button" class="btn" data-l-art="diktat"><i class="fa-solid fa-ear-listen"></i> Rhythmus-Diktat</button>
+            </span>
+        </div>
+        <p class="zs-hinweis" id="l-art-text" style="margin:.5rem 0 0;"></p>
         <p class="zs-hinweis" style="margin:.4rem 0 .8rem;">
             Noten- und Pausenwerte antippen, die vorkommen dürfen. Alle Kinder bekommen in jeder Runde denselben Rhythmus.
         </p>
@@ -48,7 +55,7 @@
             <span class="btn zk-zahl" id="l-runden"></span>
             <button type="button" class="btn" data-l-plus="runden:1">+</button>
         </div>
-        <div class="leiste" style="margin-bottom:.6rem;">
+        <div class="leiste" style="margin-bottom:.6rem;" id="l-stufe-zeile">
             <span class="schalter-feld">Stufe</span>
             <span class="segment">
                 <button type="button" class="btn" data-l-stufe="1">1 · sofort</button>
@@ -67,6 +74,7 @@
                 <button type="button" class="btn" data-l-zeit="120">2 min</button>
             </span>
             <label class="chip zk-abstand"><input type="checkbox" id="l-notenlinien"><span>Notenlinien</span></label>
+            <label class="chip zk-abstand" id="l-klatsch-chip" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="l-klatsch"><span>Klatschmodus</span></label>
         </div>
         <details class="zk-eigene">
             <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
@@ -78,7 +86,7 @@
             <textarea id="l-eigene" rows="4" spellcheck="false" placeholder="https://greenboy87.github.io/rhythmus-werkstatt/#t=4/4&r=V-AA-Vp-SSSS&#10;AA-pA-ASS-V_H-Vp-AA"></textarea>
         </details>
         <div class="leiste" style="margin-top:.9rem;">
-            <span class="zs-hinweis">Punkte: richtiges Kästchen +2, Fehler −1, wer zuerst fertig ist +5 / +3 / +1.</span>
+            <span class="zs-hinweis" id="l-punkte-text"></span>
             <button type="button" class="btn btn-primär" id="l-oeffnen-btn" style="margin-left:auto;"><i class="fa-solid fa-door-open"></i> Raum öffnen</button>
         </div>
     </section>
@@ -115,6 +123,14 @@
         <!-- Runde -->
         <div id="l-runde" class="hidden">
             <div id="l-noten" class="zk-noten"></div>
+            <div id="l-diktat" class="hidden">
+                <p class="zk-gross" style="text-align:center;">Hört gut zu und baut den Rhythmus nach!</p>
+                <div class="leiste" style="justify-content:center; margin:.6rem 0;">
+                    <button type="button" class="btn btn-primär zk-gross-knopf" id="l-hoeren-btn"><i class="fa-solid fa-play"></i> Vorspielen</button>
+                </div>
+                <div class="leiste" id="l-metronom" style="justify-content:center;"></div>
+                <div id="l-klang-host" class="hidden"></div>
+            </div>
             <div class="zk-fortschritt" id="l-fortschritt"></div>
             <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
                 <button type="button" class="btn btn-warnung" id="l-beenden-btn"><i class="fa-solid fa-flag-checkered"></i> Runde beenden</button>
@@ -177,7 +193,17 @@
     <section class="karte hidden" id="s-spiel">
         <div class="zs-stand" id="s-stand"></div>
         <div id="s-noten" class="zk-noten"></div>
+        <div id="s-dk" class="hidden">
+            <p class="zs-hinweis" style="text-align:center; margin:.2rem 0 .6rem;">Hör zu und bau den Rhythmus aus den Bausteinen nach – dann prüfen.</p>
+            <div class="dk-editor" id="s-dk-editor"></div>
+            <div class="leiste" id="s-dk-palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
+        </div>
         <p class="zk-meldung" id="s-meldung"></p>
+        <div class="leiste hidden" id="s-dk-knoepfe" style="justify-content:center; margin-top:.6rem;">
+            <button type="button" class="btn" id="s-dk-zurueck"><i class="fa-solid fa-rotate-left"></i> Zurück</button>
+            <button type="button" class="btn" id="s-dk-leeren"><i class="fa-solid fa-eraser"></i> Leeren</button>
+            <button type="button" class="btn btn-primär zk-gross-knopf" id="s-dk-pruefen"><i class="fa-solid fa-check"></i> Prüfen</button>
+        </div>
         <div class="zs-pad" id="s-pad">
             <button type="button" data-zeichen="1">1</button>
             <button type="button" data-zeichen="2">2</button>
@@ -196,10 +222,12 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=48"></script>
-<script src="js/vendor/qrcode.min.js?v=48"></script>
-<script src="js/noten.js?v=48"></script>
-<script src="js/zaehlkern.js?v=48"></script>
-<script type="module" src="js/klasse.js?v=48"></script>
+<script src="js/version.js?v=49"></script>
+<script src="js/vendor/qrcode.min.js?v=49"></script>
+<script src="js/noten.js?v=49"></script>
+<script src="js/zaehlkern.js?v=49"></script>
+<script src="js/editor.js?v=49"></script>
+<script src="js/audio.js?v=49"></script>
+<script type="module" src="js/klasse.js?v=49"></script>
 </body>
 </html>

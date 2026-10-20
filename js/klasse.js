@@ -19,6 +19,13 @@
    (je Runde nicht unter 0), die ersten drei Fertigen +5/+3/+1 (fertig
    heisst: alle Kaestchen richtig - falsche muessen ausgebessert werden).
    Pruefen und Zeichnen: js/zaehlkern.js, wie im Zaehl-Training.
+   Spielart (lehrer.art): 'zaehlen' (Zaehlzeiten, s. oben) oder 'diktat'
+   (Rhythmus-Diktat wie die Rhythmus-Runde im Scoreboard): Der Beamer
+   spielt den Rhythmus vor (Vorklatschen aus audio.js, ohne Notenbild),
+   die Kinder bauen ihn mit dem Eingabefeld (editor.js, Palette =
+   lehrer.werte) nach und pruefen; Einheit ist dann der Takt (richtig =
+   stimmende Takte, fehler = Fehlversuche, +4 je Takt), lehrer.klatsch =
+   Klatschmodus (rhythmusGleich).
    ============================================================ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
 import { getDatabase, ref, set, update, get, onValue, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js';
@@ -35,7 +42,11 @@ const firebaseConfig = {
 const db = getDatabase(initializeApp(firebaseConfig));
 const pfad = (code, rest) => `rooms/zz-${code}${rest ? '/' + rest : ''}`;
 
-const PUNKTE_RICHTIG = 2, PUNKTE_FEHLER = 1, PUNKTE_TEMPO = [5, 3, 1];
+const PUNKTE_RICHTIG = { zaehlen: 2, diktat: 4 }, PUNKTE_FEHLER = 1, PUNKTE_TEMPO = [5, 3, 1];
+const ART_TEXT = {
+    zaehlen: 'Alle sehen denselben Rhythmus und schreiben die Zählzeiten über die Noten.',
+    diktat: 'Du spielst den Rhythmus am Beamer vor (so oft du willst), alle bauen ihn auf ihrem Gerät nach.'
+};
 const CODE_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // ohne 0/O, 1/I
 const EMOJIS = ['🥁', '🎸', '🎹', '🎺', '🎷', '🎻', '🪇', '🎤', '🦊', '🐼', '🐸', '🦄', '🐙', '🚀', '⚡', '🌈'];
 const STUFEN_TEXT = {
@@ -55,6 +66,7 @@ onValue(ref(db, '.info/connected'), s => {
 
 /* ---------- Kleinkram ---------- */
 const $ = (id) => document.getElementById(id);
+window.zeigeToast = zeigeToast;   // audio.js (Vorspielen) meldet sich darueber
 function zeigeToast(text, art) {
     const el = document.createElement('div');
     el.className = 'toast' + (art ? ' ' + art : '');
@@ -127,6 +139,7 @@ function eigeneLesen(text, zeichenStandard) {
 const L_SCHLUESSEL = 'zk-lehrer';
 const L = Object.assign({
     auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'],
+    art: 'zaehlen', klatsch: true,
     zeichen: '4/4', takte: 2, runden: 5, stufe: 1, zeit: 90, notenlinien: false, eigene: '',
     code: null,       // offener Raum
     spiel: null,      // Kennung des laufenden Spiels
@@ -148,6 +161,14 @@ function lEinstellungenZeichnen() {
     $('l-takte').textContent = L.takte;
     $('l-runden').textContent = L.runden;
     $('l-notenlinien').checked = L.notenlinien;
+    $('l-klatsch').checked = L.klatsch;
+    document.querySelectorAll('[data-l-art]').forEach(b => b.classList.toggle('an', b.dataset.lArt === L.art));
+    $('l-art-text').textContent = ART_TEXT[L.art];
+    zeigen('l-stufe-zeile', L.art === 'zaehlen');
+    zeigen('l-klatsch-chip', L.art === 'diktat');
+    $('l-punkte-text').textContent = L.art === 'diktat'
+        ? 'Punkte: richtiger Takt +4, Fehlversuch −1, wer zuerst fertig ist +5 / +3 / +1.'
+        : 'Punkte: richtiges Kästchen +2, Fehler −1, wer zuerst fertig ist +5 / +3 / +1.';
     const e = eigeneLesen(L.eigene, L.zeichen);
     $('l-eigene-info').textContent = !L.eigene.trim() ? '' : e.fehler ? '– ' + e.fehler : `– ${e.aufgaben.length} ${e.aufgaben.length === 1 ? 'Rhythmus' : 'Rhythmen'} = ${e.aufgaben.length} Runden`;
 }
@@ -171,8 +192,8 @@ async function raumOeffnen() {
     L.code = code; L.gesamt = {}; L.spiel = null; L.plan = plan;
     lSpeichern();
     lehrerStand = null;
-    await set(ref(db, pfad(code, 'lehrer')), { phase: 'warten', runde: 0, runden: plan.length, stufe: L.stufe, offen: serverTimestamp() });
-    lehrerStand = { phase: 'warten', runde: 0, runden: plan.length, stufe: L.stufe };
+    await set(ref(db, pfad(code, 'lehrer')), { phase: 'warten', art: L.art, runde: 0, runden: plan.length, stufe: L.stufe, offen: serverTimestamp() });
+    lehrerStand = { phase: 'warten', art: L.art, runde: 0, runden: plan.length, stufe: L.stufe };
     lRaumVerbinden();
 }
 
@@ -243,19 +264,25 @@ function lZeichnen() {
     $('kopf-info').textContent = `Raum ${L.code} · ${n} ${n === 1 ? 'Kind' : 'Kinder'}`;
     if (st.phase === 'warten') {
         zeigen('l-lobby', true);
-        $('l-phase-info').textContent = `${st.runden} Runden · ${ZS_STUFEN_KURZ[st.stufe]}`;
+        $('l-phase-info').textContent = `${st.art === 'diktat' ? 'Rhythmus-Diktat' : 'Zählzeiten · ' + ZS_STUFEN_KURZ[st.stufe]} · ${st.runden} Runden`;
         $('l-anzahl').textContent = n ? `${n} ${n === 1 ? 'Kind ist' : 'Kinder sind'} dabei.` : 'Noch niemand da.';
         $('l-namen').innerHTML = lSpielerSortiert().map(([id, p]) =>
             `<span class="zk-name">${esc(p.emoji)} ${esc(p.name)}<button type="button" data-raus="${esc(id)}" title="Entfernen">×</button></span>`).join('');
         $('l-start-btn').disabled = !n;
     } else if (st.phase === 'runde') {
         zeigen('l-runde', true);
-        $('l-phase-info').textContent = `Runde ${st.runde} von ${st.runden} · ${ZS_STUFEN_KURZ[st.stufe]}`;
+        const diktat = st.art === 'diktat';
+        $('l-phase-info').textContent = `Runde ${st.runde} von ${st.runden} · ${diktat ? 'Rhythmus-Diktat' : ZS_STUFEN_KURZ[st.stufe]}`;
         const stueck = zkStueckAusKuerzel(st.aufgabe, st.zeichen);
-        // Beamer: nur die Noten, ohne Kaestchen und ohne Loesung
         const host = $('l-noten');
-        const breite = Math.max(280, host.clientWidth || 800);
-        host.innerHTML = stueckAnzeigeHtml(stueck, { notenlinien: st.notenlinien, breite: breite / 1.8, skalierung: 1.8 });
+        zeigen('l-noten', !diktat);
+        zeigen('l-diktat', diktat);
+        // Beamer: beim Zaehlen nur die Noten (ohne Kaestchen und Loesung), beim Diktat gar keine
+        if (diktat) host.innerHTML = '';
+        else {
+            const breite = Math.max(280, host.clientWidth || 800);
+            host.innerHTML = stueckAnzeigeHtml(stueck, { notenlinien: st.notenlinien, breite: breite / 1.8, skalierung: 1.8 });
+        }
         lFortschrittZeichnen();
     } else if (st.phase === 'auswertung') {
         zeigen('l-auswertung', true);
@@ -282,7 +309,7 @@ function lFortschrittZeichnen() {
         return `<div class="zk-balken-zeile${f.fertig ? ' fertig' : ''}">
             <span class="zk-balken-name">${esc(p.emoji)} ${esc(p.name)}</span>
             <span class="zk-balken"><span style="width:${anteil}%"></span></span>
-            <span class="zk-balken-wert">${f.fertig ? '✓' + zeit : (f.richtig || 0) + '/' + (f.gesamt || '–')}</span>
+            <span class="zk-balken-wert">${f.fertig ? '✓' + zeit : (f.richtig || 0) + '/' + (f.gesamt || '–') + (st.art === 'diktat' && f.fehler ? ` <small class="zs-rot">${f.fehler}✗</small>` : '')}</span>
         </div>`;
     });
     const fertig = lSpielerSortiert().filter(([id]) => rundenStand[id] && rundenStand[id].fertig).length;
@@ -300,6 +327,20 @@ function lUhr() {
     if (rest <= 0) lAuswerten();
 }
 
+/* Palette fuers Diktat: die gewaehlten Bausteine plus alles, was in eigenen
+   Rhythmen vorkommt - sonst liesse sich ein Takt gar nicht nachbauen. */
+function lWerte() {
+    const w = new Set(L.auswahl);
+    L.plan.forEach(p => p.kuerzel.split(/[_-]/).forEach(c => w.add(c)));
+    return ZS_BAUSTEINE.map(b => b.code).filter(c => w.has(c));
+}
+function lVorspielen() {
+    const st = lehrerStand;
+    if (!st || st.phase !== 'runde' || st.art !== 'diktat') return;
+    // Laeuft es schon, stoppt derselbe Knopf
+    Vorklatschen.starten(zkStueckAusKuerzel(st.aufgabe, st.zeichen), $('l-klang-host'), false, 0, null, null);
+}
+
 async function lRundeStarten() {
     const st = lehrerStand;
     const runde = (st.runde || 0) + 1;
@@ -308,7 +349,7 @@ async function lRundeStarten() {
     if (!L.spiel) { L.spiel = zufall(6, 'abcdefghijkmnpqrstuvwxyz23456789'); lSpeichern(); }
     rundenStand = {};
     await lehrerSetzen({
-        phase: 'runde', runde, runden: L.plan.length, stufe: L.stufe, zeichen: aufgabe.zeichen,
+        phase: 'runde', art: L.art, klatsch: L.klatsch, werte: lWerte(), runde, runden: L.plan.length, stufe: L.stufe, zeichen: aufgabe.zeichen,
         notenlinien: L.notenlinien, aufgabe: aufgabe.kuerzel, dauer: L.zeit, spiel: L.spiel,
         start: serverTimestamp(), wertung: null
     });
@@ -337,7 +378,7 @@ async function lAuswerten() {
             const f = rundenStand[id] || {};
             const tempoPlatz = fertige.indexOf(id);
             const tempo = tempoPlatz >= 0 && tempoPlatz < PUNKTE_TEMPO.length ? PUNKTE_TEMPO[tempoPlatz] : 0;
-            const grund = Math.max(0, (f.richtig || 0) * PUNKTE_RICHTIG - (f.fehler || 0) * PUNKTE_FEHLER);
+            const grund = Math.max(0, (f.richtig || 0) * PUNKTE_RICHTIG[st.art || 'zaehlen'] - (f.fehler || 0) * PUNKTE_FEHLER);
             L.gesamt[id] = (L.gesamt[id] || 0) + grund + tempo;
             wertung[id] = { punkte: grund + tempo, tempo, richtig: f.richtig || 0, fehler: f.fehler || 0, gesamt: L.gesamt[id] };
         });
@@ -347,6 +388,7 @@ async function lAuswerten() {
             wertung[id].platz = i > 0 && wertung[reihe[i - 1]].gesamt === wertung[id].gesamt ? wertung[reihe[i - 1]].platz : i + 1;
         });
         lSpeichern();
+        if (Vorklatschen.istAn()) Vorklatschen.stoppen(true);
         await lehrerSetzen({ phase: 'auswertung', wertung });
         if (standAbo) { standAbo(); standAbo = null; }
         lZeichnen();
@@ -358,7 +400,7 @@ function lListenZeichnen() {
     const name = (id) => spielerListe[id] ? `${esc(spielerListe[id].emoji)} ${esc(spielerListe[id].name)}` : '?';
     const runde = Object.keys(w).sort((a, b) => w[b].punkte - w[a].punkte);
     $('l-rundenliste').innerHTML = `<table class="zk-tabelle">${runde.map(id =>
-        `<tr><td>${name(id)}</td><td class="zk-klein">${w[id].richtig} ✓ · ${w[id].fehler} ✗${w[id].tempo ? ` · ⚡+${w[id].tempo}` : ''}</td><td class="zk-p">+${w[id].punkte}</td></tr>`).join('')}</table>`;
+        `<tr><td>${name(id)}</td><td class="zk-klein">${w[id].richtig} ${lehrerStand.art === 'diktat' ? (w[id].richtig === 1 ? 'Takt' : 'Takte') + ' ✓' : '✓'} · ${w[id].fehler} ✗${w[id].tempo ? ` · ⚡+${w[id].tempo}` : ''}</td><td class="zk-p">+${w[id].punkte}</td></tr>`).join('')}</table>`;
     const gesamt = Object.keys(w).sort((a, b) => w[a].platz - w[b].platz);
     $('l-gesamtliste').innerHTML = `<table class="zk-tabelle">${gesamt.map(id =>
         `<tr><td class="zk-platz">${w[id].platz}.</td><td>${name(id)}</td><td class="zk-p">${w[id].gesamt}</td></tr>`).join('')}</table>`;
@@ -426,6 +468,10 @@ function lehrerAufbauen() {
         lSpeichern(); lEinstellungenZeichnen();
     }));
     $('l-notenlinien').addEventListener('change', e => { L.notenlinien = e.target.checked; lSpeichern(); });
+    $('l-klatsch').addEventListener('change', e => { L.klatsch = e.target.checked; lSpeichern(); });
+    document.querySelectorAll('[data-l-art]').forEach(b => b.addEventListener('click', () => { L.art = b.dataset.lArt; lSpeichern(); lEinstellungenZeichnen(); }));
+    $('l-hoeren-btn').addEventListener('click', lVorspielen);
+    Metronom.bauen($('l-metronom'), () => (lehrerStand && lehrerStand.zeichen) || '4/4');
     $('l-eigene').value = L.eigene;
     if (L.eigene.trim()) $('l-eigene').closest('details').open = true;
     $('l-eigene').addEventListener('input', e => { L.eigene = e.target.value; lSpeichern(); lEinstellungenZeichnen(); });
@@ -521,6 +567,10 @@ function sZeichnen() {
     zeigen('s-beitritt', false);
     if (st.phase === 'runde') {
         zeigen('s-info', false); zeigen('s-spiel', true);
+        const diktat = st.art === 'diktat';
+        zeigen('s-noten', !diktat); zeigen('s-dk', diktat);
+        if (diktat) { zeigen('s-pad', false); sDiktatVorbereiten(); sDiktatZeichnen(); return; }
+        zeigen('s-dk-knoepfe', false);
         const schluessel = sRundenSchluessel();
         if (sAufgabeSchluessel !== schluessel) {
             sAufgabeSchluessel = schluessel;
@@ -567,8 +617,73 @@ function sSpielZeichnen(blitz) {
     if (a.fertig) $('s-fertig').innerHTML = '<b>Fertig!</b> Warte auf die anderen …';
     sStandZeile();
 }
+/* ---------- Schueler: Rhythmus-Diktat ----------
+   Eingabefeld wie in der Werkstatt; Pruefen vergleicht Takt fuer Takt mit
+   dem vorgespielten Rhythmus. Jeder Fehlversuch zaehlt als Fehler, richtig =
+   stimmende Takte beim letzten Pruefen. Eigener Stand in zk-diktat (Neuladen). */
+let sDk = null;   // { schluessel, loesung, fehler, richtig, fertig, gemeldet, editor }
+function sDiktatVorbereiten() {
+    const st = sStand, schluessel = sRundenSchluessel();
+    if (sDk && sDk.schluessel === schluessel) return;
+    const loesung = zkStueckAusKuerzel(st.aufgabe, st.zeichen);
+    const editor = rhythmusEditor($('s-dk-editor'), $('s-dk-palette'), st.zeichen, st.werte || null);
+    sDk = { schluessel, loesung, fehler: 0, richtig: 0, fertig: false, gemeldet: false, editor };
+    const alt = lesen('zk-diktat', null);
+    if (alt && alt.schluessel === schluessel) {
+        Object.assign(sDk, { fehler: alt.fehler, richtig: alt.richtig, fertig: alt.fertig, gemeldet: alt.fertig });
+        editor.setzen(st.zeichen, alt.takte.map(k => ({ bausteine: k ? k.split('-').map(c => RHYTHMUS_NACH_CODE[c]).filter(Boolean) : [] })));
+    } else {
+        editor.setzen(st.zeichen, loesung.takte.map(() => ({ bausteine: [] })));
+        sDkMelden();
+    }
+    editor.aufAenderung(() => { $('s-meldung').textContent = ''; sDkSichern(); });
+    $('s-meldung').textContent = '';
+}
+function sDkSichern() {
+    if (!sDk) return;
+    schreiben('zk-diktat', { schluessel: sDk.schluessel, fehler: sDk.fehler, richtig: sDk.richtig, fertig: sDk.fertig,
+        takte: sDk.editor.stueck().takte.map(t => t.bausteine.map(b => b.code).join('-')) });
+}
+function sDkMelden() {
+    const d = { richtig: sDk.richtig, fehler: sDk.fehler, gesamt: sDk.loesung.takte.length, fertig: sDk.fertig };
+    if (sDk.fertig && !sDk.gemeldet) { d.fertigAm = serverTimestamp(); sDk.gemeldet = true; }
+    sDkSichern();
+    update(ref(db, pfad(sCode, `stand/${sDk.schluessel}/${geraet}`)), d).catch(() => zeigeToast('Senden hat nicht geklappt – Verbindung prüfen.', 'danger'));
+}
+function sDkPruefen() {
+    if (sStand.phase !== 'runde' || !sDk || sDk.fertig) return;
+    const eingabe = sDk.editor.stueck(), soll = taktSoll(sDk.loesung.zeichen);
+    const offen = eingabe.takte.findIndex(t => Math.abs(rhythmusDauer(t.bausteine) - soll) > 0.001);
+    if (offen >= 0) {
+        $('s-meldung').textContent = `Takt ${offen + 1} ist ${rhythmusDauer(eingabe.takte[offen].bausteine) > soll ? 'zu lang' : 'noch nicht voll'}.`;
+        return;
+    }
+    const kurz = (t) => t.bausteine.map(b => b.code).join('-');
+    const stimmt = sDk.loesung.takte.map((t, i) => !!eingabe.takte[i] && rhythmusGleich(kurz(eingabe.takte[i]), kurz(t), sStand.klatsch !== false));
+    sDk.richtig = stimmt.filter(Boolean).length;
+    if (stimmt.every(Boolean)) sDk.fertig = true;
+    else {
+        sDk.fehler++;
+        const falsch = stimmt.map((s, i) => s ? null : i + 1).filter(Boolean);
+        $('s-meldung').textContent = (falsch.length === 1 ? `Takt ${falsch[0]} stimmt` : `Takte ${falsch.join(', ')} stimmen`) + ' noch nicht – hör nochmal hin.';
+    }
+    sDkMelden();
+    sDiktatZeichnen();
+    document.querySelectorAll('#s-dk-editor .editor-takt').forEach((box, i) => {
+        box.classList.toggle('dk-richtig', !!stimmt[i]);
+        box.classList.toggle('dk-falsch', !stimmt[i]);
+    });
+}
+function sDiktatZeichnen() {
+    zeigen('s-dk', !sDk.fertig);
+    zeigen('s-dk-knoepfe', !sDk.fertig);
+    zeigen('s-fertig', sDk.fertig);
+    if (sDk.fertig) { $('s-fertig').innerHTML = '<b>Richtig!</b> Warte auf die anderen …'; $('s-meldung').textContent = ''; }
+    sStandZeile();
+}
+
 function sStandZeile() {
-    const st = sStand, a = sAufgabe;
+    const st = sStand, a = st.art === 'diktat' ? sDk : sAufgabe;
     if (!a) return;
     let zeit = '';
     if (st.dauer > 0 && st.start) zeit = ` · <b class="zk-zeit">${zsZeit(Math.max(0, Math.ceil((st.start + st.dauer * 1000 - jetzt()) / 1000)))}</b>`;
@@ -625,8 +740,11 @@ function schuelerAufbauen() {
         const z = e.target.closest('[data-feld]');
         if (z && zkWaehlen(sAufgabe, Number(z.dataset.feld))) sSpielZeichnen();
     });
+    $('s-dk-pruefen').addEventListener('click', sDkPruefen);
+    $('s-dk-zurueck').addEventListener('click', () => { if (sDk && !sDk.fertig) sDk.editor.zurueck(); });
+    $('s-dk-leeren').addEventListener('click', () => { if (sDk && !sDk.fertig) sDk.editor.leeren(); });
     document.addEventListener('keydown', e => {
-        if (sStand.phase !== 'runde' || !sAufgabe || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (sStand.phase !== 'runde' || sStand.art === 'diktat' || !sAufgabe || e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
         const k = e.key;
         let ok = true;
