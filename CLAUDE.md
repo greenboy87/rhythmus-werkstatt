@@ -99,6 +99,33 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   localStorage bleiben unberührt. Blätter speichern ihre Einstellungen
   selbst im selben Format (`einstellungen`: Hash ohne `#`); ältere Blätter
   ohne das Feld laden nur den Rhythmus.
+  **Beat- und Drumset-Link** (ebenfalls in link.js, DOM-frei, verlustfrei:
+  `beatLinkLesen(beatLinkBauen(x))` = x, `drumLinkLesen(drumLinkBauen(x))` = x;
+  `null`, wenn der Schlüssel fehlt). Eigene Schlüssel statt `r=`, damit
+  `linkLesen` sie ignoriert und reiter.js den richtigen Reiter öffnet:
+  `#b=AA.hb.h-V.h--Vp_SSSS.h.h.h.h&u=…&t=3/4&titel=…&bpm=100&o=zew3k2`
+  bzw. `#d=hb.h.hs.h-s.1.2-…&t=…&titel=…&bpm=…&o=f`.
+  - Plätze (Zählzeiten) mit `-`, Takte mit `_`; leerer Platz = nichts
+    zwischen den Trennern (am Taktende weggelassen). Taktzahl = Anzahl
+    `_`-Gruppen (max. 8), `t` = Zählzeiten `x/4` (1-12, Standard 4/4).
+  - Beat-Platz: Baustein-Code aus `BEAT_FORMEN`, dann je Note (Pausen-Teile
+    übersprungen) `.` + Instrument-Buchstaben `BEAT_LINK_INST`: c Crash,
+    h Hi-Hat, o Hi-Hat offen, r Ride, s Snare, b Bassdrum, g Ghost.
+    `b=` = eine Ebene (`beat.easy`), mit `u=` dazu = zwei Ebenen (`b=`
+    Becken, `u=` Bassdrum/Snare) - der Link stellt also auch den Modus ein.
+  - Drumset-Platz: Rasterstellen mit `.` (3, 4 oder 6 Teile = Raster `r`),
+    je Stelle Buchstaben `DRUM_LINK_INST` (wie oben, Toms `1 2 3`).
+  - `o` = Schalter, die AN sind (Beat: `a` Backbeat, `z` Zählzeiten, `f`
+    Farbe, `m` Metronom, `e` Loop, `u` Als Übung, `w3` Durchgänge, `k2`
+    Takte/Zeile; Drumset: `z f m`). Fehlt `o`, gilt der Standard
+    (`BEAT_LINK_STANDARD`: Backbeat, Zählzeiten, Loop an; `DRUM_LINK_STANDARD`:
+    Zählzeiten an) - `o=` leer heißt also „alles aus“.
+  - Unbekannte Plätze werden übersprungen und per Toast gemeldet. Nicht im
+    Link: Stift, „Mehr“, Stummschaltung, Loop-Bereich.
+  - Übernahme beim Laden (vor dem gespeicherten Stand) und bei `hashchange`:
+    `bwLinkUebernehmen` / `dsLinkUebernehmen`; aktueller Stand als Objekt:
+    `bwLinkStand` / `dsLinkStand`. Der Link ist das „Online-Speichern“:
+    der ganze Beat steht in der URL, kein Server sieht ihn.
 - `js/export.js` - `rhythmusAudio(stueck, optionen) -> Promise<Blob>`:
   rendert den Zeitplan mit denselben Klangfunktionen in einem
   `OfflineAudioContext` (44,1 kHz mono, 0,5 s Ausklang, Spitze auf -1 dBFS).
@@ -171,8 +198,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Beat-Werkstatt | Drumset-Werkstatt | Zähl-Training“ (`<main id="reiter-rhythmus">`,
   `#reiter-beat`, `#reiter-drumset`, `#reiter-zaehlen`). Wird als letzte Datei geladen, damit
   beat.js und drumset.js schon eingerichtet sind. Gewählter Reiter in
-  `localStorage` `rw-reiter`, ein Rhythmus-Link `#…r=…` öffnet immer die
-  Rhythmus-Werkstatt; in den Einbett-Ansichten `?ansicht=` gibt es keine
+  `localStorage` `rw-reiter`, ein Link öffnet immer seinen Reiter (`r=`
+  Rhythmus-, `b=` Beat-, `d=` Drumset-Werkstatt, auch bei `hashchange`); in den Einbett-Ansichten `?ansicht=` gibt es keine
   Reiter. `reiterZeigen` stoppt die Spieler der anderen Reiter und setzt
   die Druck-Klasse am `<body>` (`druck-beat` / `druck-drumset`).
 - `js/beat.js` - **Beat-Werkstatt**, eigener Reiter.
@@ -261,8 +288,20 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     (`.uebung-nr`) wählt die Zeile - Regeln wie `anzeigeAngetippt`.
   - Jede Notenzeile (Rhythmus, Beat, Drumset) beginnt mit einem
     Anfangsstrich; bei „Als Übung“ mit Doppelstrich.
-  - Zustand in `localStorage` `rw-beat` (nur dieser Browser). Noch ohne
-    Link und Audio-Export.
+  - Zustand in `localStorage` `rw-beat` (nur dieser Browser, automatisch).
+    Dazu benannte Blätter (`rw-beat-blaetter`: Name -> Link-Text ohne `#`)
+    und „Link kopieren“ (Format siehe link.js). Noch ohne Audio-Export.
+  - Gemeinsam mit drumset.js (stehen in beat.js): `blattLeisteEinrichten`
+    (Leiste „Speichern | Blatt laden… | Löschen | Link kopieren“, IDs
+    `bw-…`/`ds-…`; ein Blatt ist einfach der Link-Text, Laden = Link
+    übernehmen - nur ein Format), `taktZiehenEinrichten` + `taktGriffHtml`
+    (Takte verschieben: Taktkopf `.bw-takt-griff` anfassen und ziehen,
+    Pointer-Events am Editor-Kasten, weil der bei jeder Änderung neu
+    gezeichnet wird; Geist `.bw-takt-geist`, Zielmarke `.ziel-vor`/
+    `.ziel-nach`, `touch-action: none` am Griff fürs iPad) und
+    `plaetzeTaktVerschieben` (flache Platzliste umsortieren).
+    `bwTaktVerschieben` verschiebt alle drei Ebenen samt `bwTaktRest`.
+    `urlKopieren` (Zwischenablage mit Rückfall) steht in app.js.
 - `js/drumset.js` - **Drumset-Werkstatt** (Reiter `drumset`): das ganze
   Schlagzeug in EINEM System, eine Stimme, alle Hälse nach oben - zuerst
   für Fills. Nutzt Notensatz-Teile und Klänge aus beat.js (`bwPause`,
@@ -301,7 +340,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     der Fill auf dem Crash. Erster Besuch startet mit der ersten Vorlage.
   - Druck/PDF wie in der Beat-Werkstatt: Blatt `#ds-druck` (Klasse
     `bw-nur-druck`), `dsDruckZeichnen`, `blattPdf`.
-  - Zustand in `localStorage` `rw-drumset`. Noch ohne Link, Audio-Export,
+  - Zustand in `localStorage` `rw-drumset`, benannte Blätter in
+    `rw-drumset-blaetter`, Link `#d=…`, Takte verschieben
+    (`dsTaktVerschieben`) - alles wie in der Beat-Werkstatt. Noch ohne Audio-Export,
     Akzente und zweite Stimme (Füße mit Hals nach unten) - später sollen
     Beats und Fills zusammen in einem Stück stehen.
 - `js/zaehlspiel.js` - **Zähl-Training** (Reiter `zaehlen`): Zählzeiten
@@ -406,7 +447,7 @@ Browser trotz neuem Commit noch die alte JS/CSS-Datei ausliefern, während
 `index.html` selbst schon aktuell ist - genau das hat einmal einen echten
 Fix scheinbar wirkungslos gemacht. Bei jeder inhaltlichen Änderung also
 **beides zusammen** hochzählen: `APP_VERSION` in `js/version.js` und jedes
-`?v=` in `index.html`.
+`?v=` in `index.html` und `klasse.html`.
 
 ## Offene Ausbaustufen (siehe Projektauftrag)
 

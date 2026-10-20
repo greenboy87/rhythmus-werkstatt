@@ -438,7 +438,12 @@ function linkUebernehmen(hash) {
 }
 
 function linkKopieren() {
-    const url = location.origin + location.pathname + '#' + linkBauen(linkStand());
+    urlKopieren(location.origin + location.pathname + '#' + linkBauen(linkStand()));
+}
+
+/* Text in die Zwischenablage, sonst zum Abschreiben anzeigen - auch fuer
+   die Links der Beat- und Drumset-Werkstatt. */
+function urlKopieren(url) {
     const fallback = () => {
         const feld = document.createElement('textarea');
         feld.value = url;

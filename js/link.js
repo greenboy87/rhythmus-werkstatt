@@ -139,3 +139,178 @@ function linkBauen(x) {
     if (x.groesse !== undefined && x.groesse !== s.groesse) teile.push('g=' + x.groesse);
     return teile.join('&');
 }
+
+/* ============================================================
+   BEAT- UND DRUMSET-LINK: eigener Schluessel statt r=, damit ein Link
+   genau einen Reiter meint (reiter.js oeffnet bei b= die Beat-, bei d=
+   die Drumset-Werkstatt). Ebenfalls DOM-frei und verlustfrei:
+   beatLinkLesen(beatLinkBauen(x)) bzw. drumLinkLesen(drumLinkBauen(x))
+   ergibt wieder x.
+     #b=AA.hb.h-AA.hs.h_V.b--Vp&u=...&t=3/4&titel=Groove&bpm=100&o=zew2
+     #d=hb.h.hs.h-s.1.2-s.s.s.s&t=4/4&titel=Fill&bpm=90&o=f
+   Platz = Zaehlzeit, Plaetze mit "-", Takte mit "_" getrennt, leerer
+   Platz = nichts zwischen den Trennern (am Taktende weggelassen).
+   Beat: Platz = Baustein-Code, dann je Note (ohne Pausen) "." und die
+   Instrument-Buchstaben (BEAT_LINK_INST, g = Ghost Note). b= ist die
+   eine Ebene bzw. bei zwei Ebenen die Becken, u= (nur bei zwei Ebenen)
+   Bassdrum/Snare.
+   Drumset: Platz = Rasterstellen mit "." getrennt (3, 4 oder 6 Teile =
+   Raster), je Stelle die Instrument-Buchstaben (DRUM_LINK_INST).
+   ============================================================ */
+const LINK_TAKTE_MAX = 8, LINK_SCHLAEGE_MAX = 12;
+const BEAT_LINK_INST = { crash: 'c', hh: 'h', ho: 'o', ride: 'r', s: 's', b: 'b', g: 'g' };
+const DRUM_LINK_INST = { crash: 'c', hh: 'h', ho: 'o', ride: 'r', s: 's', t1: '1', t2: '2', t3: '3', b: 'b' };
+const BEAT_LINK_STANDARD = {
+    schlaege: 4, titel: '', bpm: 90,
+    backbeat: true, zaehlzeiten: true, farbe: false, metronom: false,
+    loop: true, alsUebung: false, durchgaenge: 1, proZeile: 0
+};
+const DRUM_LINK_STANDARD = { schlaege: 4, titel: '', bpm: 90, zaehlzeiten: true, farbe: false, metronom: false };
+/* Schalter in "o": Buchstabe = an. Fehlt "o", gilt der Standard. */
+const BEAT_LINK_SCHALTER = { a: 'backbeat', z: 'zaehlzeiten', f: 'farbe', m: 'metronom', e: 'loop', u: 'alsUebung' };
+const DRUM_LINK_SCHALTER = { z: 'zaehlzeiten', f: 'farbe', m: 'metronom' };
+
+function linkWerte(hash) {
+    const werte = {};
+    String(hash || '').replace(/^#/, '').split('&').forEach(paar => {
+        if (!paar) return;
+        const i = paar.indexOf('=');
+        const name = linkDekodieren(i < 0 ? paar : paar.slice(0, i)).trim().toLowerCase();
+        werte[name] = i < 0 ? '' : linkDekodieren(paar.slice(i + 1));
+    });
+    return werte;
+}
+function linkZahl(text, min, max) {
+    if (!/^\d+$/.test(String(text || '').trim())) return null;
+    const n = Number(text);
+    return n >= min && n <= max ? n : null;
+}
+function linkInstUmkehr(tabelle) {
+    const r = {};
+    Object.keys(tabelle).forEach(k => { r[tabelle[k]] = k; });
+    return r;
+}
+/* Gemeinsamer Teil: Taktart (x/4), Titel, Tempo, Schalter. */
+function linkKopfLesen(werte, standard, schalter) {
+    const erg = Object.assign({}, standard);
+    const t = /^(\d+)\/4$/.exec(String(werte.t || '').replace(/\s+/g, ''));
+    if (t && Number(t[1]) >= 1 && Number(t[1]) <= LINK_SCHLAEGE_MAX) erg.schlaege = Number(t[1]);
+    if (werte.titel !== undefined) erg.titel = werte.titel.slice(0, 80);
+    const bpm = linkZahl(werte.bpm, 40, 200);
+    if (bpm !== null) erg.bpm = bpm;
+    if (werte.o !== undefined) {
+        Object.values(schalter).forEach(k => { erg[k] = false; });
+        String(werte.o).replace(/\s+/g, '').replace(/([a-z])(\d*)/gi, (_, b, ziffern) => {
+            const n = ziffern ? Number(ziffern) : null;
+            b = b.toLowerCase();
+            if (schalter[b]) erg[schalter[b]] = true;
+            else if (b === 'w' && 'durchgaenge' in standard) erg.durchgaenge = Math.max(2, Math.min(10, n || 2));
+            else if (b === 'k' && 'proZeile' in standard && n !== null) erg.proZeile = Math.min(LINK_TAKTE_MAX, n);
+            return '';
+        });
+    }
+    return erg;
+}
+function linkKopfBauen(x, standard, schalter) {
+    const teile = [];
+    if (x.schlaege !== standard.schlaege) teile.push('t=' + x.schlaege + '/4');
+    if (x.titel) teile.push('titel=' + encodeURIComponent(x.titel));
+    if (x.bpm !== standard.bpm) teile.push('bpm=' + x.bpm);
+    const o = (y) => Object.keys(schalter).filter(b => y[schalter[b]]).join('') +
+        (y.durchgaenge > 1 ? 'w' + (y.durchgaenge === 2 ? '' : y.durchgaenge) : '') +
+        (y.proZeile > 0 ? 'k' + y.proZeile : '');
+    if (o(x) !== o(standard)) teile.push('o=' + o(x));
+    return teile;
+}
+/* Plaetze <-> Text: Takte "_", Plaetze "-", leere Plaetze am Taktende weg. */
+function linkPlaetzeBauen(plaetze, takte, schlaege, platzText) {
+    const t = [];
+    for (let i = 0; i < takte; i++) {
+        const liste = [];
+        for (let s = 0; s < schlaege; s++) liste.push(plaetze[i * schlaege + s] ? platzText(plaetze[i * schlaege + s]) : '');
+        while (liste.length && liste[liste.length - 1] === '') liste.pop();
+        t.push(liste.join('-'));
+    }
+    return t.join('_');
+}
+function linkPlaetzeLesen(text, takte, schlaege, platzLesen, unbekannt) {
+    const gruppen = String(text).replace(/\s+/g, '').split('_');
+    const plaetze = [];
+    for (let i = 0; i < takte; i++) {
+        const liste = (gruppen[i] || '').split('-');
+        for (let s = 0; s < schlaege; s++) {
+            const roh = liste[s] || '';
+            let p = null;
+            if (roh) {
+                p = platzLesen(roh);
+                if (!p) unbekannt.push({ code: roh, takt: i + 1 });
+            }
+            plaetze.push(p);
+        }
+    }
+    return plaetze;
+}
+
+/* Beat: x = { modus: 'easy'|'profi', schlaege, takte, easy (bzw. oben +
+   unten): Plaetze {code, inst} oder null, Laenge takte × schlaege,
+   titel, bpm, backbeat, zaehlzeiten, farbe, metronom, loop, alsUebung,
+   durchgaenge, proZeile }. Lesen liefert dazu unbekannt: [{code, takt}]. */
+function beatLinkBauen(x) {
+    const platzText = (p) => {
+        const form = typeof BEAT_FORM !== 'undefined' ? BEAT_FORM[p.code] : null;
+        return p.code + p.inst.map((inst, i) => (form && form.teile[i].p) ? null
+            : '.' + inst.map(k => BEAT_LINK_INST[k] || '').join('')).filter(t => t !== null).join('');
+    };
+    const ebene1 = x.modus === 'profi' ? x.oben : x.easy;
+    const teile = ['b=' + linkPlaetzeBauen(ebene1, x.takte, x.schlaege, platzText)];
+    if (x.modus === 'profi') teile.push('u=' + linkPlaetzeBauen(x.unten, x.takte, x.schlaege, platzText));
+    return teile.concat(linkKopfBauen(x, BEAT_LINK_STANDARD, BEAT_LINK_SCHALTER)).join('&');
+}
+function beatLinkLesen(hash) {
+    const werte = linkWerte(hash);
+    if (werte.b === undefined) return null;
+    const erg = linkKopfLesen(werte, BEAT_LINK_STANDARD, BEAT_LINK_SCHALTER);
+    erg.modus = werte.u !== undefined ? 'profi' : 'easy';
+    erg.takte = Math.max(1, Math.min(LINK_TAKTE_MAX, werte.b.split('_').length));
+    erg.unbekannt = [];
+    const inst = linkInstUmkehr(BEAT_LINK_INST);
+    const platzLesen = (roh) => {
+        const [code, ...noten] = roh.split('.');
+        const form = typeof BEAT_FORM !== 'undefined' ? BEAT_FORM[code] : null;
+        if (!form) return null;
+        let n = 0;
+        const p = { code, inst: form.teile.map(t => t.p ? [] : (noten[n++] || '').split('').map(b => inst[b]).filter(Boolean)) };
+        return typeof platzGueltig === 'function' ? platzGueltig(p) : p;
+    };
+    if (erg.modus === 'profi') {
+        erg.oben = linkPlaetzeLesen(werte.b, erg.takte, erg.schlaege, platzLesen, erg.unbekannt);
+        erg.unten = linkPlaetzeLesen(werte.u, erg.takte, erg.schlaege, platzLesen, erg.unbekannt);
+    } else {
+        erg.easy = linkPlaetzeLesen(werte.b, erg.takte, erg.schlaege, platzLesen, erg.unbekannt);
+    }
+    return erg;
+}
+
+/* Drumset: x = { schlaege, takte, plaetze: {r, n} oder null, titel, bpm,
+   zaehlzeiten, farbe, metronom }. Lesen liefert dazu unbekannt. */
+function drumLinkBauen(x) {
+    const platzText = (p) => p.n.map(inst => inst.map(k => DRUM_LINK_INST[k] || '').join('')).join('.');
+    return ['d=' + linkPlaetzeBauen(x.plaetze, x.takte, x.schlaege, platzText)]
+        .concat(linkKopfBauen(x, DRUM_LINK_STANDARD, DRUM_LINK_SCHALTER)).join('&');
+}
+function drumLinkLesen(hash) {
+    const werte = linkWerte(hash);
+    if (werte.d === undefined) return null;
+    const erg = linkKopfLesen(werte, DRUM_LINK_STANDARD, DRUM_LINK_SCHALTER);
+    erg.takte = Math.max(1, Math.min(LINK_TAKTE_MAX, werte.d.split('_').length));
+    erg.unbekannt = [];
+    const inst = linkInstUmkehr(DRUM_LINK_INST);
+    const platzLesen = (roh) => {
+        const stellen = roh.split('.');
+        if (![3, 4, 6].includes(stellen.length)) return null;
+        const p = { r: stellen.length, n: stellen.map(s => s.split('').map(b => inst[b]).filter(Boolean)) };
+        return typeof dsPlatzGueltig === 'function' ? dsPlatzGueltig(p) : p;
+    };
+    erg.plaetze = linkPlaetzeLesen(werte.d, erg.takte, erg.schlaege, platzLesen, erg.unbekannt);
+    return erg;
+}

@@ -758,7 +758,7 @@ function bwEditorZeichnen() {
     if (bwAktiv.platz >= bwPlaetze()) bwAktiv.platz = bwPlaetze() - 1;
     let html = '';
     for (let t = 0; t < beat.takte; t++) {
-        html += `<div class="bw-takt"><div class="bw-takt-kopf"><span>Takt ${t + 1}</span>` +
+        html += `<div class="bw-takt" data-takt="${t}"><div class="bw-takt-kopf">${taktGriffHtml(t)}` +
             `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
             `<div class="bw-reihe" style="grid-template-columns: repeat(${bwS()}, minmax(52px, 84px))">`;
         for (let s = 0; s < bwS(); s++) {
@@ -1210,6 +1210,209 @@ function bwRasterTippen(platz, k, reihe) {
     if (m.get(k)) bwVorhoeren({ code: 'V', inst: [m.get(k)] });
 }
 
+/* ============================================================
+   GEMEINSAM FUER BEAT- UND DRUMSET-WERKSTATT: Takte verschieben,
+   benannte Blaetter, Link kopieren
+   ============================================================ */
+
+/* Taktkopf als Griff: anfassen und ziehen verschiebt den ganzen Takt.
+   Zeigerereignisse wie im Rhythmus-Editor (HTML5-Drag feuert auf dem iPad
+   nicht); der Editor wird bei jeder Aenderung neu gezeichnet, deshalb
+   haengt alles am Editor-Kasten selbst. verschieben(von, nach): nach =
+   neue Position des Takts (0-basiert). */
+function taktGriffHtml(t) {
+    return `<span class="bw-takt-griff" data-takt="${t}" title="Anfassen und ziehen: Takt an eine andere Stelle verschieben">` +
+        `<i class="fa-solid fa-grip-vertical"></i> Takt ${t + 1}</span>`;
+}
+function taktZiehenEinrichten(host, verschieben) {
+    let zug = null;
+    const kaesten = () => [...host.querySelectorAll('.bw-takt')];
+    const zielLoeschen = () => host.querySelectorAll('.bw-takt.ziel-vor, .bw-takt.ziel-nach')
+        .forEach(k => k.classList.remove('ziel-vor', 'ziel-nach'));
+    // Einfuegestelle 0..n (vor Takt i) fuer den Zeiger: naechster Kasten, linke/rechte Haelfte
+    function stelleAn(x, y) {
+        let bester = -1, besterAbstand = Infinity;
+        kaesten().forEach((k, i) => {
+            const r = k.getBoundingClientRect();
+            const abstand = Math.max(0, r.top - y, y - r.bottom) + Math.max(0, r.left - x, x - r.right);
+            if (abstand < besterAbstand) { besterAbstand = abstand; bester = i; }
+        });
+        if (bester < 0) return null;
+        const r = kaesten()[bester].getBoundingClientRect();
+        return x < r.left + r.width / 2 ? bester : bester + 1;
+    }
+    function aufraeumen() {
+        if (!zug) return;
+        if (zug.geist) zug.geist.remove();
+        if (zug.kasten) zug.kasten.classList.remove('gezogen');
+        zielLoeschen();
+        document.removeEventListener('pointermove', bewegen);
+        document.removeEventListener('pointerup', loslassen);
+        document.removeEventListener('pointercancel', abbrechen);
+        zug = null;
+    }
+    function bewegen(e) {
+        if (!zug) return;
+        if (!zug.gezogen && Math.hypot(e.clientX - zug.x, e.clientY - zug.y) < 8) return;
+        e.preventDefault();
+        if (!zug.gezogen) {
+            zug.gezogen = true;
+            zug.kasten.classList.add('gezogen');
+            const r = zug.kasten.getBoundingClientRect();
+            zug.geist = zug.kasten.cloneNode(true);
+            zug.geist.classList.add('bw-takt-geist');
+            zug.geist.style.width = r.width + 'px';
+            zug.dx = zug.x - r.left; zug.dy = zug.y - r.top;
+            document.body.appendChild(zug.geist);
+        }
+        zug.geist.style.left = (e.clientX - zug.dx) + 'px';
+        zug.geist.style.top = (e.clientY - zug.dy) + 'px';
+        zielLoeschen();
+        const stelle = stelleAn(e.clientX, e.clientY);
+        const k = kaesten();
+        if (stelle === null || stelle === zug.von || stelle === zug.von + 1) return;
+        if (stelle < k.length) k[stelle].classList.add('ziel-vor');
+        else k[k.length - 1].classList.add('ziel-nach');
+    }
+    function loslassen(e) {
+        if (!zug) return;
+        const { von, gezogen } = zug;
+        const stelle = gezogen ? stelleAn(e.clientX, e.clientY) : null;
+        aufraeumen();
+        if (stelle === null || stelle === von || stelle === von + 1) return;
+        verschieben(von, stelle > von ? stelle - 1 : stelle);
+    }
+    function abbrechen() { aufraeumen(); }
+    host.addEventListener('pointerdown', (e) => {
+        const griff = e.target.closest('.bw-takt-griff');
+        if (!griff || zug || e.button > 0) return;
+        e.preventDefault();
+        zug = { von: Number(griff.dataset.takt), x: e.clientX, y: e.clientY, gezogen: false, kasten: griff.closest('.bw-takt') };
+        document.addEventListener('pointermove', bewegen, { passive: false });
+        document.addEventListener('pointerup', loslassen);
+        document.addEventListener('pointercancel', abbrechen);
+    });
+}
+/* Liste in Takt-Stuecke zu je s Plaetzen, Takt von an Stelle nach. Takte
+   hinter "takte" (beim Verkleinern versteckt) bleiben, wo sie sind. */
+function plaetzeTaktVerschieben(liste, takte, s, von, nach) {
+    const stuecke = [];
+    for (let t = 0; t < takte; t++) stuecke.push(Array.from({ length: s }, (_, i) => liste[t * s + i] || null));
+    const [takt] = stuecke.splice(von, 1);
+    stuecke.splice(nach, 0, takt);
+    const neu = liste.slice();
+    stuecke.forEach((st, t) => st.forEach((p, i) => { neu[t * s + i] = p; }));
+    return neu;
+}
+
+/* Benannte Blaetter je Reiter (nur in diesem Browser) und "Link kopieren".
+   Ein Blatt ist einfach der Link-Text (Hash ohne #) - Laden = Link
+   uebernehmen, so gibt es nur ein Format. o: { praefix ('bw'/'ds'),
+   schluessel (localStorage), bauen() -> Hash, uebernehmen(hash), titel() }. */
+function blattLeisteEinrichten(o) {
+    const id = (n) => document.getElementById(o.praefix + '-' + n);
+    const lesen = () => {
+        try { const x = JSON.parse(localStorage.getItem(o.schluessel) || '{}'); return x && typeof x === 'object' ? x : {}; }
+        catch (e) { return {}; }
+    };
+    const schreiben = (alle) => {
+        try { localStorage.setItem(o.schluessel, JSON.stringify(alle)); return true; }
+        catch (e) { zeigeToast('Speichern geht in diesem Browser nicht (privates Fenster?).', 'danger'); return false; }
+    };
+    const wahl = id('blatt-wahl');
+    const auswahlZeichnen = (name) => {
+        const namen = Object.keys(lesen()).sort((a, b) => a.localeCompare(b, 'de'));
+        wahl.innerHTML = '<option value="">Blatt laden…</option>' +
+            namen.map(n => `<option value="${n.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">${n.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</option>`).join('');
+        wahl.value = name || '';
+    };
+    auswahlZeichnen();
+    id('blatt-speichern').addEventListener('click', () => {
+        const name = (prompt('Name für dieses Blatt:', wahl.value || o.titel()) || '').trim();
+        if (!name) return;
+        const alle = lesen();
+        const ueberschreibt = Object.prototype.hasOwnProperty.call(alle, name);
+        if (ueberschreibt && !confirm(`„${name}" gibt es schon – überschreiben?`)) return;
+        alle[name] = o.bauen();
+        if (!schreiben(alle)) return;
+        auswahlZeichnen(name);
+        zeigeToast(ueberschreibt ? `„${name}" überschrieben.` : `„${name}" gespeichert.`, 'success');
+    });
+    wahl.addEventListener('change', () => {
+        const name = wahl.value;
+        const blatt = name && lesen()[name];
+        if (!blatt) return;
+        o.uebernehmen(blatt);
+        zeigeToast(`„${name}" geladen.`, 'info');
+    });
+    id('blatt-loeschen').addEventListener('click', () => {
+        const name = wahl.value;
+        if (!name) { zeigeToast('Wähle erst ein gespeichertes Blatt aus.', 'danger'); return; }
+        if (!confirm(`„${name}" wirklich löschen?`)) return;
+        const alle = lesen();
+        delete alle[name];
+        if (!schreiben(alle)) return;
+        auswahlZeichnen();
+        zeigeToast(`„${name}" gelöscht.`, 'info');
+    });
+    id('link-kopieren').addEventListener('click', () => urlKopieren(location.origin + location.pathname + '#' + o.bauen()));
+}
+
+/* ---------- Beat als Link (Format in link.js) ---------- */
+function bwLinkStand() {
+    const n = bwPlaetze();
+    const liste = (eb) => Array.from({ length: n }, (_, p) => beat[eb][p] || null);
+    const x = {
+        modus: beat.modus, schlaege: beat.schlaege, takte: beat.takte,
+        titel: beat.titel, bpm: beat.bpm, backbeat: beat.backbeat, zaehlzeiten: beat.zaehlzeiten,
+        farbe: beat.farbe, metronom: beat.metronom, loop: beat.loop, alsUebung: beat.alsUebung,
+        durchgaenge: beat.durchgaenge, proZeile: beat.proZeile
+    };
+    if (beat.modus === 'profi') { x.oben = liste('oben'); x.unten = liste('unten'); }
+    else x.easy = liste('easy');
+    return x;
+}
+function bwLinkUebernehmen(hash) {
+    const x = beatLinkLesen(hash);
+    if (!x) return false;
+    ['schlaege', 'takte', 'titel', 'bpm', 'backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'loop', 'alsUebung', 'durchgaenge', 'proZeile']
+        .forEach(k => { beat[k] = x[k]; });
+    beat.modus = x.modus;
+    if (x.modus === 'profi') {
+        // Eine Ebene schon mit dem zusammengelegten Beat fuellen - so stimmt
+        // der Moduswechsel sofort und zeigt keinen alten Stand
+        beat.oben = x.oben; beat.unten = x.unten;
+        beat.easy = x.oben.map((o, p) => {
+            const m = platzKarte(o);
+            platzKarte(x.unten[p]).forEach((inst, k) => m.set(k, [...(m.get(k) || []), ...inst]));
+            return platzAusKarte(m);
+        });
+    } else {
+        // Zwei Ebenen leer: der Moduswechsel teilt den Beat dann selbst auf
+        beat.easy = x.easy; beat.oben = []; beat.unten = [];
+    }
+    ['oben', 'unten', 'easy'].forEach(eb => { bwTaktRest[eb] = []; });
+    bwLoopAuswahl = null;
+    bwTaktartEigen = ![4, 3, 2].includes(beat.schlaege);
+    bwAktiv = { ebene: bwEbenen()[0], platz: 0 };
+    document.getElementById('bw-titel').value = beat.titel;
+    x.unbekannt.forEach(u => zeigeToast(`Unbekannter Platz „${u.code}" in Takt ${u.takt} – übersprungen`, 'danger'));
+    bwAenderung();
+    return true;
+}
+function bwTaktVerschieben(von, nach) {
+    const S = bwS();
+    ['oben', 'unten', 'easy'].forEach(eb => {
+        beat[eb] = plaetzeTaktVerschieben(beat[eb], beat.takte, S, von, nach);
+        const rest = bwTaktRest[eb];
+        if (rest.length) { const [r] = rest.splice(von, 1); rest.splice(nach, 0, r); }
+    });
+    bwLoopAuswahl = null;
+    bwAktiv.platz = nach * S + (bwAktiv.platz % S);
+    zeigeToast(`Takt ${von + 1} ist jetzt Takt ${nach + 1}.`, 'info');
+    bwAenderung();
+}
+
 function bwEinrichten() {
     beatLaden();
     if (!beat.oben.some(Boolean) && !beat.unten.some(Boolean) && !beat.easy.some(Boolean)) {
@@ -1375,12 +1578,20 @@ function bwEinrichten() {
         beatSpeichern(); bwSchalterZeichnen();
     }));
 
+    taktZiehenEinrichten(document.getElementById('bw-editor'), bwTaktVerschieben);
+    blattLeisteEinrichten({
+        praefix: 'bw', schluessel: 'rw-beat-blaetter', titel: () => beat.titel,
+        bauen: () => beatLinkBauen(bwLinkStand()), uebernehmen: bwLinkUebernehmen
+    });
+    window.addEventListener('hashchange', () => bwLinkUebernehmen(location.hash));
+
     let resizeTimer = null;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => { if (!document.getElementById('reiter-beat').classList.contains('hidden')) bwAnzeigeZeichnen(); }, 150);
     });
-    bwZeichnen();
+    // Beat-Link (#b=...) geht vor dem gespeicherten Stand
+    if (!bwLinkUebernehmen(location.hash)) bwZeichnen();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

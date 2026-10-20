@@ -47,8 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Direktlink auf einen Reiter: ?reiter=zaehlen (bzw. beat, drumset)
     const gewuenscht = new URLSearchParams(location.search).get('reiter');
     if (REITER[gewuenscht]) start = gewuenscht;
-    // Ein Rhythmus-Link geht immer in die Rhythmus-Werkstatt
-    if (/(^|[#&])r=/.test(location.hash)) start = 'rhythmus';
+    // Ein Link oeffnet immer seinen Reiter: r= Rhythmus, b= Beat, d= Drumset
+    const linkReiter = () => /(^|[#&])r=/.test(location.hash) ? 'rhythmus'
+        : /(^|[#&])b=/.test(location.hash) ? 'beat'
+        : /(^|[#&])d=/.test(location.hash) ? 'drumset' : null;
+    start = linkReiter() || start;
     if (start !== 'rhythmus') reiterZeigen(start);
-    window.addEventListener('hashchange', () => { if (/(^|[#&])r=/.test(location.hash)) reiterZeigen('rhythmus'); });
+    window.addEventListener('hashchange', () => { if (linkReiter()) reiterZeigen(linkReiter()); });
 });

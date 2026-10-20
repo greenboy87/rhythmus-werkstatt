@@ -535,7 +535,7 @@ function dsEditorZeichnen() {
     if (dsAktiv >= dsPlaetze()) dsAktiv = dsPlaetze() - 1;
     let html = '';
     for (let t = 0; t < ds.takte; t++) {
-        html += `<div class="bw-takt"><div class="bw-takt-kopf"><span>Takt ${t + 1}</span>` +
+        html += `<div class="bw-takt" data-takt="${t}"><div class="bw-takt-kopf">${taktGriffHtml(t)}` +
             `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
             `<div class="bw-reihe" style="grid-template-columns: repeat(${dsS()}, minmax(64px, ${DS_SCHLAG}px))">`;
         for (let s = 0; s < dsS(); s++) {
@@ -732,6 +732,32 @@ function dsTaste(e) {
     if (fertig) e.preventDefault();
 }
 
+/* ---------- Fill als Link (Format in link.js), Takte verschieben ---------- */
+function dsLinkStand() {
+    return {
+        schlaege: ds.schlaege, takte: ds.takte, titel: ds.titel, bpm: ds.bpm,
+        zaehlzeiten: ds.zaehlzeiten, farbe: ds.farbe, metronom: ds.metronom,
+        plaetze: Array.from({ length: dsPlaetze() }, (_, p) => ds.plaetze[p] || null)
+    };
+}
+function dsLinkUebernehmen(hash) {
+    const x = drumLinkLesen(hash);
+    if (!x) return false;
+    ['schlaege', 'takte', 'titel', 'bpm', 'zaehlzeiten', 'farbe', 'metronom', 'plaetze'].forEach(k => { ds[k] = x[k]; });
+    dsTaktartEigen = ![4, 3, 2].includes(ds.schlaege);
+    dsAktiv = 0;
+    document.getElementById('ds-titel').value = ds.titel;
+    x.unbekannt.forEach(u => zeigeToast(`Unbekannter Platz „${u.code}" in Takt ${u.takt} – übersprungen`, 'danger'));
+    dsAenderung();
+    return true;
+}
+function dsTaktVerschieben(von, nach) {
+    ds.plaetze = plaetzeTaktVerschieben(ds.plaetze, ds.takte, dsS(), von, nach);
+    dsAktiv = nach * dsS() + (dsAktiv % dsS());
+    zeigeToast(`Takt ${von + 1} ist jetzt Takt ${nach + 1}.`, 'info');
+    dsAenderung();
+}
+
 function dsEinrichten() {
     dsLaden();
     if (!ds.plaetze.some(Boolean)) {
@@ -823,12 +849,20 @@ function dsEinrichten() {
     document.getElementById('ds-metronom').addEventListener('change', (e) => { ds.metronom = e.target.checked; dsSpeichern(); });
     document.getElementById('ds-zaehlzeiten').addEventListener('change', (e) => { ds.zaehlzeiten = e.target.checked; dsAenderung(); });
 
+    taktZiehenEinrichten(document.getElementById('ds-editor'), dsTaktVerschieben);
+    blattLeisteEinrichten({
+        praefix: 'ds', schluessel: 'rw-drumset-blaetter', titel: () => ds.titel,
+        bauen: () => drumLinkBauen(dsLinkStand()), uebernehmen: dsLinkUebernehmen
+    });
+    window.addEventListener('hashchange', () => dsLinkUebernehmen(location.hash));
+
     let resizeTimer = null;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => { if (!document.getElementById('reiter-drumset').classList.contains('hidden')) dsAnzeigeZeichnen(); }, 150);
     });
-    dsZeichnen();
+    // Drumset-Link (#d=...) geht vor dem gespeicherten Stand
+    if (!dsLinkUebernehmen(location.hash)) dsZeichnen();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
