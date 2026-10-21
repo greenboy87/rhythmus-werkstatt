@@ -309,6 +309,19 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `.ziel-nach`, `touch-action: none` am Griff fürs iPad) und
     `plaetzeTaktVerschieben` (flache Platzliste umsortieren).
     `bwTaktVerschieben` verschiebt alle drei Ebenen samt `bwTaktRest`.
+    Takt löschen: Mülleimer im Taktkopf (`taktLoeschenHtml`, Klasse
+    `.bw-takt-weg`) -> `bwTaktLoeschen`/`dsTaktLoeschen` über
+    `plaetzeTaktLoeschen`; die folgenden Takte rücken nach, der einzige
+    Takt wird nur geleert.
+- Rückgängig: `verlaufAnlegen(stand, setzen)` und `verlaufTaste` in app.js,
+  je ein Verlauf für Rhythmus (`rhythmusVerlauf`), Beat (`bwVerlauf`) und
+  Drumset (`dsVerlauf`). Strg/⌘+Z zurück, Strg+Y bzw. Strg/⌘+Shift+Z
+  wieder vor; in Textfeldern bleibt das Rückgängig des Browsers. Gemerkt
+  wird nach jeder Änderung (`aufAenderung` bzw. `beatSpeichern`/
+  `dsSpeichern`) nur der Inhalt (Noten, Takte, Taktart; Beat auch Modus,
+  Backbeat, `bwTaktRest`) - nicht Tempo, Titel oder Anzeige-Schalter.
+  Der Verlauf wird erst am Ende des Einrichtens angelegt, damit das Laden
+  selbst kein Rückgängig-Schritt ist. Nur solange die Seite offen ist.
     `urlKopieren` (Zwischenablage mit Rückfall) steht in app.js.
 - `js/drumset.js` - **Drumset-Werkstatt** (Reiter `drumset`): das ganze
   Schlagzeug in EINEM System, eine Stimme, alle Hälse nach oben - zuerst

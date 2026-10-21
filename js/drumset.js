@@ -112,6 +112,15 @@ function dsLaden() {
 }
 function dsSpeichern() {
     try { localStorage.setItem(DS_SCHLUESSEL, JSON.stringify(ds)); } catch (e) { /* privates Fenster - dann eben nicht */ }
+    if (dsVerlauf) dsVerlauf.merken();
+}
+/* Strg+Z: Noten, Takte und Taktart - nicht Tempo, Titel oder Stift. */
+let dsVerlauf = null;
+function dsVerlaufStand() { return JSON.stringify([ds.takte, ds.schlaege, ds.plaetze]); }
+function dsVerlaufSetzen(text) {
+    [ds.takte, ds.schlaege, ds.plaetze] = JSON.parse(text);
+    dsTaktartEigen = ![4, 3, 2].includes(ds.schlaege);
+    dsAenderung();
 }
 
 /* ---------- Vorlagen: Takt 1 Groove (Crash auf 1), Takt 2 Fill ----------
@@ -536,7 +545,8 @@ function dsEditorZeichnen() {
     let html = '';
     for (let t = 0; t < ds.takte; t++) {
         html += `<div class="bw-takt" data-takt="${t}"><div class="bw-takt-kopf">${taktGriffHtml(t)}` +
-            `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
+            `<span><button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button>` +
+            `${taktLoeschenHtml(t)}</span></div>` +
             `<div class="bw-reihe" style="grid-template-columns: repeat(${dsS()}, minmax(64px, ${DS_SCHLAG}px))">`;
         for (let s = 0; s < dsS(); s++) {
             const platz = t * dsS() + s;
@@ -700,6 +710,7 @@ function dsVorlageLaden(nr) {
    P Pause (ganze Zaehlzeit leer, weiter), Leertaste, ←/→, ⌫. */
 function dsTaste(e) {
     if (document.getElementById('reiter-drumset').classList.contains('hidden')) return;
+    if (verlaufTaste(e, dsVerlauf)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const ziel = e.target;
     if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
@@ -751,6 +762,17 @@ function dsLinkUebernehmen(hash) {
     dsAenderung();
     return true;
 }
+/* Takt t ganz herausnehmen (wie bwTaktLoeschen), der einzige wird geleert. */
+function dsTaktLoeschen(t) {
+    const S = dsS();
+    if (ds.takte > 1) {
+        ds.plaetze = plaetzeTaktLoeschen(ds.plaetze, S, t);
+        ds.takte--;
+    } else ds.plaetze = ds.plaetze.map((p, i) => (i < S ? null : p));
+    dsAktiv = Math.min(t, ds.takte - 1) * S;
+    zeigeToast(`Takt ${t + 1} gelöscht – Strg+Z holt ihn zurück.`, 'info');
+    dsAenderung();
+}
 function dsTaktVerschieben(von, nach) {
     ds.plaetze = plaetzeTaktVerschieben(ds.plaetze, ds.takte, dsS(), von, nach);
     dsAktiv = nach * dsS() + (dsAktiv % dsS());
@@ -788,6 +810,8 @@ function dsEinrichten() {
     document.getElementById('ds-farbe').addEventListener('click', () => { ds.farbe = !ds.farbe; dsAenderung(); });
 
     document.getElementById('ds-editor').addEventListener('click', (e) => {
+        const weg = e.target.closest('.bw-takt-weg');
+        if (weg) { dsTaktLoeschen(Number(weg.dataset.takt)); return; }
         const kop = e.target.closest('.bw-kopieren');
         if (kop) {
             const t = Number(kop.dataset.takt);
@@ -863,6 +887,7 @@ function dsEinrichten() {
     });
     // Drumset-Link (#d=...) geht vor dem gespeicherten Stand
     if (!dsLinkUebernehmen(location.hash)) dsZeichnen();
+    dsVerlauf = verlaufAnlegen(dsVerlaufStand, dsVerlaufSetzen);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

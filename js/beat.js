@@ -219,6 +219,20 @@ function beatLaden() {
 }
 function beatSpeichern() {
     try { localStorage.setItem(BEAT_SCHLUESSEL, JSON.stringify(beat)); } catch (e) { /* privates Fenster - dann eben nicht */ }
+    if (bwVerlauf) bwVerlauf.merken();
+}
+/* Strg+Z: Inhalt des Beats (Noten, Takte, Taktart, Modus, Backbeat) samt
+   bwTaktRest - Tempo, Titel und Anzeige-Schalter gehoeren nicht dazu. */
+let bwVerlauf = null;
+function bwVerlaufStand() {
+    return JSON.stringify([beat.modus, beat.takte, beat.schlaege, beat.backbeat, beat.oben, beat.unten, beat.easy, bwTaktRest]);
+}
+function bwVerlaufSetzen(text) {
+    const [modus, takte, schlaege, backbeat, oben, unten, easy, rest] = JSON.parse(text);
+    Object.assign(beat, { modus, takte, schlaege, backbeat, oben, unten, easy });
+    Object.assign(bwTaktRest, rest);
+    bwTaktartEigen = ![4, 3, 2].includes(beat.schlaege);
+    bwAenderung();
 }
 
 /* Platz mit Backbeat: auf Schlag 2 und 4 (Index 1 und 3) der Trommel-Ebene
@@ -759,7 +773,8 @@ function bwEditorZeichnen() {
     let html = '';
     for (let t = 0; t < beat.takte; t++) {
         html += `<div class="bw-takt" data-takt="${t}"><div class="bw-takt-kopf">${taktGriffHtml(t)}` +
-            `<button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button></div>` +
+            `<span><button type="button" class="bw-kopieren" data-takt="${t}" title="Diesen Takt in den nächsten Takt kopieren"><i class="fa-regular fa-copy"></i> in nächsten</button>` +
+            `${taktLoeschenHtml(t)}</span></div>` +
             `<div class="bw-reihe" style="grid-template-columns: repeat(${bwS()}, minmax(52px, 84px))">`;
         for (let s = 0; s < bwS(); s++) {
             const platz = t * bwS() + s;
@@ -821,6 +836,7 @@ const BW_TASTEN = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'q', 'w', 
 function bwTasteFuer(code) { return BW_TASTEN[BEAT_FORMEN.findIndex(f => f.code === code)] || ''; }
 function bwTaste(e) {
     if (document.getElementById('reiter-beat').classList.contains('hidden')) return;
+    if (verlaufTaste(e, bwVerlauf)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const ziel = e.target;
     if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
@@ -1304,6 +1320,16 @@ function plaetzeTaktVerschieben(liste, takte, s, von, nach) {
     stuecke.forEach((st, t) => st.forEach((p, i) => { neu[t * s + i] = p; }));
     return neu;
 }
+/* Takt t (je s Plaetze) aus der flachen Liste nehmen; alles dahinter -
+   auch beim Verkleinern versteckte Takte - rueckt um einen Takt vor. */
+function plaetzeTaktLoeschen(liste, s, t) {
+    const neu = liste.slice();
+    neu.splice(t * s, s);
+    return neu;
+}
+function taktLoeschenHtml(t) {
+    return `<button type="button" class="bw-kopieren bw-takt-weg" data-takt="${t}" title="Diesen Takt löschen (Strg+Z holt ihn zurück)" aria-label="Takt ${t + 1} löschen"><i class="fa-regular fa-trash-can"></i></button>`;
+}
 
 /* Benannte Blaetter je Reiter (nur in diesem Browser) und "Link kopieren".
    Ein Blatt ist einfach der Link-Text (Hash ohne #) - Laden = Link
@@ -1400,6 +1426,22 @@ function bwLinkUebernehmen(hash) {
     bwAenderung();
     return true;
 }
+/* Takt t ganz herausnehmen, die folgenden ruecken nach. Ist es der
+   einzige Takt, wird er nur geleert. */
+function bwTaktLoeschen(t) {
+    const S = bwS();
+    ['oben', 'unten', 'easy'].forEach(eb => {
+        if (beat.takte > 1) {
+            beat[eb] = plaetzeTaktLoeschen(beat[eb], S, t);
+            bwTaktRest[eb].splice(t, 1);
+        } else beat[eb] = beat[eb].map((p, i) => (i < S ? null : p));
+    });
+    if (beat.takte > 1) beat.takte--;
+    bwLoopAuswahl = null;
+    bwAktiv.platz = Math.min(t, beat.takte - 1) * S;
+    zeigeToast(`Takt ${t + 1} gelöscht – Strg+Z holt ihn zurück.`, 'info');
+    bwAenderung();
+}
 function bwTaktVerschieben(von, nach) {
     const S = bwS();
     ['oben', 'unten', 'easy'].forEach(eb => {
@@ -1479,6 +1521,8 @@ function bwEinrichten() {
 
     // Editor: Platz waehlen, Note antippen = Instrument wechseln, × = leeren
     document.getElementById('bw-editor').addEventListener('click', (e) => {
+        const weg = e.target.closest('.bw-takt-weg');
+        if (weg) { bwTaktLoeschen(Number(weg.dataset.takt)); return; }
         const kop = e.target.closest('.bw-kopieren');
         if (kop) {
             const t = Number(kop.dataset.takt);
@@ -1592,6 +1636,7 @@ function bwEinrichten() {
     });
     // Beat-Link (#b=...) geht vor dem gespeicherten Stand
     if (!bwLinkUebernehmen(location.hash)) bwZeichnen();
+    bwVerlauf = verlaufAnlegen(bwVerlaufStand, bwVerlaufSetzen);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

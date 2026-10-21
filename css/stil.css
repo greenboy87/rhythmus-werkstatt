@@ -389,6 +389,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
     padding: .1rem .3rem; border-radius: 6px;
 }
 .bw-kopieren:hover { color: var(--akzent); background: var(--rand-schwach); }
+.bw-takt-weg { margin-left: .15rem; }
+.bw-takt-weg:hover { color: var(--gefahr); }
 /* Taktkopf als Griff: ganzen Takt ziehen (beat.js taktZiehenEinrichten) */
 .bw-takt-griff {
     cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;

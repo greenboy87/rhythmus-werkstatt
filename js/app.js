@@ -66,6 +66,7 @@ function zeigeToast(text, art) {
 
 /* ---------- Aufbau ---------- */
 let editor = null;
+let rhythmusVerlauf = null;   // Strg+Z im Rhythmus-Reiter (verlaufAnlegen)
 let anzeigeVerdeckt = false;
 let anzeigeSkalierung = 1;
 let wiederholungen = 1;      // zusaetzliche Durchgaenge, nicht die Gesamtzahl (Anzeige = +1)
@@ -469,6 +470,52 @@ function urlKopieren(url) {
     } else fallback();
 }
 
+/* Rueckgaengig/Wiederholen je Reiter (Rhythmus, Beat, Drumset). stand()
+   liefert den Inhalt als Text (Noten, Takte, Taktart - nicht Tempo oder
+   Titel), setzen(text) stellt ihn wieder her. Nach jeder Aenderung
+   merken(); gleiche Staende hintereinander zaehlen nicht, deshalb loest
+   das Wiederherstellen selbst keinen neuen Schritt aus. */
+const VERLAUF_MAX = 100;
+function verlaufAnlegen(stand, setzen) {
+    const zurueck = [], vor = [];
+    let jetzt = stand();
+    return {
+        merken() {
+            const s = stand();
+            if (s === jetzt) return;
+            zurueck.push(jetzt);
+            if (zurueck.length > VERLAUF_MAX) zurueck.shift();
+            vor.length = 0;
+            jetzt = s;
+        },
+        rueckgaengig() {
+            if (!zurueck.length) { zeigeToast('Nichts mehr rückgängig zu machen.', 'info'); return; }
+            vor.push(jetzt);
+            jetzt = zurueck.pop();
+            setzen(jetzt);
+        },
+        wiederholen() {
+            if (!vor.length) { zeigeToast('Nichts zum Wiederholen.', 'info'); return; }
+            zurueck.push(jetzt);
+            jetzt = vor.pop();
+            setzen(jetzt);
+        }
+    };
+}
+/* Strg+Z / ⌘Z rueckgaengig, Strg+Y / Strg+Shift+Z / ⌘⇧Z wiederholen.
+   In Textfeldern bleibt das Rueckgaengig des Browsers. true = erledigt. */
+function verlaufTaste(e, verlauf) {
+    if (!verlauf || !(e.ctrlKey || e.metaKey) || e.altKey) return false;
+    const ziel = e.target;
+    if (ziel && (ziel.isContentEditable || /^(INPUT|TEXTAREA)$/.test(ziel.tagName) && !['checkbox', 'range', 'button'].includes(ziel.type))) return false;
+    const taste = e.key.toLowerCase();
+    if (taste === 'z' && !e.shiftKey) verlauf.rueckgaengig();
+    else if ((taste === 'z' && e.shiftKey) || (taste === 'y' && !e.shiftKey)) verlauf.wiederholen();
+    else return false;
+    e.preventDefault();
+    return true;
+}
+
 /* Uebung als HTML-Datei: Beim Oeffnen springt sie sofort in die
    Rhythmus-Werkstatt, mit genau diesem Stand (derselbe Link wie bei
    "Link kopieren"). Ohne Internet bleibt die Datei stehen und zeigt
@@ -540,7 +587,10 @@ function init() {
     taktartWahl.value = '4/4';
 
     editor = rhythmusEditor(document.getElementById('editor-takte'), document.getElementById('palette'), '4/4');
-    editor.aufAenderung(() => { anzeigeNeuZeichnen(); genKnopfAktualisieren(); });
+    editor.aufAenderung(() => {
+        anzeigeNeuZeichnen(); genKnopfAktualisieren();
+        if (rhythmusVerlauf) rhythmusVerlauf.merken();
+    });
 
     taktartWahl.addEventListener('change', () => editor.taktartSetzen(taktartWahl.value));
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
@@ -698,6 +748,13 @@ function init() {
     window.addEventListener('hashchange', () => linkUebernehmen(location.hash));
 
     if (!linkUebernehmen(location.hash)) anzeigeNeuZeichnen();
+    rhythmusVerlauf = verlaufAnlegen(
+        () => { const s = editor.stueck(); return JSON.stringify([s.zeichen, s.takte.map(t => t.bausteine.map(bausteinKuerzel))]); },
+        (text) => {
+            const [zeichen, takte] = JSON.parse(text);
+            taktartWahl.value = zeichen;
+            editor.setzen(zeichen, takte.map(codes => ({ bausteine: codes.map(bausteinAusKuerzel).filter(Boolean) })));
+        });
     zeigeStand();
     if (EINGEBETTET) einbettungMelden();
 }
@@ -709,6 +766,7 @@ function init() {
 function rhythmusTaste(e) {
     const reiter = document.getElementById('reiter-rhythmus');
     if (!reiter || reiter.classList.contains('hidden')) return;
+    if (verlaufTaste(e, rhythmusVerlauf)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const ziel = e.target;
     if (ziel && (ziel.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(ziel.tagName) && ziel.type !== 'checkbox' && ziel.type !== 'range')) return;
