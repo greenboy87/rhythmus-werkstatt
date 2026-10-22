@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=57">
-<link rel="stylesheet" href="css/druck.css?v=57">
+<link rel="stylesheet" href="css/stil.css?v=58">
+<link rel="stylesheet" href="css/druck.css?v=58">
 </head>
 <body>
 
@@ -173,11 +173,22 @@
                 </div>
             </details>
         </div>
+        <div class="leiste antipp-leiste">
+            <span>Note antippen:</span>
+            <span class="segment" role="group" aria-label="Was Antippen im Notenbild macht">
+                <button type="button" class="btn an" data-antippen="akzent" title="Note antippen = Akzent an/aus, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-chevron-right"></i> Akzent</button>
+                <button type="button" class="btn" data-antippen="start" title="Note antippen = ab dieser Note abspielen, neben die Noten tippen = ab Taktanfang"><i class="fa-solid fa-forward-step"></i> Startpunkt</button>
+            </span>
+        </div>
+        <div class="leiste hidden" id="startpunkt-info" style="margin-bottom:.5rem;">
+            <span><i class="fa-solid fa-forward-step"></i> <b id="startpunkt-text"></b> – Abspielen (und Loop) beginnt hier</span>
+            <button type="button" class="btn" id="startpunkt-weg"><i class="fa-solid fa-xmark"></i> Von vorn</button>
+        </div>
         <div class="leiste hidden" id="loop-auswahl-info" style="margin-bottom:.5rem;">
             <span><i class="fa-solid fa-repeat"></i> <b id="loop-auswahl-text"></b> – nur dieser Teil wird abgespielt</span>
             <button type="button" class="btn" id="loop-auswahl-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
         </div>
-        <p class="anzeige-tipp" id="loop-tipp">Tipp: Note antippen = Akzent an/aus. Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück</span></p>
+        <p class="anzeige-tipp" id="loop-tipp">Tipp: Note antippen = Akzent an/aus (mit „Startpunkt“: ab dieser Note abspielen). Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück bzw. von vorn</span></p>
         <h2 id="anzeige-titel" class="hidden" style="text-align:center; margin:0 0 .6rem;"></h2>
         </div>
         <div id="anzeige"></div>
@@ -578,21 +589,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=57"></script>
-<script src="js/noten.js?v=57"></script>
-<script src="js/editor.js?v=57"></script>
-<script src="js/audio.js?v=57"></script>
-<script src="js/generator.js?v=57"></script>
-<script src="js/link.js?v=57"></script>
-<script src="js/vendor/lame.min.js?v=57"></script>
-<script src="js/export.js?v=57"></script>
-<script src="js/pdf.js?v=57"></script>
-<script src="js/app.js?v=57"></script>
-<script src="js/beat.js?v=57"></script>
-<script src="js/drumset.js?v=57"></script>
-<script src="js/zaehlkern.js?v=57"></script>
-<script src="js/zaehlspiel.js?v=57"></script>
-<script src="js/spiele.js?v=57"></script>
-<script src="js/reiter.js?v=57"></script>
+<script src="js/version.js?v=58"></script>
+<script src="js/noten.js?v=58"></script>
+<script src="js/editor.js?v=58"></script>
+<script src="js/audio.js?v=58"></script>
+<script src="js/generator.js?v=58"></script>
+<script src="js/link.js?v=58"></script>
+<script src="js/vendor/lame.min.js?v=58"></script>
+<script src="js/export.js?v=58"></script>
+<script src="js/pdf.js?v=58"></script>
+<script src="js/app.js?v=58"></script>
+<script src="js/beat.js?v=58"></script>
+<script src="js/drumset.js?v=58"></script>
+<script src="js/zaehlkern.js?v=58"></script>
+<script src="js/zaehlspiel.js?v=58"></script>
+<script src="js/spiele.js?v=58"></script>
+<script src="js/reiter.js?v=58"></script>
 </body>
 </html>

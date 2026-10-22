@@ -420,7 +420,9 @@ const Metronom = (function () {
    Zeiten in Sekunden ab Beginn (0 = erster Vorlauf-Klick bzw. erster
    Schlag). So koennen Live und Datei nie auseinanderlaufen.
    optionen: { bpm, vorlaufTakte, durchgaenge (1 = einmal), nurMetronom,
-              zeilen (optional: Takte je Zeile - dann jede Zeile einzeln wiederholt) }
+              zeilen (optional: Takte je Zeile - dann jede Zeile einzeln wiederholt),
+              abViertel (optional: Startpunkt mitten im ersten Takt, in Vierteln -
+                         davor laeuft nur der Puls, damit der Takt stimmt) }
    Rueckgabe: {
      ereignisse:   [{ zeit, art: 'klick'|'klatsch', betont, puls, akzent }]
                    (akzent: betonte Note, nur bei Klatschen),
@@ -435,6 +437,7 @@ function rhythmusZeitplan(stueck, optionen) {
     const vorlaufTakte = Math.max(0, Math.round(Number(opt.vorlaufTakte) || 0));
     const durchgaenge = Math.max(1, Math.round(Number(opt.durchgaenge) || 1));
     const nurMetronom = !!opt.nurMetronom;
+    const abViertel = Math.max(0, Number(opt.abViertel) || 0);
 
     const pw = pulsWert(stueck.zeichen);
     const schlagDauer = 60 / bpm;             // Dauer EINES Metronom-Klicks
@@ -472,17 +475,24 @@ function rhythmusZeitplan(stueck, optionen) {
             for (let taktNr = abschnitt.von; taktNr < abschnitt.bis; taktNr++) {
                 const takt = stueck.takte[taktNr];
                 const taktStartT = t;
+                // Startpunkt: in jedem Durchgang (und jedem Loop) des ersten
+                // Takts erst ab dort klatschen und markieren
+                const ab = abschnittNr === 0 && taktNr === abschnitt.von ? abViertel : 0;
                 for (let p = 0; p < proTakt; p++) {
                     ereignisse.push({ zeit: taktStartT + p * pw * viertel, art: 'klick', betont: p === 0, puls: p });
                 }
                 let gelaufen = 0;
                 takt.bausteine.forEach(b => {
-                    markierungen.push({ zeit: t, taktNr, ab: gelaufen });
+                    if (gelaufen + b.dauer > ab + 1e-6) {
+                        const von = Math.max(gelaufen, ab);
+                        markierungen.push({ zeit: t + (von - gelaufen) * viertel, taktNr, ab: von });
+                    }
                     if (!nurMetronom) {
-                        let innerT = t;
+                        let innerT = t, innerV = gelaufen;
                         b.teile.forEach((teil, teilNr) => {
-                            if (!teil.p) ereignisse.push({ zeit: innerT, art: 'klatsch', betont: false, akzent: istAkzent(b, teilNr) });
+                            if (!teil.p && innerV > ab - 1e-6) ereignisse.push({ zeit: innerT, art: 'klatsch', betont: false, akzent: istAkzent(b, teilNr) });
                             innerT += teil.d * viertel;
+                            innerV += teil.d;
                         });
                     }
                     t += b.dauer * viertel;
@@ -551,12 +561,14 @@ const Vorklatschen = (function () {
        wirkt also auch mitten im Abspielen.
        taktVersatz (optional): stueck ist nur ein Ausschnitt (Loop-Bereich),
        der bei diesem Takt des angezeigten Stuecks beginnt - fuer die
-       Mitlese-Markierung. */
-    function starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz) {
+       Mitlese-Markierung.
+       abViertel (optional): Startpunkt mitten im ersten Takt (siehe
+       rhythmusZeitplan) - auch jeder Loop beginnt wieder dort. */
+    function starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz, abViertel) {
         const versatz = Number(taktVersatz) || 0;
         if (laeuft) { stoppen(); return; }
         if (!stueck.takte.length) { zeigeToast('Trage erst einen Rhythmus ein.', 'danger'); return; }
-        const c = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz));
+        const c = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz, abViertel));
         if (!c) return;
         Metronom.stoppen();
         ctx = c;
@@ -572,7 +584,7 @@ const Vorklatschen = (function () {
         // Ein kompletter Ablauf (Vorlauf + alle Durchgaenge) ab Schlag "ab"
         // als Ereignisliste in Schlaegen - am Ende ein "ende"-Eintrag.
         function ablauf(ab, vorlaufTakte) {
-            const plan = rhythmusZeitplan(stueck, { bpm: 60, vorlaufTakte, durchgaenge, nurMetronom, zeilen });
+            const plan = rhythmusZeitplan(stueck, { bpm: 60, vorlaufTakte, durchgaenge, nurMetronom, zeilen, abViertel });
             const liste = [
                 ...plan.ereignisse.map(e => Object.assign({}, e, { schlag: ab + e.zeit })),
                 ...plan.markierungen.map(m => ({ schlag: ab + m.zeit, art: 'markierung', taktNr: m.taktNr, ab: m.ab })),

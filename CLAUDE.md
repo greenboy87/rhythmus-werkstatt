@@ -202,6 +202,17 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   spielt „Abspielen“ nur diesen Ausschnitt (`Vorklatschen.starten(...,
   taktVersatz)` haelt die Mitlese-Markierung an der richtigen Stelle) und
   schaltet den Loop ein. Nicht im Link gespeichert.
+- Startpunkt (`startpunkt` in app.js, `{takt, ab}`, ab = Viertel im Takt):
+  Umschalter „Note antippen: Akzent | Startpunkt“ über dem Notenbild
+  (`antippModus`). Im Modus Startpunkt setzt eine Note den Start genau
+  dort, eine Takt-Fläche auf den Taktanfang, dieselbe Stelle nochmal hebt
+  ihn auf (auch „Von vorn“ bzw. Esc). Gezeichnet als Strich mit Fähnchen
+  (`.startpunkt`, `opt.startpunkt` in `stueckAnzeigeHtml`, nur Bildschirm).
+  Abspielen nimmt das Stück ab dem Takt (`taktVersatz`) und gibt
+  `abViertel` an `rhythmusZeitplan`: im ersten Takt läuft vor dem Start nur
+  der Puls (der Takt bleibt hörbar), geklatscht und markiert wird ab dort -
+  in jedem Durchgang und jedem Loop. Bei „Als Übung“ kürzt `zeilenAb` die
+  Zeilenaufteilung. Ein Loop-Bereich hat Vorrang. Nicht im Link gespeichert.
 - `js/reiter.js` - Reiter in der Kopfzeile: „Rhythmus-Werkstatt |
   Beat-Werkstatt | Drumset-Werkstatt | Zähl-Training“ (`<main id="reiter-rhythmus">`,
   `#reiter-beat`, `#reiter-drumset`, `#reiter-zaehlen`). Wird als letzte Datei geladen, damit

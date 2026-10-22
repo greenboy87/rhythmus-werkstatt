@@ -333,10 +333,15 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 /* ---------- Loop-Bereich: angetippte Takte bzw. Übung ---------- */
 .anzeige-system .takt-feld, .anzeige-system .uebung-nr { cursor: pointer; }
 .anzeige-system .takt-auswahl { fill: var(--akzent); opacity: .22; stroke: none; }
+.anzeige-system .startpunkt { stroke: var(--akzent); fill: var(--akzent); pointer-events: none; }
+#startpunkt-info { font-size: .85rem; color: var(--text-gedaempft); }
+#startpunkt-info b { color: var(--akzent); }
+.antipp-leiste { justify-content: center; margin-bottom: .4rem; font-size: .85rem; color: var(--text-gedaempft); }
+.antipp-modus-start .anzeige-system .noten-feld { cursor: crosshair; }
 #loop-auswahl-info { font-size: .85rem; color: var(--text-gedaempft); }
 #loop-auswahl-info b { color: var(--akzent); }
 .anzeige-tipp { font-size: .75rem; color: var(--text-schwach); margin: 0 0 .4rem; text-align: center; }
-@media print { .anzeige-tipp, #loop-auswahl-info { display: none !important; } }
+@media print { .anzeige-tipp, #loop-auswahl-info, #startpunkt-info, .antipp-leiste, .startpunkt { display: none !important; } }
 .anzeige-system .noten-feld { cursor: pointer; }
 
 /* ============================================================

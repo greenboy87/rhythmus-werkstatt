@@ -72,6 +72,8 @@ let anzeigeSkalierung = 1;
 let wiederholungen = 1;      // zusaetzliche Durchgaenge, nicht die Gesamtzahl (Anzeige = +1)
 let takteProZeile = 0;       // 0 = automatisch; gilt fuer Bildschirm/Vollbild UND Druck gleichermassen
 let loopAuswahl = null;      // {von, bis} Taktnummern (einschliesslich) - nur dieser Teil wird abgespielt
+let startpunkt = null;       // {takt, ab} - ab hier wird abgespielt (ab = Viertel im Takt)
+let antippModus = 'akzent';  // 'akzent' | 'start': was Antippen einer Note im Notenbild macht
 
 function anzeigeOptionen() {
     return {
@@ -121,9 +123,11 @@ function anzeigeNeuZeichnen() {
     const breite = Math.max(320, (host.clientWidth || 900) / anzeigeSkalierung);
     // Passt die Auswahl nicht mehr zum Stueck (Takte geloescht), faellt sie weg.
     if (loopAuswahl && loopAuswahl.bis >= editor.stueck().takte.length) loopAuswahl = null;
-    const optionen = Object.assign(anzeigeOptionen(), { breite, skalierung: anzeigeSkalierung, auswahl: loopAuswahl });
+    if (startpunkt && startpunktTakt() === null) startpunkt = null;
+    const optionen = Object.assign(anzeigeOptionen(), { breite, skalierung: anzeigeSkalierung, auswahl: loopAuswahl, startpunkt });
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     loopAuswahlAnzeigen();
+    startpunktAnzeigen();
     document.getElementById('anzeige-karte').classList.toggle('anzeige-verdeckt', anzeigeVerdeckt);
     titelAktualisieren();
     druckNeuZeichnen();
@@ -142,6 +146,15 @@ function loopAuswahlSetzen(neu) {
 function anzeigeAngetippt(e) {
     // Note antippen = Akzent an/aus (Flaechen der Noten liegen ueber denen der Takte)
     const note = e.target.closest('.noten-feld');
+    if (note && antippModus === 'start') {
+        const t = Number(note.dataset.takt), b = Number(note.dataset.baustein), teilNr = Number(note.dataset.teil);
+        const bausteine = editor.stueck().takte[t].bausteine;
+        let ab = 0;
+        for (let i = 0; i < b; i++) ab += bausteine[i].dauer;
+        for (let i = 0; i < teilNr; i++) ab += bausteine[b].teile[i].d;
+        startpunktUmschalten({ takt: t, ab });
+        return;
+    }
     if (note) {
         editor.akzentUmschalten(Number(note.dataset.takt), Number(note.dataset.baustein), Number(note.dataset.teil));
         return;
@@ -156,6 +169,7 @@ function anzeigeAngetippt(e) {
     const feld = e.target.closest('.takt-feld');
     if (!feld) return;
     const i = Number(feld.dataset.takt);
+    if (antippModus === 'start') { startpunktUmschalten({ takt: i, ab: 0 }); return; }
     if (!loopAuswahl) loopAuswahlSetzen({ von: i, bis: i });
     else if (i >= loopAuswahl.von && i <= loopAuswahl.bis) loopAuswahlSetzen(null);
     else loopAuswahlSetzen({ von: Math.min(i, loopAuswahl.von), bis: Math.max(i, loopAuswahl.bis) });
@@ -172,6 +186,54 @@ function loopAuswahlAnzeigen() {
     document.getElementById('loop-auswahl-text').textContent = nr
         ? `Übung ${nr.textContent.replace('.', '')}`
         : (von === bis ? `Takt ${von + 1}` : `Takt ${von + 1}–${bis + 1}`);
+}
+
+/* ---------- Startpunkt: ab hier abspielen ----------
+   Nur im Antipp-Modus "Startpunkt": Note antippen = ab dieser Note,
+   neben die Noten = ab Taktanfang, dieselbe Stelle nochmal = von vorn.
+   Vor der Note laeuft im ersten Takt nur der Puls weiter (der Takt bleibt
+   hoerbar), auch jeder Loop beginnt wieder hier. Ein Loop-Bereich hat
+   Vorrang. Nicht im Link gespeichert. */
+function startpunktSetzen(neu) {
+    startpunkt = neu;
+    anzeigeNeuZeichnen();
+}
+function startpunktUmschalten(neu) {
+    const gleich = startpunkt && startpunkt.takt === neu.takt && Math.abs(startpunkt.ab - neu.ab) < 1e-6;
+    startpunktSetzen(gleich ? null : neu);
+}
+// Takt des Startpunkts, oder null, wenn er nicht mehr ins Stueck passt
+function startpunktTakt() {
+    const takt = startpunkt && editor.stueck().takte[startpunkt.takt];
+    if (!takt) return null;
+    const lang = takt.bausteine.reduce((s, b) => s + b.dauer, 0);
+    return startpunkt.ab < lang - 1e-6 || startpunkt.ab === 0 ? startpunkt.takt : null;
+}
+function startpunktAnzeigen() {
+    document.getElementById('startpunkt-info').classList.toggle('hidden', !startpunkt);
+    if (!startpunkt) return;
+    // Zaehlzeit wie ueber den Noten: "3", "2 und", "1 e" - neben dem Raster nur der Takt
+    const pw = pulsWert(editor.zeichen());
+    const puls = Math.floor((startpunkt.ab + 1e-6) / pw);
+    const raster = (startpunkt.ab - puls * pw) / 0.25;
+    const stufe = Math.round(raster);
+    const silbe = Math.abs(raster - stufe) < 0.02 && stufe < 4 ? (stufe === 0 ? String(puls + 1) : `${puls + 1} ${['', 'e', 'und', 'e'][stufe]}`) : '';
+    document.getElementById('startpunkt-text').textContent =
+        `Start: Takt ${startpunkt.takt + 1}` + (silbe ? ` auf „${silbe}“` : '');
+}
+/* Zeilenaufteilung ("Als Uebung") ab einem Takt: vordere Zeilen fallen weg,
+   die angebrochene zaehlt nur noch ihre restlichen Takte. */
+function zeilenAb(zeilen, takt) {
+    if (!zeilen) return null;
+    const rest = [];
+    let von = 0;
+    zeilen.forEach(n => { if (von + n > takt) rest.push(von + n - Math.max(von, takt)); von += n; });
+    return rest;
+}
+function antippModusSetzen(modus) {
+    antippModus = modus;
+    document.querySelectorAll('[data-antippen]').forEach(b => b.classList.toggle('an', b.dataset.antippen === modus));
+    document.getElementById('anzeige').classList.toggle('antipp-modus-start', modus === 'start');
 }
 
 /* Titel steht ueber den Noten - auf dem Bildschirm (auch im Vollbild fuers
@@ -661,6 +723,8 @@ function init() {
     document.getElementById('drucken-btn').addEventListener('click', () => window.print());
     document.getElementById('anzeige').addEventListener('click', anzeigeAngetippt);
     document.getElementById('loop-auswahl-weg').addEventListener('click', () => loopAuswahlSetzen(null));
+    document.getElementById('startpunkt-weg').addEventListener('click', () => startpunktSetzen(null));
+    document.querySelectorAll('[data-antippen]').forEach(b => b.addEventListener('click', () => antippModusSetzen(b.dataset.antippen)));
     document.getElementById('pdf-btn').addEventListener('click', pdfHerunterladen);
     document.querySelectorAll('details.menue').forEach(m => {
         m.addEventListener('click', (e) => { if (e.target.closest('.menue-liste button')) m.open = false; });
@@ -706,6 +770,10 @@ function init() {
             // beim Mitlesen landet trotzdem an der richtigen Stelle.
             const teil = Object.assign({}, stueck, { takte: stueck.takte.slice(loopAuswahl.von, loopAuswahl.bis + 1) });
             Vorklatschen.starten(teil, document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, null, endlos, loopAuswahl.von);
+        } else if (startpunkt) {
+            const teil = Object.assign({}, stueck, { takte: stueck.takte.slice(startpunkt.takt) });
+            Vorklatschen.starten(teil, document.getElementById('anzeige'), nurMetronom, extraDurchgaenge,
+                zeilenAb(uebungsZeilen(), startpunkt.takt), endlos, startpunkt.takt, startpunkt.ab);
         } else {
             Vorklatschen.starten(stueck, document.getElementById('anzeige'), nurMetronom, extraDurchgaenge, uebungsZeilen(), endlos);
         }
@@ -785,6 +853,8 @@ function rhythmusTaste(e) {
         loopAuswahlSetzen({ von: t, bis: t });
     } else if (e.key === 'Escape' && loopAuswahl) {
         loopAuswahlSetzen(null);
+    } else if (e.key === 'Escape' && startpunkt) {
+        startpunktSetzen(null);
     } else {
         fertig = false;
     }

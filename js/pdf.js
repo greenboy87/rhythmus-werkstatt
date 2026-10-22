@@ -22,7 +22,7 @@ function systemAlsBild(svg, b, h, k) {
     kopie.removeAttribute('style');
     kopie.setAttribute('color', '#000');
     kopie.querySelectorAll('.linien-fuenf, .bw-linie-anzeige').forEach(el => el.setAttribute('color', '#666'));
-    kopie.querySelectorAll('.bw-spiel, .takt-auswahl').forEach(el => el.remove());   // Mitlese-Flaechen und Loop-Auswahl der Beat-/Drumset-Werkstatt
+    kopie.querySelectorAll('.bw-spiel, .takt-auswahl, .startpunkt').forEach(el => el.remove());   // Mitlese-Flaechen und Loop-Auswahl der Beat-/Drumset-Werkstatt
     kopie.querySelectorAll('.kopf, .zaehlzeit, .handsatz').forEach(el => el.setAttribute('fill', '#000'));
     kopie.querySelectorAll('.jetzt').forEach(el => el.classList.remove('jetzt'));
     const xml = new XMLSerializer().serializeToString(kopie);

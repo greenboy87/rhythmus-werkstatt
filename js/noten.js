@@ -391,7 +391,7 @@ function schluesselSvg(x, mitteY, tinte) {
    Gibt HTML zurueck: ein <svg> je Notenzeile (Systemumbruch).
    ============================================================ */
 function stueckAnzeigeHtml(stueck, optionen) {
-    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null, pausenFelder: false }, optionen || {});
+    const opt = Object.assign({ notenlinien: false, zaehlzeiten: false, undAlsPlus: false, wiederholung: false, wiederholungen: 1, alsUebung: false, handsatz: false, breite: 900, takteProZeile: 0, skalierung: 1, auswahl: null, startpunkt: null, pausenFelder: false }, optionen || {});
     const tinte = 'currentColor';
     const takte = stueck.takte || [];
     const zaehlY = hatAkzente(stueck) ? ZAEHL_Y_AKZENT : ZAEHL_Y;
@@ -546,6 +546,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
 
         const zaehlzeitenTexte = [];
         const taktFelder = [];   // Flaeche je Takt: zum Antippen (Loop-Bereich) und Markieren
+        let startSvg = '';       // Startpunkt-Markierung, falls sie in dieser Zeile steht
         const notenFelder = [];  // Flaeche je Note: Antippen = Akzent an/aus (liegt ueber den Taktflaechen)
         system.forEach(({ takt, index }, posInSystem) => {
             // Taktstrich zwischen den Takten - am Zeilenanfang steht stattdessen
@@ -577,6 +578,15 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 gelaufen += b.dauer;
             });
             const taktEndeX = x;
+            // Startpunkt ({takt, ab}): Strich mit Faehnchen kurz vor der Note,
+            // bei der das Abspielen beginnt - nur Bildschirm, wie die Auswahl.
+            const sp = opt.startpunkt;
+            if (sp && sp.takt === index) {
+                const einsatz = taktEinsaetze.find(e => Math.abs(e.v - sp.ab) < 1e-6);
+                const sx = (einsatz ? einsatz.px : xBeiViertel(marken, sp.ab, taktEndeX)) - 11;
+                startSvg = `<g class="startpunkt"><line x1="${sx}" y1="${LINIE_Y - 30}" x2="${sx}" y2="${LINIE_Y + 24}" stroke-width="2.5"/>` +
+                    `<path d="M${sx} ${LINIE_Y - 33} l9 5 l-9 5 z"/></g>`;
+            }
 
             if (opt.zaehlzeiten) {
                 // Nicht ein fester Raster-Takt, sondern eine Silbe je tatsaechlichem
@@ -646,6 +656,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
             teileSvg.push(`<rect class="takt-feld" data-takt="${f.index}" x="${f.von}" y="${feldOben}" width="${f.bis - f.von}" height="${feldHoehe}" fill="transparent"/>`);
         });
         teileSvg.push(...notenFelder);
+        if (startSvg) teileSvg.push(startSvg);
 
         // Anfangsstrich: jede Zeile beginnt mit einem Strich ueber das System -
         // ausser dort, wo schon ein Doppelstrich bzw. Wiederholungszeichen steht.
