@@ -169,7 +169,6 @@ function anzeigeAngetippt(e) {
     const feld = e.target.closest('.takt-feld');
     if (!feld) return;
     const i = Number(feld.dataset.takt);
-    if (antippModus === 'start') { startpunktUmschalten({ takt: i, ab: 0 }); return; }
     if (!loopAuswahl) loopAuswahlSetzen({ von: i, bis: i });
     else if (i >= loopAuswahl.von && i <= loopAuswahl.bis) loopAuswahlSetzen(null);
     else loopAuswahlSetzen({ von: Math.min(i, loopAuswahl.von), bis: Math.max(i, loopAuswahl.bis) });
@@ -190,7 +189,8 @@ function loopAuswahlAnzeigen() {
 
 /* ---------- Startpunkt: ab hier abspielen ----------
    Nur im Antipp-Modus "Startpunkt": Note antippen = ab dieser Note,
-   neben die Noten = ab Taktanfang, dieselbe Stelle nochmal = von vorn.
+   dieselbe Note nochmal = von vorn. Neben die Noten tippen waehlt auch
+   hier den Loop-Bereich.
    Vor der Note laeuft im ersten Takt nur der Puls weiter (der Takt bleibt
    hoerbar), auch jeder Loop beginnt wieder hier. Ein Loop-Bereich hat
    Vorrang. Nicht im Link gespeichert. */
