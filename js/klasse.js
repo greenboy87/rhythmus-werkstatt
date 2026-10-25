@@ -29,8 +29,9 @@
    Automatik (nur Lehrkraft, lokal in L): "Vorspielen wiederholen" (Diktat:
    der Beamer spielt nach jeder Pause neu vor) und "Automodus" (Diktat: nach
    L.anzahl-mal Vorspielen und einer letzten Pause endet die Runde; beide
-   Spielarten: Aufloesung L.aufloesung Sekunden zeigen - beim Diktat mit
-   Noten vorspielen -, dann naechste Runde bzw. Endstand). lAutoPlanen
+   Spielarten: Aufloesung L.aufloesung Sekunden zeigen, dann naechste Runde
+   bzw. Endstand). "Aufloesung vorspielen" (L.aufloesungSpielen, auch ohne
+   Automodus): bei der Aufloesung den Rhythmus einmal mit Noten vorspielen. lAutoPlanen
    entscheidet nach jedem Schritt neu; Zeit und "alle fertig" gelten weiter.
    ============================================================ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
@@ -147,7 +148,7 @@ const L = Object.assign({
     auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'],
     art: 'zaehlen', klatsch: true,
     zeichen: '4/4', takte: 2, runden: 5, stufe: 1, zeit: 90, notenlinien: false, eigene: '',
-    wiederholen: false, automodus: false, pause: 0, anzahl: 3, aufloesung: 10,
+    wiederholen: false, automodus: false, pause: 0, anzahl: 3, aufloesung: 10, aufloesungSpielen: true,
     code: null,       // offener Raum
     spiel: null,      // Kennung des laufenden Spiels
     plan: [],         // [{zeichen, kuerzel}] je Runde
@@ -157,7 +158,7 @@ let lehrerStand = null;      // zuletzt geschriebener Stand unter lehrer
 let spielerListe = {};       // id -> {name, emoji}
 let rundenStand = {};        // id -> Fortschritt der laufenden Runde
 let standAbo = null, uhr = null, autoEnde = null;
-const L_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30], L_AUFLOESUNG = [5, 8, 10, 15, 20, 30, 45, 60];
+const L_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30], L_AUFLOESUNG = [1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60];
 let lAutoTimer = null, lAutoTicker = null, lAutoAnhalten = false, lAutoSchritt = '';
 let lSpielt = false, lGehoert = 0, lNachgehoert = false;
 const lSpeichern = () => schreiben(L_SCHLUESSEL, L);
@@ -415,7 +416,7 @@ function lAutoPlanen() {
     lAutoAus();
     const st = lehrerStand;
     const diktat = st && st.art === 'diktat';
-    const aktiv = L.automodus || (diktat && L.wiederholen);
+    const aktiv = st && (L.automodus || (diktat && L.wiederholen) || (st.phase === 'auswertung' && L.aufloesungSpielen));
     if (!st || !L.code || !aktiv || (st.phase !== 'runde' && st.phase !== 'auswertung')) { lAutoZeigen(''); return; }
     if (lAutoAnhalten) { lAutoZeigen('Automatik angehalten.'); return; }
     if (lSpielt && Vorklatschen.istAn()) { lAutoZeigen(st.phase === 'auswertung' ? 'So klang es …' : 'Hört gut zu …'); return; }
@@ -432,13 +433,13 @@ function lAutoPlanen() {
         const stand = L.automodus ? `${lGehoert} von ${L.anzahl}` : `${lGehoert}× gehört`;
         return lAutoNach(pause, `Nochmal in {s} s (${stand})`, lVorspielen);
     }
-    // Auswertung
-    if (!L.automodus) { lAutoZeigen(''); return; }
-    if (diktat && !lNachgehoert) return lAutoNach(1.5, 'Gleich nochmal mit Noten …', () => {
+    // Auswertung: auf Wunsch die Loesung mit Noten vorspielen, im Automodus dann weiter
+    if (L.aufloesungSpielen && !lNachgehoert && stueck) return lAutoNach(1, 'Gleich wird die Lösung vorgespielt …', () => {
         lNachgehoert = true; lSpielt = true;
         Vorklatschen.starten(stueck, $('l-loesung'), false, 0, null, null);
         lAutoPlanen();
     });
+    if (!L.automodus) { lAutoZeigen(''); return; }
     lAutoNach(L.aufloesung, (st.runde >= st.runden ? 'Endstand' : 'Nächste Runde') + ' in {s} s', lWeiter);
 }
 

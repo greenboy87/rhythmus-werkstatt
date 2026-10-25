@@ -449,8 +449,10 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   gespielten gewürfelten Runden neu, `plan[i].gewuerfelt`; eigene Rhythmen
   bleiben). Automatik (nur Lehrkraft, in `zk-lehrer`): „Vorspielen
   wiederholen“ (Diktat) und „Automodus“ (Diktat: nach `L.anzahl`-mal
-  Vorspielen + Pause endet die Runde; Auflösung `L.aufloesung` s, beim
-  Diktat mit Noten vorgespielt; dann nächste Runde bzw. Endstand). Zeit und
+  Vorspielen + Pause endet die Runde; Auflösung `L.aufloesung` s (1-60),
+  dann nächste Runde bzw. Endstand). „Auflösung vorspielen“
+  (`L.aufloesungSpielen`, Standard an, auch ohne Automodus): bei der
+  Auflösung den Rhythmus einmal mit Noten vorspielen. Zeit und
   „alle fertig“ beenden eine Runde früher. `lAutoPlanen` plant nur bei
   neuer Phase/Runde neu (`lAutoSchritt`). Tasten am Beamer: Leertaste
   vorspielen, → Spiel starten bzw. nächste Runde.
