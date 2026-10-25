@@ -444,8 +444,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
   Verlinkt im Zähl-Training („Mit der Klasse spielen“).
   Startbildschirm der Lehrkraft = nur „Raum öffnen“. Alle Einstellungen
-  stehen genau einmal im Raum unter dem Spiel (`details#l-panel`, Lobby,
-  Runde, Auflösung, Ende): Spielart, Notenwerte, Taktart, Takte, Runden
+  stehen genau einmal im Raum (`details#l-panel`): in der Lobby rechts neben
+  dem QR-Code (`#l-panel-lobby`, QR bleibt beim Scrollen stehen), sonst unter
+  dem Spiel (`#l-panel-platz`) - `lZeichnen` hängt es um: Spielart, Notenwerte, Taktart, Takte, Runden
   (bis `L_RUNDEN_MAX` = 50, nie unter die laufende), Zeit (`lZeitAendern`,
   gilt sofort, auch `lehrer.dauer` der laufenden Runde), Stufe, Notenlinien,
   Klatschmodus, Metronom + „Tempo beibehalten“, Automatik, eigene Rhythmen.

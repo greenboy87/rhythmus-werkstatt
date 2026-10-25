@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=70">
-<link rel="stylesheet" href="css/klasse.css?v=70">
+<link rel="stylesheet" href="css/stil.css?v=71">
+<link rel="stylesheet" href="css/klasse.css?v=71">
 </head>
 <body>
 
@@ -63,10 +63,12 @@
                     <p class="zk-gross">QR-Code scannen, Namen eingeben – los geht’s!</p>
                     <p class="zs-hinweis" id="l-anzahl"></p>
                     <div class="zk-namen" id="l-namen"></div>
+                    <div class="leiste" style="margin-top:1rem;">
+                        <button type="button" class="btn btn-primär zk-gross-knopf" id="l-start-btn"><i class="fa-solid fa-play"></i> Spiel starten</button>
+                    </div>
+                    <!-- In der Lobby stehen die Einstellungen hier, neben dem QR-Code (lZeichnen haengt sie um) -->
+                    <div id="l-panel-lobby"></div>
                 </div>
-            </div>
-            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
-                <button type="button" class="btn btn-primär zk-gross-knopf" id="l-start-btn"><i class="fa-solid fa-play"></i> Spiel starten</button>
             </div>
         </div>
 
@@ -108,6 +110,7 @@
         </div>
 
         <!-- Einstellungen: nur hier, in Lobby, Runde und Auflösung. Gelten ab der naechsten Runde, Zeit sofort -->
+        <div id="l-panel-platz">
         <details class="zk-einstellungen" id="l-panel" open>
             <summary><i class="fa-solid fa-sliders"></i> Einstellungen <span class="zs-hinweis">gelten ab der nächsten Runde, die Zeit sofort</span></summary>
             <div class="leiste" style="margin:.8rem 0 .4rem;">
@@ -198,6 +201,7 @@
             </details>
             <p class="zs-hinweis" id="l-punkte-text" style="margin:.7rem 0 0;"></p>
         </details>
+        </div>
     </section>
 
     <!-- QR klein waehrend des Spiels (Nachzuegler) -->
@@ -267,12 +271,12 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=70"></script>
-<script src="js/vendor/qrcode.min.js?v=70"></script>
-<script src="js/noten.js?v=70"></script>
-<script src="js/zaehlkern.js?v=70"></script>
-<script src="js/editor.js?v=70"></script>
-<script src="js/audio.js?v=70"></script>
-<script type="module" src="js/klasse.js?v=70"></script>
+<script src="js/version.js?v=71"></script>
+<script src="js/vendor/qrcode.min.js?v=71"></script>
+<script src="js/noten.js?v=71"></script>
+<script src="js/zaehlkern.js?v=71"></script>
+<script src="js/editor.js?v=71"></script>
+<script src="js/audio.js?v=71"></script>
+<script type="module" src="js/klasse.js?v=71"></script>
 </body>
 </html>

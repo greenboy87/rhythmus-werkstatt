@@ -351,6 +351,9 @@ function lZeichnen() {
         $('l-phase-info').textContent = 'Endstand';
         lEndeZeichnen();
     }
+    // Einstellungen: in der Lobby neben dem QR-Code, sonst unter dem Spiel
+    const panelZiel = $(st.phase === 'warten' ? 'l-panel-lobby' : 'l-panel-platz');
+    if ($('l-panel').parentElement !== panelZiel) panelZiel.appendChild($('l-panel'));
     // Neue Phase (oder neue Runde): Automatik von vorn planen. Andere Anlaesse
     // zum Neuzeichnen (Kind kommt dazu, Fenstergroesse) lassen den Countdown laufen.
     const schritt = `${st.phase}:${st.runde}`;
