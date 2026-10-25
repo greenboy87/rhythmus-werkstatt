@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=62">
-<link rel="stylesheet" href="css/druck.css?v=62">
+<link rel="stylesheet" href="css/stil.css?v=63">
+<link rel="stylesheet" href="css/druck.css?v=63">
 </head>
 <body>
 
@@ -560,6 +560,26 @@
             <label class="chip" style="margin-left:.6rem;" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="dk-klatsch"><span>Klatschmodus</span></label>
             <label class="chip" title="Aus: Ein zu voller Takt wird beim Eingeben nicht rot markiert und beim Prüfen nicht verraten – schwieriger"><input type="checkbox" id="dk-ueberlang"><span>Zu lange Takte markieren</span></label>
         </div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <span class="segment" role="group" aria-label="Runden oder endlos">
+                <button type="button" class="btn" data-dk-runden="ja" title="Runden zu 5 Aufgaben mit Ergebnis am Ende">Runden zu <span class="zs-runde-zahl">5</span></button>
+                <button type="button" class="btn" data-dk-runden="nein" title="Ohne Runden: beliebig lange weiterspielen">Endlos</button>
+            </span>
+            <label class="chip" title="Spielt die Aufgabe von selbst immer wieder vor, bis sie gelöst ist"><input type="checkbox" id="dk-wiederholen"><span><i class="fa-solid fa-repeat"></i> Automatisch wiederholen</span></label>
+            <label class="chip" title="Läuft ganz von allein: vorspielen (so oft wie eingestellt), Lösung zeigen und noch einmal vorspielen, dann die nächste Aufgabe"><input type="checkbox" id="dk-automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
+            <span class="stufen" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
+                <span class="stufen-name">Pause</span>
+                <button type="button" class="btn" id="dk-pause-minus" aria-label="Kürzere Pause">−</button>
+                <span class="stufen-wert" id="dk-pause-anzeige">auto</span>
+                <button type="button" class="btn" id="dk-pause-plus" aria-label="Längere Pause">+</button>
+            </span>
+            <span class="stufen" id="dk-anzahl-feld" title="Automodus: so oft wird vorgespielt, bevor die Lösung kommt">
+                <span class="stufen-name">Vorspielen</span>
+                <button type="button" class="btn" id="dk-anzahl-minus" aria-label="Seltener">−</button>
+                <span class="stufen-wert" id="dk-anzahl-anzeige">3×</span>
+                <button type="button" class="btn" id="dk-anzahl-plus" aria-label="Öfter">+</button>
+            </span>
+        </div>
         <div class="leiste">
             <div class="leiste" id="dk-metronom"></div>
             <button type="button" class="btn btn-primär" id="dk-start-btn" style="margin-left:auto;"></button>
@@ -570,6 +590,10 @@
         <div class="zs-stand" id="dk-stand"></div>
         <div class="leiste" style="justify-content:center; margin:.4rem 0 1rem;">
             <button type="button" class="btn btn-primär dk-hoeren" id="dk-hoeren-btn"><i class="fa-solid fa-play"></i> Anhören</button>
+        </div>
+        <div class="dk-auto hidden" id="dk-auto">
+            <span id="dk-auto-text"></span>
+            <button type="button" class="btn" id="dk-auto-pause"></button>
         </div>
         <div id="dk-noten" class="hidden"></div>
         <!-- nach dem Loesen: was man selbst eingegeben hat, unter der Loesung -->
@@ -590,6 +614,7 @@
             <span id="dk-fertig-text"></span>
             <button type="button" class="btn btn-primär" id="dk-weiter-btn"></button>
         </div>
+        <p class="zs-hinweis" style="text-align:center; margin:.8rem 0 0;">Tastatur: <kbd>Leertaste</kbd> vorspielen/stoppen · <kbd>→</kbd> nächste Aufgabe · <kbd>Enter</kbd> prüfen bzw. weiter · <kbd>⌫</kbd> letzten Baustein weg</p>
     </section>
     </div>
 </main>
@@ -600,21 +625,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=62"></script>
-<script src="js/noten.js?v=62"></script>
-<script src="js/editor.js?v=62"></script>
-<script src="js/audio.js?v=62"></script>
-<script src="js/generator.js?v=62"></script>
-<script src="js/link.js?v=62"></script>
-<script src="js/vendor/lame.min.js?v=62"></script>
-<script src="js/export.js?v=62"></script>
-<script src="js/pdf.js?v=62"></script>
-<script src="js/app.js?v=62"></script>
-<script src="js/beat.js?v=62"></script>
-<script src="js/drumset.js?v=62"></script>
-<script src="js/zaehlkern.js?v=62"></script>
-<script src="js/zaehlspiel.js?v=62"></script>
-<script src="js/spiele.js?v=62"></script>
-<script src="js/reiter.js?v=62"></script>
+<script src="js/version.js?v=63"></script>
+<script src="js/noten.js?v=63"></script>
+<script src="js/editor.js?v=63"></script>
+<script src="js/audio.js?v=63"></script>
+<script src="js/generator.js?v=63"></script>
+<script src="js/link.js?v=63"></script>
+<script src="js/vendor/lame.min.js?v=63"></script>
+<script src="js/export.js?v=63"></script>
+<script src="js/pdf.js?v=63"></script>
+<script src="js/app.js?v=63"></script>
+<script src="js/beat.js?v=63"></script>
+<script src="js/drumset.js?v=63"></script>
+<script src="js/zaehlkern.js?v=63"></script>
+<script src="js/zaehlspiel.js?v=63"></script>
+<script src="js/spiele.js?v=63"></script>
+<script src="js/reiter.js?v=63"></script>
 </body>
 </html>

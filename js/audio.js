@@ -548,8 +548,8 @@ const Vorklatschen = (function () {
     let laeuft = false, uhr = null, ctx = null, summe = null, klicks = [];
     let folge = [], anzeigeFolge = [], anker = null, horizont = 0;
     let letzterHost = null, letztesZeichen = '4/4';
-    let zustandCallback = null;
-    function zustandMelden() { if (zustandCallback) zustandCallback(laeuft); }
+    const zustandCallbacks = [];   // Werkstatt-Knopf und Rhythmus-Diktat (Automatik)
+    function zustandMelden() { zustandCallbacks.forEach(fn => fn(laeuft)); }
 
     function zeitVon(schlag) { return anker.zeit + (schlag - anker.schlag) * 60 / anker.bpm; }
     function schlagVon(zeit) { return anker.schlag + (zeit - anker.zeit) * anker.bpm / 60; }
@@ -680,5 +680,5 @@ const Vorklatschen = (function () {
         zeigeToast(meldung, 'info');
     }
 
-    return { starten, stoppen, istAn: () => laeuft, aufZustandAendern: (fn) => { zustandCallback = fn; } };
+    return { starten, stoppen, istAn: () => laeuft, aufZustandAendern: (fn) => { zustandCallbacks.push(fn); } };
 })();

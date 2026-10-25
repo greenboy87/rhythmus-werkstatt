@@ -706,6 +706,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .spiel-bereich.hidden { display: none !important; }
 .zk-meldung { min-height: 1.3em; text-align: center; color: var(--gefahr); font-weight: 700; margin: .3rem 0 0; }
 .dk-hoeren { font-size: 1.1rem; padding: .75rem 1.6rem; }
+.dk-auto {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem;
+    margin: -.4rem 0 .9rem; font-size: .85rem; font-weight: 700; color: var(--text-gedaempft); font-variant-numeric: tabular-nums;
+}
+.dk-auto .btn { padding: .25rem .7rem; font-size: .78rem; }
 .dk-editor { margin-bottom: .7rem; }
 .dk-editor .takt-entfernen { display: none; }
 .dk-editor .noten-feld { pointer-events: none; }   /* Akzente spielen im Diktat keine Rolle */

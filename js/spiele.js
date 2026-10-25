@@ -13,6 +13,14 @@
    jede Runde wie das Zaehl-Training: {typ:'rw-runde-start'} und am Ende
    {typ:'rw-runde', spiel:'diktat', takte, pct, detail}. pct: je Aufgabe
    1 beim ersten Versuch, 0,5 spaeter, 0 mit "Loesung zeigen".
+   Modi: "Endlos" (dk.runden = false, keine Runden, nichts gemeldet),
+   "Automatisch wiederholen" (spielt nach jeder Pause neu vor, bis geloest)
+   und "Automodus" (vorspielen dk.anzahl-mal, Loesung zeigen, mit Noten
+   nochmal vorspielen, naechste Aufgabe - ganz ohne Zutun; Runden mit
+   automatisch gezeigter Loesung werden nicht gemeldet). Pause dk.pause in
+   Sekunden, 0 = auto (so lang wie die Aufgabe, mindestens 3 s). Ablauf:
+   dkAutoPlanen entscheidet nach jedem Schritt (Vorspielen zu Ende, neue
+   Aufgabe, geloest) neu, was als Naechstes kommt.
    ============================================================ */
 const SPIEL_SCHLUESSEL = 'rw-spiel';
 const DK_SCHLUESSEL = 'rw-diktat';
@@ -21,7 +29,12 @@ const SPIELE_TEXT = {
     diktat: 'Zuhören und den Rhythmus aus Bausteinen nachbauen.'
 };
 // ueberlang: zu volle Takte rot markieren und beim Pruefen benennen (aus = schwieriger)
-const dk = { auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'], zeichen: '4/4', takte: 1, klatsch: true, ueberlang: true };
+const dk = {
+    auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'], zeichen: '4/4', takte: 1, klatsch: true, ueberlang: true,
+    runden: true, wiederholen: false, automodus: false, pause: 0, anzahl: 3
+};
+const DK_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30];   // Sekunden, 0 = auto
+let dkAutoTimer = null, dkAutoTicker = null, dkAutoAnhalten = false;
 let dkAufgabe = null;   // { loesung: stueck, versuche, gehoert, fertig, geloest, eingabe, stimmt }
 let dkRunde = null;     // { regeln, nr, ergebnisse: [{erster}], fertig }
 let dkEditor = null, dkSpielt = false;
@@ -60,9 +73,9 @@ function dkTakteVergleichen(eingabe, loesung, klatsch) {
 function dkRundeStarten() {
     if (!dk.auswahl.some(c => ZS_BAUSTEINE.some(b => b.code === c))) { zeigeToast('Wähle mindestens einen Baustein aus.', 'danger'); return; }
     const vorher = dkRunde;
-    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang }, nr: 0, ergebnisse: [], fertig: false, start: Date.now() };
+    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang, runden: dk.runden }, nr: 0, ergebnisse: [], fertig: false, start: Date.now() };
     if (!dkAufgabeErzeugen()) { dkRunde = vorher; return; }
-    zsMelden({ typ: 'rw-runde-start' });
+    if (dk.runden) zsMelden({ typ: 'rw-runde-start' });
 }
 function dkWeiter() {
     if (!dkRunde || dkRunde.fertig) dkRundeStarten();
@@ -86,16 +99,68 @@ function dkAufgabeErzeugen() {
 
 function dkHoeren() {
     if (!dkAufgabe) return;
-    if (dkSpielt && Vorklatschen.istAn()) { dkStoppen(); return; }
+    if (dkSpielt && Vorklatschen.istAn()) {
+        // Von Hand gestoppt: die Automatik wartet, bis wieder vorgespielt wird
+        dkStoppen();
+        if (dk.wiederholen || dk.automodus) { dkAutoAnhalten = true; dkAutoPlanen(); }
+        return;
+    }
+    dkAutoAnhalten = false;
     dkSpielt = true;
     dkAufgabe.gehoert++;
-    // Host ohne Notenbild - die Mitlese-Markierung hat dort nichts zu markieren
+    // Vor dem Loesen ohne Notenbild (nichts zu markieren), danach liest die
+    // Markierung in der Loesung mit
     Vorklatschen.starten(dkAufgabe.loesung, document.getElementById('dk-noten'), false, 0, null, null);
     dkStandZeichnen();
+    dkAutoPlanen();
 }
 function dkStoppen() {
+    clearTimeout(dkAutoTimer); clearInterval(dkAutoTicker); dkAutoTimer = dkAutoTicker = null;
     if (dkSpielt && Vorklatschen.istAn()) Vorklatschen.stoppen(true);
     dkSpielt = false;
+}
+
+/* ---------- Diktat: Automatik ---------- */
+function dkSichtbar() {
+    const reiter = document.getElementById('reiter-zaehlen'), spiel = document.getElementById('spiel-diktat');
+    return reiter && spiel && !reiter.classList.contains('hidden') && !spiel.classList.contains('hidden');
+}
+function dkPauseSekunden() {
+    if (dk.pause) return dk.pause;
+    const dauer = rhythmusZeitplan(dkAufgabe.loesung, { bpm: Metronom.bpm(), vorlaufTakte: 0 }).dauer;
+    return Math.max(3, Math.round(dauer));
+}
+function dkAutoZeigen(text) {
+    const an = !!dkAufgabe && (dk.wiederholen || dk.automodus);
+    document.getElementById('dk-auto').classList.toggle('hidden', !an);
+    document.getElementById('dk-auto-text').textContent = text;
+    document.getElementById('dk-auto-pause').innerHTML = dkAutoAnhalten
+        ? '<i class="fa-solid fa-play"></i> Weiter' : '<i class="fa-solid fa-pause"></i> Anhalten';
+}
+// Nach sek Sekunden tat ausfuehren, bis dahin rueckwaerts zaehlen ({s} im Text)
+function dkAutoNach(sek, text, tat) {
+    const ziel = Date.now() + sek * 1000;
+    const zeigen = () => dkAutoZeigen(text.replace('{s}', Math.max(1, Math.ceil((ziel - Date.now()) / 1000))));
+    zeigen();
+    dkAutoTicker = setInterval(zeigen, 250);
+    dkAutoTimer = setTimeout(() => { clearInterval(dkAutoTicker); dkAutoTimer = dkAutoTicker = null; tat(); }, sek * 1000);
+}
+function dkAutoPlanen() {
+    clearTimeout(dkAutoTimer); clearInterval(dkAutoTicker); dkAutoTimer = dkAutoTicker = null;
+    const a = dkAufgabe;
+    if (!a || !(dk.wiederholen || dk.automodus) || !dkSichtbar()) { dkAutoZeigen(''); return; }
+    if (dkAutoAnhalten) { dkAutoZeigen('Automatik angehalten.'); return; }
+    if (dkSpielt && Vorklatschen.istAn()) { dkAutoZeigen(a.fertig ? 'So klingt es …' : 'Hör gut zu …'); return; }
+    const pause = dkPauseSekunden();
+    if (!a.fertig) {
+        if (a.gehoert === 0) return dkAutoNach(1.5, 'Gleich geht’s los …', dkHoeren);
+        if (dk.automodus && a.gehoert >= dk.anzahl) return dkAutoNach(pause, 'Lösung in {s} s', () => dkLoesungZeigen(true));
+        const stand = dk.automodus ? `${a.gehoert} von ${dk.anzahl}` : `${a.gehoert}× gehört`;
+        return dkAutoNach(pause, `Nochmal in {s} s (${stand})`, dkHoeren);
+    }
+    if (!dk.automodus) { dkAutoZeigen('Gelöst – mit → geht es weiter.'); return; }
+    if (!a.nachgehoert) return dkAutoNach(1.5, 'Gleich nochmal mit Noten …', () => { a.nachgehoert = true; dkHoeren(); });
+    dkAutoNach(pause, (dkRunde.fertig ? 'Neue Runde' : 'Nächste Aufgabe') + ' in {s} s', dkWeiter);
 }
 
 function dkPruefen() {
@@ -128,8 +193,9 @@ function dkPruefen() {
     meldung.textContent = falsch.length === 1 ? `Takt ${falsch[0]} stimmt noch nicht – hör nochmal hin.` : `Takte ${falsch.join(', ')} stimmen noch nicht – hör nochmal hin.`;
     dkStandZeichnen();
 }
-function dkLoesungZeigen() {
+function dkLoesungZeigen(automatisch) {
     if (!dkAufgabe || dkAufgabe.fertig) return;
+    if (automatisch === true) dkRunde.ohneWertung = true;
     // Was gerade im Feld steht, gilt als letzte Eingabe - auch ungeprueft
     const eingabe = dkEditor.stueck();
     if (eingabe.takte.some(t => t.bausteine.length)) {
@@ -142,11 +208,11 @@ function dkFertig(geloest) {
     const a = dkAufgabe;
     a.fertig = true; a.geloest = geloest;
     dkRunde.ergebnisse.push({ erster: !geloest && a.versuche === 1, geschafft: !geloest });
-    if (dkRunde.nr >= ZS_RUNDE) {
+    if (dkRunde.regeln.runden && dkRunde.nr >= ZS_RUNDE) {
         const r = dkRunde, erg = r.ergebnisse;
         r.fertig = true;
         const punkte = erg.reduce((s, e) => s + (e.erster ? 1 : e.geschafft ? 0.5 : 0), 0);
-        zsMelden({
+        if (!r.ohneWertung) zsMelden({
             typ: 'rw-runde', spiel: 'diktat', takte: r.regeln.takte, pct: Math.round(punkte / erg.length * 100),
             detail: `${erg.filter(e => e.erster).length}/${erg.length} sofort · ${r.regeln.zeichen} · ${zsZeit(Math.round((Date.now() - r.start) / 1000))}`
         });
@@ -166,6 +232,19 @@ function dkEinstellungenZeichnen() {
     document.getElementById('dk-takte-anzeige').textContent = dk.takte;
     document.getElementById('dk-klatsch').checked = dk.klatsch;
     document.getElementById('dk-ueberlang').checked = dk.ueberlang;
+    document.querySelectorAll('[data-dk-runden]').forEach(b => b.classList.toggle('an', (b.dataset.dkRunden === 'ja') === dk.runden));
+    document.getElementById('dk-wiederholen').checked = dk.wiederholen;
+    document.getElementById('dk-automodus').checked = dk.automodus;
+    document.getElementById('dk-pause-anzeige').textContent = dk.pause ? dk.pause + ' s' : 'auto';
+    document.getElementById('dk-anzahl-anzeige').textContent = dk.anzahl + '×';
+    document.getElementById('dk-anzahl-feld').classList.toggle('hidden', !dk.automodus);
+}
+// Automatik-Schalter gelten sofort (nicht erst ab der naechsten Runde)
+function dkModusGeaendert() {
+    dkSpeichern();
+    dkEinstellungenZeichnen();
+    dkAutoAnhalten = false;
+    dkAutoPlanen();
 }
 function dkGeaendert() {
     if (dkRunde && !dkRunde.fertig) zeigeToast('Gilt ab der nächsten Runde – „Neue Runde“ startet sie sofort.', 'info');
@@ -176,20 +255,21 @@ function dkStandZeichnen() {
     const a = dkAufgabe;
     if (!a) return;
     const erste = dkRunde.ergebnisse.filter(e => e.erster).length;
+    const runden = dkRunde.regeln.runden;
     document.getElementById('dk-stand').innerHTML =
-        `<span><b>Aufgabe ${dkRunde.nr} von ${ZS_RUNDE}</b> · ${dkRunde.regeln.zeichen} · ${dkRunde.regeln.takte} ${dkRunde.regeln.takte === 1 ? 'Takt' : 'Takte'}</span>` +
+        `<span><b>Aufgabe ${dkRunde.nr}${runden ? ' von ' + ZS_RUNDE : ''}</b> · ${dkRunde.regeln.zeichen} · ${dkRunde.regeln.takte} ${dkRunde.regeln.takte === 1 ? 'Takt' : 'Takte'}</span>` +
         `<span>Angehört <b>${a.gehoert}×</b></span>` +
         `<span>Versuche <b class="${a.versuche > 1 ? 'zs-rot' : ''}">${a.versuche}</b></span>` +
-        `<span>Beim ersten Mal richtig <b>${erste}</b></span>`;
+        `<span>Beim ersten Mal richtig <b>${erste}${runden ? '' : ' von ' + dkRunde.ergebnisse.length}</b></span>`;
 }
 function dkZeichnen() {
     const spiel = document.getElementById('dk-spiel');
     if (!spiel) return;
     spiel.classList.toggle('hidden', !dkAufgabe);
     document.getElementById('dk-start-btn').innerHTML = dkAufgabe
-        ? '<i class="fa-solid fa-rotate-right"></i> Neue Runde'
+        ? '<i class="fa-solid fa-rotate-right"></i> ' + (dk.runden ? 'Neue Runde' : 'Neu starten')
         : '<i class="fa-solid fa-play"></i> Los geht’s';
-    if (!dkAufgabe) return;
+    if (!dkAufgabe) { dkAutoZeigen(''); return; }
     const a = dkAufgabe;
     dkStandZeichnen();
     const noten = document.getElementById('dk-noten');
@@ -231,10 +311,13 @@ function dkZeichnen() {
             ? '<i class="fa-solid fa-rotate-right"></i> Neue Runde'
             : '<i class="fa-solid fa-arrow-right"></i> Nächste Aufgabe';
     }
+    dkAutoPlanen();
 }
 
-/* Tastatur im Diktat: Leertaste = anhoeren, Enter = pruefen bzw. weiter,
-   Rueckschritt = letzten Baustein weg */
+/* Tastatur im Diktat: Leertaste = anhoeren/stoppen, Enter = pruefen bzw.
+   weiter, Pfeil rechts = naechste Aufgabe (ungeloest nur endlos oder im
+   Automodus - sonst zaehlt die Runde nicht sauber), Rueckschritt = letzten
+   Baustein weg */
 function dkTaste(e) {
     const reiter = document.getElementById('reiter-zaehlen');
     if (!reiter || reiter.classList.contains('hidden') || document.getElementById('spiel-diktat').classList.contains('hidden')) return;
@@ -244,6 +327,10 @@ function dkTaste(e) {
     let fertig = true;
     if (e.key === ' ') { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); dkHoeren(); }
     else if (e.key === 'Enter') { if (dkAufgabe.fertig) dkWeiter(); else dkPruefen(); }
+    else if (e.key === 'ArrowRight') {
+        if (dkAufgabe.fertig || !dkRunde.regeln.runden || dk.automodus) dkWeiter();
+        else zeigeToast('Erst prüfen oder „Lösung zeigen“ – dann geht es mit → weiter.', 'info');
+    }
     else if (e.key === 'Backspace' && !dkAufgabe.fertig) dkEditor.zurueck();
     else fertig = false;
     if (fertig) e.preventDefault();
@@ -267,6 +354,27 @@ function spieleAufbauen() {
     document.getElementById('dk-takte-plus').addEventListener('click', () => { dk.takte = Math.min(4, dk.takte + 1); dkGeaendert(); });
     document.getElementById('dk-klatsch').addEventListener('change', e => { dk.klatsch = e.target.checked; dkGeaendert(); });
     document.getElementById('dk-ueberlang').addEventListener('change', e => { dk.ueberlang = e.target.checked; dkGeaendert(); dkUeberlangZeigen(); });
+    document.querySelectorAll('[data-dk-runden]').forEach(b => b.addEventListener('click', () => { dk.runden = b.dataset.dkRunden === 'ja'; dkGeaendert(); dkZeichnen(); }));
+    document.getElementById('dk-wiederholen').addEventListener('change', e => { dk.wiederholen = e.target.checked; dkModusGeaendert(); });
+    document.getElementById('dk-automodus').addEventListener('change', e => { dk.automodus = e.target.checked; dkModusGeaendert(); });
+    const pauseSchritt = (r) => {
+        const i = Math.max(0, DK_PAUSEN.indexOf(dk.pause));
+        dk.pause = DK_PAUSEN[Math.max(0, Math.min(DK_PAUSEN.length - 1, i + r))];
+        dkModusGeaendert();
+    };
+    document.getElementById('dk-pause-minus').addEventListener('click', () => pauseSchritt(-1));
+    document.getElementById('dk-pause-plus').addEventListener('click', () => pauseSchritt(1));
+    document.getElementById('dk-anzahl-minus').addEventListener('click', () => { dk.anzahl = Math.max(1, dk.anzahl - 1); dkModusGeaendert(); });
+    document.getElementById('dk-anzahl-plus').addEventListener('click', () => { dk.anzahl = Math.min(10, dk.anzahl + 1); dkModusGeaendert(); });
+    document.getElementById('dk-auto-pause').addEventListener('click', () => {
+        dkAutoAnhalten = !dkAutoAnhalten;
+        if (dkAutoAnhalten) dkStoppen();
+        dkAutoPlanen();
+    });
+    // Vorspielen zu Ende: die Automatik plant den naechsten Schritt
+    Vorklatschen.aufZustandAendern((laeuft) => {
+        if (!laeuft) setTimeout(() => { if (dkSpielt && !Vorklatschen.istAn()) { dkSpielt = false; dkAutoPlanen(); } }, 0);
+    });
     document.getElementById('dk-start-btn').addEventListener('click', dkRundeStarten);
     document.getElementById('dk-weiter-btn').addEventListener('click', dkWeiter);
     document.getElementById('dk-hoeren-btn').addEventListener('click', dkHoeren);
