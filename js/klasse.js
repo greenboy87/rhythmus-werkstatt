@@ -26,6 +26,12 @@
    lehrer.werte) nach und pruefen; Einheit ist dann der Takt (richtig =
    stimmende Takte, fehler = Fehlversuche, +4 je Takt), lehrer.klatsch =
    Klatschmodus (rhythmusGleich).
+   Automatik (nur Lehrkraft, lokal in L): "Vorspielen wiederholen" (Diktat:
+   der Beamer spielt nach jeder Pause neu vor) und "Automodus" (Diktat: nach
+   L.anzahl-mal Vorspielen und einer letzten Pause endet die Runde; beide
+   Spielarten: Aufloesung L.aufloesung Sekunden zeigen - beim Diktat mit
+   Noten vorspielen -, dann naechste Runde bzw. Endstand). lAutoPlanen
+   entscheidet nach jedem Schritt neu; Zeit und "alle fertig" gelten weiter.
    ============================================================ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
 import { getDatabase, ref, set, update, get, onValue, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js';
@@ -141,6 +147,7 @@ const L = Object.assign({
     auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'],
     art: 'zaehlen', klatsch: true,
     zeichen: '4/4', takte: 2, runden: 5, stufe: 1, zeit: 90, notenlinien: false, eigene: '',
+    wiederholen: false, automodus: false, pause: 0, anzahl: 3, aufloesung: 10,
     code: null,       // offener Raum
     spiel: null,      // Kennung des laufenden Spiels
     plan: [],         // [{zeichen, kuerzel}] je Runde
@@ -150,10 +157,13 @@ let lehrerStand = null;      // zuletzt geschriebener Stand unter lehrer
 let spielerListe = {};       // id -> {name, emoji}
 let rundenStand = {};        // id -> Fortschritt der laufenden Runde
 let standAbo = null, uhr = null, autoEnde = null;
+const L_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30], L_AUFLOESUNG = [5, 8, 10, 15, 20, 30, 45, 60];
+let lAutoTimer = null, lAutoTicker = null, lAutoAnhalten = false, lAutoSchritt = '';
+let lSpielt = false, lGehoert = 0, lNachgehoert = false;
 const lSpeichern = () => schreiben(L_SCHLUESSEL, L);
 
 function lEinstellungenZeichnen() {
-    document.querySelectorAll('#l-palette .gen-baustein').forEach(k => k.classList.toggle('an', L.auswahl.includes(k.dataset.code)));
+    document.querySelectorAll('#l-palette .gen-baustein, #l-palette-live .gen-baustein').forEach(k => k.classList.toggle('an', L.auswahl.includes(k.dataset.code)));
     document.querySelectorAll('[data-l-zeichen]').forEach(b => b.classList.toggle('an', b.dataset.lZeichen === L.zeichen));
     document.querySelectorAll('[data-l-stufe]').forEach(b => b.classList.toggle('an', Number(b.dataset.lStufe) === L.stufe));
     document.querySelectorAll('[data-l-zeit]').forEach(b => b.classList.toggle('an', Number(b.dataset.lZeit) === L.zeit));
@@ -169,6 +179,7 @@ function lEinstellungenZeichnen() {
     $('l-punkte-text').textContent = L.art === 'diktat'
         ? 'Punkte: richtiger Takt +4, Fehlversuch −1, wer zuerst fertig ist +5 / +3 / +1.'
         : 'Punkte: richtiges Kästchen +2, Fehler −1, wer zuerst fertig ist +5 / +3 / +1.';
+    lAutoSchalterZeichnen();
     const e = eigeneLesen(L.eigene, L.zeichen);
     $('l-eigene-info').textContent = !L.eigene.trim() ? '' : e.fehler ? '– ' + e.fehler : `– ${e.aufgaben.length} ${e.aufgaben.length === 1 ? 'Rhythmus' : 'Rhythmen'} = ${e.aufgaben.length} Runden`;
 }
@@ -202,15 +213,73 @@ function lPlanBauen() {
     if (L.eigene.trim()) {
         const e = eigeneLesen(L.eigene, L.zeichen);
         if (e.fehler) { zeigeToast(e.fehler, 'danger'); return null; }
-        return e.aufgaben;
+        return e.aufgaben.map(a => Object.assign({ gewuerfelt: false }, a));
     }
     const plan = [];
     for (let r = 0; r < L.runden; r++) {
-        const w = zkTakteWuerfeln(L.auswahl, L.zeichen, L.takte);
-        if (w.fehler) { zeigeToast(w.fehler, 'danger'); return null; }
-        plan.push({ zeichen: L.zeichen, kuerzel: zkStueckKuerzel({ takte: w.takte }) });
+        const a = lWuerfeln();
+        if (!a) return null;
+        plan.push(a);
     }
     return plan;
+}
+function lWuerfeln() {
+    const w = zkTakteWuerfeln(L.auswahl, L.zeichen, L.takte);
+    if (w.fehler) { zeigeToast(w.fehler, 'danger'); return null; }
+    return { zeichen: L.zeichen, kuerzel: zkStueckKuerzel({ takte: w.takte }), gewuerfelt: true };
+}
+
+/* Im Spiel aendern: Runden und Notenwerte. Gespielte Runden (und die
+   laufende) bleiben, wie sie sind; nur was noch kommt, wird angepasst. */
+function lNaechsteRundeIndex() {
+    const st = lehrerStand || {};
+    return st.phase === 'warten' || !st.runde ? 0 : st.runde;   // runde ist 1-basiert = Index der naechsten
+}
+const L_ZEITEN = [0, 30, 45, 60, 90, 120, 180, 300];
+function lRundenLiveZeichnen() {
+    $('l-runden-live').textContent = L.plan.length || L.runden;
+    $('l-zeit-live').textContent = !L.zeit ? 'ohne' : L.zeit < 120 ? L.zeit + ' s' : zsZeit(L.zeit);
+}
+/* Zeitlimit im Spiel: gilt sofort - in der laufenden Runde ab ihrem Start
+   gerechnet (ist die neue Zeit schon um, wird gleich ausgewertet). */
+async function lZeitAendern(schritt) {
+    const i = Math.max(0, L_ZEITEN.indexOf(L.zeit));
+    L.zeit = L_ZEITEN[Math.max(0, Math.min(L_ZEITEN.length - 1, i + schritt))];
+    lSpeichern();
+    lEinstellungenZeichnen();
+    lRundenLiveZeichnen();
+    if (lehrerStand && lehrerStand.phase === 'runde') await lehrerSetzen({ dauer: L.zeit });
+    lAutoPlanen();
+}
+async function lRundenAendern(schritt) {
+    const st = lehrerStand;
+    if (!st || st.phase === 'ende') return;
+    const min = Math.max(1, st.phase === 'warten' ? 1 : st.runde);
+    const ziel = Math.max(min, Math.min(15, L.plan.length + schritt));
+    if (ziel === L.plan.length) return;
+    while (L.plan.length < ziel) { const a = lWuerfeln(); if (!a) break; L.plan.push(a); }
+    L.plan.length = Math.min(L.plan.length, ziel);
+    if (!L.eigene.trim()) L.runden = L.plan.length;
+    lSpeichern();
+    lEinstellungenZeichnen();
+    lRundenLiveZeichnen();
+    await lehrerSetzen({ runden: L.plan.length });
+    lZeichnen();
+    lAutoPlanen();
+}
+function lRestNeuWuerfeln() {
+    const ab = lNaechsteRundeIndex();
+    let neu = 0;
+    for (let i = ab; i < L.plan.length; i++) {
+        if (L.plan[i].gewuerfelt === false) continue;
+        const a = lWuerfeln();
+        if (!a) return;
+        L.plan[i] = a; neu++;
+    }
+    lSpeichern();
+    $('l-palette-live-text').textContent = neu
+        ? `Gilt ab der nächsten Runde – ${neu} ${neu === 1 ? 'Runde' : 'Runden'} neu gewürfelt.`
+        : 'Gilt für das nächste Spiel (keine gewürfelte Runde mehr übrig).';
 }
 
 function lRaumVerbinden() {
@@ -297,6 +366,80 @@ function lZeichnen() {
         $('l-phase-info').textContent = 'Endstand';
         lEndeZeichnen();
     }
+    zeigen('l-auto-leiste', st.phase === 'warten' || st.phase === 'runde' || st.phase === 'auswertung');
+    lRundenLiveZeichnen();
+    // Neue Phase (oder neue Runde): Automatik von vorn planen. Andere Anlaesse
+    // zum Neuzeichnen (Kind kommt dazu, Fenstergroesse) lassen den Countdown laufen.
+    const schritt = `${st.phase}:${st.runde}`;
+    if (schritt !== lAutoSchritt) {
+        lAutoSchritt = schritt;
+        lGehoert = 0; lNachgehoert = false;
+        lAutoPlanen();
+    }
+}
+
+/* ---------- Automatik ---------- */
+function lAutoSchalterZeichnen() {
+    document.querySelectorAll('[data-l-modus]').forEach(c => { c.checked = !!L[c.dataset.lModus]; });
+    document.querySelectorAll('.l-pause-anzeige').forEach(el => { el.textContent = L.pause ? L.pause + ' s' : 'auto'; });
+    document.querySelectorAll('.l-anzahl-anzeige').forEach(el => { el.textContent = L.anzahl + '×'; });
+    document.querySelectorAll('.l-aufloesung-anzeige').forEach(el => { el.textContent = L.aufloesung + ' s'; });
+    document.querySelectorAll('.l-nur-diktat').forEach(el => el.classList.toggle('hidden', L.art !== 'diktat'
+        || (el.classList.contains('l-nur-auto') && !L.automodus)));
+    document.querySelectorAll('.l-nur-auto:not(.l-nur-diktat)').forEach(el => el.classList.toggle('hidden', !L.automodus));
+}
+function lAutoModusGeaendert() {
+    lSpeichern();
+    lAutoSchalterZeichnen();
+    lAutoAnhalten = false;
+    lAutoPlanen();
+}
+function lPauseSekunden(stueck) {
+    if (L.pause) return L.pause;
+    return Math.max(3, Math.round(rhythmusZeitplan(stueck, { bpm: Metronom.bpm(), vorlaufTakte: 0 }).dauer));
+}
+function lAutoZeigen(text) {
+    zeigen('l-auto', !!text);
+    $('l-auto-text').textContent = text;
+    $('l-auto-pause').innerHTML = lAutoAnhalten ? '<i class="fa-solid fa-play"></i> Weiter' : '<i class="fa-solid fa-pause"></i> Anhalten';
+}
+function lAutoNach(sek, text, tat) {
+    const ziel = Date.now() + sek * 1000;
+    const zeigenText = () => lAutoZeigen(text.replace('{s}', Math.max(1, Math.ceil((ziel - Date.now()) / 1000))));
+    zeigenText();
+    lAutoTicker = setInterval(zeigenText, 250);
+    lAutoTimer = setTimeout(() => { clearInterval(lAutoTicker); lAutoTimer = lAutoTicker = null; tat(); }, sek * 1000);
+}
+function lAutoAus() { clearTimeout(lAutoTimer); clearInterval(lAutoTicker); lAutoTimer = lAutoTicker = null; }
+function lAutoPlanen() {
+    lAutoAus();
+    const st = lehrerStand;
+    const diktat = st && st.art === 'diktat';
+    const aktiv = L.automodus || (diktat && L.wiederholen);
+    if (!st || !L.code || !aktiv || (st.phase !== 'runde' && st.phase !== 'auswertung')) { lAutoZeigen(''); return; }
+    if (lAutoAnhalten) { lAutoZeigen('Automatik angehalten.'); return; }
+    if (lSpielt && Vorklatschen.istAn()) { lAutoZeigen(st.phase === 'auswertung' ? 'So klang es …' : 'Hört gut zu …'); return; }
+    const stueck = st.aufgabe ? zkStueckAusKuerzel(st.aufgabe, st.zeichen) : null;
+    if (st.phase === 'runde') {
+        if (!diktat) {
+            lAutoZeigen(st.dauer > 0 ? 'Automodus: Die Runde endet, wenn die Zeit um ist oder alle fertig sind.'
+                : 'Automodus ohne Zeitlimit: Die Runde wartet, bis alle fertig sind – oben eine Zeit einstellen.');
+            return;
+        }
+        const pause = lPauseSekunden(stueck);
+        if (lGehoert === 0) return lAutoNach(2, 'Gleich wird vorgespielt …', lVorspielen);
+        if (L.automodus && lGehoert >= L.anzahl) return lAutoNach(pause, 'Runde endet in {s} s', lAuswerten);
+        const stand = L.automodus ? `${lGehoert} von ${L.anzahl}` : `${lGehoert}× gehört`;
+        return lAutoNach(pause, `Nochmal in {s} s (${stand})`, lVorspielen);
+    }
+    // Auswertung
+    if (!L.automodus) { lAutoZeigen(''); return; }
+    if (diktat && !lNachgehoert) return lAutoNach(1.5, 'Gleich nochmal mit Noten …', () => {
+        lNachgehoert = true; lSpielt = true;
+        Vorklatschen.starten(stueck, $('l-loesung'), false, 0, null, null);
+        lAutoPlanen();
+    });
+    lAutoNach(L.aufloesung, (st.runde >= st.runden ? 'Endstand' : 'Nächste Runde') + ' in {s} s', lWeiter);
 }
 
 function lFortschrittZeichnen() {
@@ -337,8 +480,18 @@ function lWerte() {
 function lVorspielen() {
     const st = lehrerStand;
     if (!st || st.phase !== 'runde' || st.art !== 'diktat') return;
-    // Laeuft es schon, stoppt derselbe Knopf
+    // Laeuft es schon, stoppt derselbe Knopf - und haelt die Automatik an
+    if (lSpielt && Vorklatschen.istAn()) {
+        lSpielt = false;
+        Vorklatschen.stoppen(true);
+        if (L.wiederholen || L.automodus) { lAutoAnhalten = true; lAutoPlanen(); }
+        return;
+    }
+    lAutoAnhalten = false;
+    lSpielt = true;
+    lGehoert++;
     Vorklatschen.starten(zkStueckAusKuerzel(st.aufgabe, st.zeichen), $('l-klang-host'), false, 0, null, null);
+    lAutoPlanen();
 }
 
 async function lRundeStarten() {
@@ -388,6 +541,7 @@ async function lAuswerten() {
             wertung[id].platz = i > 0 && wertung[reihe[i - 1]].gesamt === wertung[id].gesamt ? wertung[reihe[i - 1]].platz : i + 1;
         });
         lSpeichern();
+        lSpielt = false;
         if (Vorklatschen.istAn()) Vorklatschen.stoppen(true);
         await lehrerSetzen({ phase: 'auswertung', wertung });
         if (standAbo) { standAbo(); standAbo = null; }
@@ -419,6 +573,9 @@ function lEndeZeichnen() {
 
 async function lWeiter() {
     const st = lehrerStand;
+    if (st.phase !== 'auswertung') return;   // Automatik und Knopf zugleich
+    lSpielt = false;
+    if (Vorklatschen.istAn()) Vorklatschen.stoppen(true);
     if (st.runde >= st.runden) {
         await lehrerSetzen({ phase: 'ende' });
         lZeichnen();
@@ -447,17 +604,24 @@ async function lSchliessen() {
 function lehrerAufbauen() {
     zeigen('lehrer', true);
     zeigen('zurueck-link', true);   // nur fuer die Lehrkraft - Kinder sollen im Spiel bleiben
-    const palette = $('l-palette');
-    ZS_BAUSTEINE.forEach(b => {
-        const k = document.createElement('button');
-        k.type = 'button'; k.className = 'gen-baustein'; k.dataset.code = b.code; k.title = b.wort;
-        k.innerHTML = bausteinSvg(b);
-        k.addEventListener('click', () => {
-            L.auswahl = L.auswahl.includes(b.code) ? L.auswahl.filter(c => c !== b.code) : [...L.auswahl, b.code];
-            lSpeichern(); lEinstellungenZeichnen();
+    // Zwei Paletten: in den Einstellungen und im Spiel (dort wird der Rest neu gewuerfelt)
+    for (const [palette, live] of [[$('l-palette'), false], [$('l-palette-live'), true]]) {
+        ZS_BAUSTEINE.forEach(b => {
+            const k = document.createElement('button');
+            k.type = 'button'; k.className = 'gen-baustein'; k.dataset.code = b.code; k.title = b.wort;
+            k.innerHTML = bausteinSvg(b);
+            k.addEventListener('click', () => {
+                const neu = L.auswahl.includes(b.code) ? L.auswahl.filter(c => c !== b.code) : [...L.auswahl, b.code];
+                if (live && !neu.length) { zeigeToast('Mindestens ein Notenwert muss bleiben.', 'danger'); return; }
+                L.auswahl = neu;
+                lSpeichern(); lEinstellungenZeichnen();
+                if (live) lRestNeuWuerfeln();
+            });
+            palette.appendChild(k);
         });
-        palette.appendChild(k);
-    });
+    }
+    document.querySelectorAll('[data-l-zeit-live]').forEach(k => k.addEventListener('click', () => lZeitAendern(Number(k.dataset.lZeitLive))));
+    document.querySelectorAll('[data-l-runden-live]').forEach(k => gedrueckthalten(k, () => lRundenAendern(Number(k.dataset.lRundenLive))));
     document.querySelectorAll('[data-l-zeichen]').forEach(b => b.addEventListener('click', () => { L.zeichen = b.dataset.lZeichen; lSpeichern(); lEinstellungenZeichnen(); }));
     document.querySelectorAll('[data-l-stufe]').forEach(b => b.addEventListener('click', () => { L.stufe = Number(b.dataset.lStufe); lSpeichern(); lEinstellungenZeichnen(); }));
     document.querySelectorAll('[data-l-zeit]').forEach(b => b.addEventListener('click', () => { L.zeit = Number(b.dataset.lZeit); lSpeichern(); lEinstellungenZeichnen(); }));
@@ -471,6 +635,34 @@ function lehrerAufbauen() {
     $('l-klatsch').addEventListener('change', e => { L.klatsch = e.target.checked; lSpeichern(); });
     document.querySelectorAll('[data-l-art]').forEach(b => b.addEventListener('click', () => { L.art = b.dataset.lArt; lSpeichern(); lEinstellungenZeichnen(); }));
     $('l-hoeren-btn').addEventListener('click', lVorspielen);
+    document.querySelectorAll('[data-l-modus]').forEach(c => c.addEventListener('change', () => { L[c.dataset.lModus] = c.checked; lAutoModusGeaendert(); }));
+    const stufe = (liste, wert, r) => liste[Math.max(0, Math.min(liste.length - 1, Math.max(0, liste.indexOf(wert)) + r))];
+    document.querySelectorAll('[data-l-pause]').forEach(k => k.addEventListener('click', () => { L.pause = stufe(L_PAUSEN, L.pause, Number(k.dataset.lPause)); lAutoModusGeaendert(); }));
+    document.querySelectorAll('[data-l-aufloesung]').forEach(k => k.addEventListener('click', () => { L.aufloesung = stufe(L_AUFLOESUNG, L.aufloesung, Number(k.dataset.lAufloesung)); lAutoModusGeaendert(); }));
+    document.querySelectorAll('[data-l-anzahl]').forEach(k => k.addEventListener('click', () => { L.anzahl = Math.max(1, Math.min(10, L.anzahl + Number(k.dataset.lAnzahl))); lAutoModusGeaendert(); }));
+    $('l-auto-pause').addEventListener('click', () => {
+        lAutoAnhalten = !lAutoAnhalten;
+        if (lAutoAnhalten && lSpielt && Vorklatschen.istAn()) { lSpielt = false; Vorklatschen.stoppen(true); }
+        lAutoPlanen();
+    });
+    // Tastatur am Beamer: Leertaste vorspielen/stoppen, Pfeil rechts weiter
+    // (Lobby: Spiel starten, Auswertung: naechste Runde bzw. Endstand)
+    document.addEventListener('keydown', e => {
+        if (!L.code || !lehrerStand || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'checkbox') return;
+        const st = lehrerStand;
+        if (e.key === ' ' && st.phase === 'runde' && st.art === 'diktat') {
+            if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+            lVorspielen();
+        } else if (e.key === 'ArrowRight' && st.phase === 'auswertung') lWeiter();
+        else if (e.key === 'ArrowRight' && st.phase === 'warten' && !$('l-start-btn').disabled) lRundeStarten();
+        else return;
+        e.preventDefault();
+    });
+    // Vorspielen zu Ende: naechsten Schritt planen
+    Vorklatschen.aufZustandAendern((laeuft) => {
+        if (!laeuft) setTimeout(() => { if (lSpielt && !Vorklatschen.istAn()) { lSpielt = false; lAutoPlanen(); } }, 0);
+    });
     Metronom.bauen($('l-metronom'), () => (lehrerStand && lehrerStand.zeichen) || '4/4');
     $('l-eigene').value = L.eigene;
     if (L.eigene.trim()) $('l-eigene').closest('details').open = true;

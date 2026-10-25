@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=64">
-<link rel="stylesheet" href="css/klasse.css?v=64">
+<link rel="stylesheet" href="css/stil.css?v=66">
+<link rel="stylesheet" href="css/klasse.css?v=66">
 </head>
 <body>
 
@@ -76,6 +76,28 @@
             <label class="chip zk-abstand"><input type="checkbox" id="l-notenlinien"><span>Notenlinien</span></label>
             <label class="chip zk-abstand" id="l-klatsch-chip" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="l-klatsch"><span>Klatschmodus</span></label>
         </div>
+        <div class="leiste" style="margin-bottom:.6rem;">
+            <label class="chip l-nur-diktat" title="Der Beamer spielt die Aufgabe nach jeder Pause von selbst neu vor, bis die Runde endet"><input type="checkbox" data-l-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Vorspielen wiederholen</span></label>
+            <label class="chip" title="Das Spiel läuft von allein: Beim Diktat wird so oft vorgespielt wie eingestellt, dann endet die Runde. Auflösung zeigen (und vorspielen), danach die nächste Runde, am Ende der Endstand. Zeit und „alle fertig“ beenden eine Runde früher."><input type="checkbox" data-l-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
+            <span class="stufen l-nur-diktat" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
+                <span class="stufen-name">Pause</span>
+                <button type="button" class="btn" data-l-pause="-1" aria-label="Kürzere Pause">−</button>
+                <span class="stufen-wert l-pause-anzeige">auto</span>
+                <button type="button" class="btn" data-l-pause="1" aria-label="Längere Pause">+</button>
+            </span>
+            <span class="stufen l-nur-diktat l-nur-auto" title="Automodus: so oft wird vorgespielt, dann endet die Runde (nach einer letzten Pause)">
+                <span class="stufen-name">Vorspielen</span>
+                <button type="button" class="btn" data-l-anzahl="-1" aria-label="Seltener">−</button>
+                <span class="stufen-wert l-anzahl-anzeige">3×</span>
+                <button type="button" class="btn" data-l-anzahl="1" aria-label="Öfter">+</button>
+            </span>
+            <span class="stufen l-nur-auto" title="Automodus: so lange steht die Auflösung da, bevor die nächste Runde startet">
+                <span class="stufen-name">Auflösung</span>
+                <button type="button" class="btn" data-l-aufloesung="-1" aria-label="Kürzer">−</button>
+                <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
+                <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
+            </span>
+        </div>
         <details class="zk-eigene">
             <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
             <p class="zs-hinweis" style="margin:.5rem 0;">
@@ -100,6 +122,56 @@
             <span class="zk-timer hidden" id="l-timer"></span>
             <button type="button" class="btn hidden" id="l-qr-klein-btn" title="QR-Code zeigen"><i class="fa-solid fa-qrcode"></i></button>
             <button type="button" class="btn" id="l-schliessen-btn" title="Raum schließen"><i class="fa-solid fa-xmark"></i> Schließen</button>
+        </div>
+        <!-- Automatik waehrend des Spiels (gleiche Schalter wie in den Einstellungen) -->
+        <div class="hidden" id="l-auto-leiste">
+            <div class="dk-auto-leiste">
+            <span class="stufen" title="Wie viele Runden das Spiel hat - lässt sich auch mitten im Spiel ändern">
+                <span class="stufen-name">Runden</span>
+                <button type="button" class="btn" data-l-runden-live="-1" aria-label="Weniger Runden">−</button>
+                <span class="stufen-wert" id="l-runden-live">5</span>
+                <button type="button" class="btn" data-l-runden-live="1" aria-label="Mehr Runden">+</button>
+            </span>
+            <span class="stufen" title="Zeitlimit je Runde - danach wird ausgewertet, auch wenn noch nicht alle fertig sind. Gilt sofort, auch für die laufende Runde">
+                <span class="stufen-name">Zeit</span>
+                <button type="button" class="btn" data-l-zeit-live="-1" aria-label="Weniger Zeit">−</button>
+                <span class="stufen-wert" id="l-zeit-live">90 s</span>
+                <button type="button" class="btn" data-l-zeit-live="1" aria-label="Mehr Zeit">+</button>
+            </span>
+            <details class="zk-werte-live">
+                <summary class="btn" title="Welche Noten- und Pausenwerte vorkommen - gilt ab der nächsten Runde"><i class="fa-solid fa-music"></i> Notenwerte <i class="fa-solid fa-caret-down"></i></summary>
+                <div class="zk-werte-kasten">
+                    <div class="leiste" id="l-palette-live"></div>
+                    <p class="zs-hinweis" id="l-palette-live-text" style="margin:.4rem 0 0;">Gilt ab der nächsten Runde.</p>
+                </div>
+            </details>
+            </div>
+            <div class="dk-auto-leiste">
+            <label class="chip l-nur-diktat" title="Der Beamer spielt die Aufgabe nach jeder Pause von selbst neu vor, bis die Runde endet"><input type="checkbox" data-l-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Vorspielen wiederholen</span></label>
+            <label class="chip" title="Das Spiel läuft von allein: Beim Diktat wird so oft vorgespielt wie eingestellt, dann endet die Runde. Auflösung zeigen (und vorspielen), danach die nächste Runde, am Ende der Endstand. Zeit und „alle fertig“ beenden eine Runde früher."><input type="checkbox" data-l-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
+            <span class="stufen l-nur-diktat" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
+                <span class="stufen-name">Pause</span>
+                <button type="button" class="btn" data-l-pause="-1" aria-label="Kürzere Pause">−</button>
+                <span class="stufen-wert l-pause-anzeige">auto</span>
+                <button type="button" class="btn" data-l-pause="1" aria-label="Längere Pause">+</button>
+            </span>
+            <span class="stufen l-nur-diktat l-nur-auto" title="Automodus: so oft wird vorgespielt, dann endet die Runde (nach einer letzten Pause)">
+                <span class="stufen-name">Vorspielen</span>
+                <button type="button" class="btn" data-l-anzahl="-1" aria-label="Seltener">−</button>
+                <span class="stufen-wert l-anzahl-anzeige">3×</span>
+                <button type="button" class="btn" data-l-anzahl="1" aria-label="Öfter">+</button>
+            </span>
+            <span class="stufen l-nur-auto" title="Automodus: so lange steht die Auflösung da, bevor die nächste Runde startet">
+                <span class="stufen-name">Auflösung</span>
+                <button type="button" class="btn" data-l-aufloesung="-1" aria-label="Kürzer">−</button>
+                <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
+                <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
+            </span>
+            </div>
+            <div class="dk-auto hidden" id="l-auto">
+                <span id="l-auto-text"></span>
+                <button type="button" class="btn" id="l-auto-pause"></button>
+            </div>
         </div>
 
         <!-- Lobby -->
@@ -226,12 +298,12 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=64"></script>
-<script src="js/vendor/qrcode.min.js?v=64"></script>
-<script src="js/noten.js?v=64"></script>
-<script src="js/zaehlkern.js?v=64"></script>
-<script src="js/editor.js?v=64"></script>
-<script src="js/audio.js?v=64"></script>
-<script type="module" src="js/klasse.js?v=64"></script>
+<script src="js/version.js?v=66"></script>
+<script src="js/vendor/qrcode.min.js?v=66"></script>
+<script src="js/noten.js?v=66"></script>
+<script src="js/zaehlkern.js?v=66"></script>
+<script src="js/editor.js?v=66"></script>
+<script src="js/audio.js?v=66"></script>
+<script type="module" src="js/klasse.js?v=66"></script>
 </body>
 </html>

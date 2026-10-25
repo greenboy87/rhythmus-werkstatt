@@ -236,8 +236,8 @@ function dkEinstellungenZeichnen() {
     document.getElementById('dk-klatsch').checked = dk.klatsch;
     document.getElementById('dk-ueberlang').checked = dk.ueberlang;
     document.querySelectorAll('[data-dk-runden]').forEach(b => b.classList.toggle('an', (b.dataset.dkRunden === 'ja') === dk.runden));
-    document.getElementById('dk-rundenzahl-anzeige').textContent = dk.rundenZahl;
-    document.getElementById('dk-rundenzahl-feld').classList.toggle('hidden', !dk.runden);
+    document.querySelectorAll('.dk-rundenzahl-anzeige').forEach(el => { el.textContent = dk.rundenZahl; });
+    document.querySelectorAll('.dk-rundenzahl-feld').forEach(el => el.classList.toggle('hidden', !dk.runden));
     // Automatik steht zweimal da (Einstellungen und unter dem Spiel) - beide gleich
     document.querySelectorAll('[data-dk-modus]').forEach(c => { c.checked = !!dk[c.dataset.dkModus]; });
     document.querySelectorAll('.dk-pause-anzeige').forEach(el => { el.textContent = dk.pause ? dk.pause + ' s' : 'auto'; });
@@ -366,8 +366,7 @@ function spieleAufbauen() {
         if (dkRunde && !dkRunde.fertig && dkRunde.regeln.runden) dkRunde.regeln.zahl = Math.max(dkRunde.nr, dk.rundenZahl);
         dkSpeichern(); dkEinstellungenZeichnen(); dkStandZeichnen();
     };
-    gedrueckthalten(document.getElementById('dk-rundenzahl-minus'), () => rundenzahl(-1));
-    gedrueckthalten(document.getElementById('dk-rundenzahl-plus'), () => rundenzahl(1));
+    document.querySelectorAll('[data-dk-rundenzahl]').forEach(k => gedrueckthalten(k, () => rundenzahl(Number(k.dataset.dkRundenzahl))));
     document.querySelectorAll('[data-dk-modus]').forEach(c => c.addEventListener('change', () => { dk[c.dataset.dkModus] = c.checked; dkModusGeaendert(); }));
     document.querySelectorAll('[data-dk-pause]').forEach(k => k.addEventListener('click', () => {
         const i = Math.max(0, DK_PAUSEN.indexOf(dk.pause));

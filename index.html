@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=64">
-<link rel="stylesheet" href="css/druck.css?v=64">
+<link rel="stylesheet" href="css/stil.css?v=66">
+<link rel="stylesheet" href="css/druck.css?v=66">
 </head>
 <body>
 
@@ -565,11 +565,11 @@
                 <button type="button" class="btn" data-dk-runden="ja" title="In Runden spielen, mit Ergebnis am Ende jeder Runde">Runden</button>
                 <button type="button" class="btn" data-dk-runden="nein" title="Ohne Runden: beliebig lange weiterspielen">Endlos</button>
             </span>
-            <span class="stufen" id="dk-rundenzahl-feld" title="Wie viele Aufgaben eine Runde hat">
+            <span class="stufen dk-rundenzahl-feld" title="Wie viele Aufgaben eine Runde hat - gilt sofort">
                 <span class="stufen-name">Aufgaben je Runde</span>
-                <button type="button" class="btn" id="dk-rundenzahl-minus" aria-label="Weniger Aufgaben">−</button>
-                <span class="stufen-wert" id="dk-rundenzahl-anzeige">5</span>
-                <button type="button" class="btn" id="dk-rundenzahl-plus" aria-label="Mehr Aufgaben">+</button>
+                <button type="button" class="btn" data-dk-rundenzahl="-1" aria-label="Weniger Aufgaben">−</button>
+                <span class="stufen-wert dk-rundenzahl-anzeige">5</span>
+                <button type="button" class="btn" data-dk-rundenzahl="1" aria-label="Mehr Aufgaben">+</button>
             </span>
         </div>
         <div class="leiste" style="margin-bottom:.6rem;">
@@ -600,6 +600,12 @@
             <button type="button" class="btn btn-primär dk-hoeren" id="dk-hoeren-btn"><i class="fa-solid fa-play"></i> Anhören</button>
         </div>
         <div class="dk-auto-leiste">
+            <span class="stufen dk-rundenzahl-feld" title="Wie viele Aufgaben eine Runde hat - gilt sofort">
+                <span class="stufen-name">Runde</span>
+                <button type="button" class="btn" data-dk-rundenzahl="-1" aria-label="Weniger Aufgaben">−</button>
+                <span class="stufen-wert dk-rundenzahl-anzeige">5</span>
+                <button type="button" class="btn" data-dk-rundenzahl="1" aria-label="Mehr Aufgaben">+</button>
+            </span>
             <label class="chip" title="Spielt die Aufgabe von selbst immer wieder vor, bis sie gelöst ist"><input type="checkbox" data-dk-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Wiederholen</span></label>
             <label class="chip" title="Läuft ganz von allein: vorspielen (so oft wie eingestellt), Lösung zeigen und noch einmal vorspielen, dann die nächste Aufgabe"><input type="checkbox" data-dk-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
             <span class="stufen" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
@@ -649,21 +655,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=64"></script>
-<script src="js/noten.js?v=64"></script>
-<script src="js/editor.js?v=64"></script>
-<script src="js/audio.js?v=64"></script>
-<script src="js/generator.js?v=64"></script>
-<script src="js/link.js?v=64"></script>
-<script src="js/vendor/lame.min.js?v=64"></script>
-<script src="js/export.js?v=64"></script>
-<script src="js/pdf.js?v=64"></script>
-<script src="js/app.js?v=64"></script>
-<script src="js/beat.js?v=64"></script>
-<script src="js/drumset.js?v=64"></script>
-<script src="js/zaehlkern.js?v=64"></script>
-<script src="js/zaehlspiel.js?v=64"></script>
-<script src="js/spiele.js?v=64"></script>
-<script src="js/reiter.js?v=64"></script>
+<script src="js/version.js?v=66"></script>
+<script src="js/noten.js?v=66"></script>
+<script src="js/editor.js?v=66"></script>
+<script src="js/audio.js?v=66"></script>
+<script src="js/generator.js?v=66"></script>
+<script src="js/link.js?v=66"></script>
+<script src="js/vendor/lame.min.js?v=66"></script>
+<script src="js/export.js?v=66"></script>
+<script src="js/pdf.js?v=66"></script>
+<script src="js/app.js?v=66"></script>
+<script src="js/beat.js?v=66"></script>
+<script src="js/drumset.js?v=66"></script>
+<script src="js/zaehlkern.js?v=66"></script>
+<script src="js/zaehlspiel.js?v=66"></script>
+<script src="js/spiele.js?v=66"></script>
+<script src="js/reiter.js?v=66"></script>
 </body>
 </html>

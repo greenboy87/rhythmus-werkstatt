@@ -441,6 +441,19 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `zk-aufgabe` (eigener Stand der laufenden Runde). „Schließen“ löscht den
   Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
   Verlinkt im Zähl-Training („Mit der Klasse spielen“).
+  Leiste der Lehrkraft im Raum (`#l-auto-leiste`, Lobby/Runde/Auflösung):
+  Runden −/+ (`lRundenAendern`: hängt gewürfelte Runden an oder kürzt,
+  nie unter die laufende; schreibt `lehrer.runden`), Zeit −/+
+  (`lZeitAendern`, gilt sofort, auch `lehrer.dauer` der laufenden Runde),
+  Notenwerte zum Aufklappen (`#l-palette-live`: würfelt alle noch nicht
+  gespielten gewürfelten Runden neu, `plan[i].gewuerfelt`; eigene Rhythmen
+  bleiben). Automatik (nur Lehrkraft, in `zk-lehrer`): „Vorspielen
+  wiederholen“ (Diktat) und „Automodus“ (Diktat: nach `L.anzahl`-mal
+  Vorspielen + Pause endet die Runde; Auflösung `L.aufloesung` s, beim
+  Diktat mit Noten vorgespielt; dann nächste Runde bzw. Endstand). Zeit und
+  „alle fertig“ beenden eine Runde früher. `lAutoPlanen` plant nur bei
+  neuer Phase/Runde neu (`lAutoSchritt`). Tasten am Beamer: Leertaste
+  vorspielen, → Spiel starten bzw. nächste Runde.
 - `js/spiele.js` - Reiter „Spiele“ (intern weiter `zaehlen`, damit
   `?reiter=zaehlen` und `?ansicht=zaehlen` gültig bleiben): Wahl
   Zählzeiten | Rhythmus-Diktat (`spielZeigen`, `localStorage` `rw-spiel`; in
@@ -452,7 +465,8 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Tempo/Vorlauf über eine zweite `Metronom.bauen`-Leiste (geteilter Stand).
   Modi (in `rw-diktat`, gelten sofort): „Runden | Endlos“ (`dk.runden`,
   wirkt ab der nächsten Runde; endlos wird nichts gemeldet), „Aufgaben je
-  Runde“ (`dk.rundenZahl` 1-50, gilt sofort, Start-Wert `&runden=N` bzw. 5), „Automatisch
+  Runde“ (`dk.rundenZahl` 1-50, gilt sofort, Start-Wert `&runden=N` bzw. 5,
+  auch in der Leiste unter dem Spiel), „Automatisch
   wiederholen“ (spielt nach jeder Pause neu vor, bis gelöst) und „Automodus“
   (`dk.anzahl`-mal vorspielen, Lösung zeigen, mit Noten nochmal vorspielen,
   nächste Aufgabe bzw. Runde - ohne Zutun; eine Runde mit automatischer

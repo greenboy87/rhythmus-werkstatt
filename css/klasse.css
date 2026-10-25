@@ -96,3 +96,13 @@
 #zurueck-link { text-decoration: none; }
 /* Diktat auf dem Tablet: Eingabefeld und Bausteine groesser, damit sie gut zu treffen sind */
 @media (min-width: 600px) { #s-dk { zoom: 1.35; } }
+
+/* Leiste der Lehrkraft im Spiel: Runden, Notenwerte (aufklappbar), Automatik */
+#l-auto-leiste { margin: -.2rem 0 1rem; padding-bottom: .4rem; border-bottom: 1px solid var(--rand-schwach); }
+#l-auto-leiste .dk-auto-leiste { margin: 0 0 .5rem; }
+.zk-werte-live summary { list-style: none; cursor: pointer; font-size: .8rem; padding: .3rem .7rem; }
+.zk-werte-live summary::-webkit-details-marker { display: none; }
+.zk-werte-live[open] summary { border-color: var(--akzent); color: var(--akzent); }
+.zk-werte-live[open] { flex-basis: 100%; }
+.zk-werte-kasten { margin-top: .5rem; padding: .6rem; border: 1px solid var(--rand-schwach); border-radius: 12px; background: var(--bg-erhoben); }
+.zk-werte-kasten .leiste { justify-content: center; }
