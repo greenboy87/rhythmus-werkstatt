@@ -6,8 +6,8 @@
    (Vorklatschen, ohne Notenbild), man baut ihn mit dem Eingabefeld
    (rhythmusEditor, Palette nur aus den gewaehlten Bausteinen) nach und
    prueft Takt fuer Takt (rhythmusGleich - im Klatschmodus gilt eine
-   Viertel mit folgender Pause wie eine Halbe). Runden zu ZS_RUNDE
-   Aufgaben wie im Zaehl-Training. Gewuerfelt wird mit zkTakteWuerfeln
+   Viertel mit folgender Pause wie eine Halbe). Runden zu dk.rundenZahl
+   Aufgaben (Start: &runden=N bzw. 5, wie im Zaehl-Training). Gewuerfelt wird mit zkTakteWuerfeln
    (js/zaehlkern.js). Mit der Klasse: klasse.html (Spielart "diktat").
    ?ansicht=diktat zeigt nur das Diktat (Minispiele) und meldet eingebettet
    jede Runde wie das Zaehl-Training: {typ:'rw-runde-start'} und am Ende
@@ -31,7 +31,7 @@ const SPIELE_TEXT = {
 // ueberlang: zu volle Takte rot markieren und beim Pruefen benennen (aus = schwieriger)
 const dk = {
     auswahl: ['V', 'AA', 'H', 'Vp', 'ASS', 'SSA', 'SSSS', 'pA'], zeichen: '4/4', takte: 1, klatsch: true, ueberlang: true,
-    runden: true, wiederholen: false, automodus: false, pause: 0, anzahl: 3
+    runden: true, rundenZahl: ZS_RUNDE, wiederholen: false, automodus: false, pause: 0, anzahl: 3
 };
 const DK_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30];   // Sekunden, 0 = auto
 let dkAutoTimer = null, dkAutoTicker = null, dkAutoAnhalten = false;
@@ -40,6 +40,9 @@ let dkRunde = null;     // { regeln, nr, ergebnisse: [{erster}], fertig }
 let dkEditor = null, dkSpielt = false;
 
 try { Object.assign(dk, JSON.parse(localStorage.getItem(DK_SCHLUESSEL) || '{}')); } catch (e) { /* egal */ }
+// Gibt die einbettende Seite &runden=N vor, gilt das beim Laden (Beat Vault: 10)
+if (new URLSearchParams(location.search).has('runden')) dk.rundenZahl = ZS_RUNDE;
+const DK_RUNDEN_MAX = 50;
 const dkSpeichern = () => { try { localStorage.setItem(DK_SCHLUESSEL, JSON.stringify(dk)); } catch (e) { /* egal */ } };
 
 /* ---------- Spiel waehlen ---------- */
@@ -73,7 +76,7 @@ function dkTakteVergleichen(eingabe, loesung, klatsch) {
 function dkRundeStarten() {
     if (!dk.auswahl.some(c => ZS_BAUSTEINE.some(b => b.code === c))) { zeigeToast('Wähle mindestens einen Baustein aus.', 'danger'); return; }
     const vorher = dkRunde;
-    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang, runden: dk.runden }, nr: 0, ergebnisse: [], fertig: false, start: Date.now() };
+    dkRunde = { regeln: { auswahl: dk.auswahl.slice(), zeichen: dk.zeichen, takte: dk.takte, klatsch: dk.klatsch, ueberlang: dk.ueberlang, runden: dk.runden, zahl: dk.rundenZahl }, nr: 0, ergebnisse: [], fertig: false, start: Date.now() };
     if (!dkAufgabeErzeugen()) { dkRunde = vorher; return; }
     if (dk.runden) zsMelden({ typ: 'rw-runde-start' });
 }
@@ -208,7 +211,7 @@ function dkFertig(geloest) {
     const a = dkAufgabe;
     a.fertig = true; a.geloest = geloest;
     dkRunde.ergebnisse.push({ erster: !geloest && a.versuche === 1, geschafft: !geloest });
-    if (dkRunde.regeln.runden && dkRunde.nr >= ZS_RUNDE) {
+    if (dkRunde.regeln.runden && dkRunde.nr >= dkRunde.regeln.zahl) {
         const r = dkRunde, erg = r.ergebnisse;
         r.fertig = true;
         const punkte = erg.reduce((s, e) => s + (e.erster ? 1 : e.geschafft ? 0.5 : 0), 0);
@@ -233,11 +236,13 @@ function dkEinstellungenZeichnen() {
     document.getElementById('dk-klatsch').checked = dk.klatsch;
     document.getElementById('dk-ueberlang').checked = dk.ueberlang;
     document.querySelectorAll('[data-dk-runden]').forEach(b => b.classList.toggle('an', (b.dataset.dkRunden === 'ja') === dk.runden));
-    document.getElementById('dk-wiederholen').checked = dk.wiederholen;
-    document.getElementById('dk-automodus').checked = dk.automodus;
-    document.getElementById('dk-pause-anzeige').textContent = dk.pause ? dk.pause + ' s' : 'auto';
-    document.getElementById('dk-anzahl-anzeige').textContent = dk.anzahl + '×';
-    document.getElementById('dk-anzahl-feld').classList.toggle('hidden', !dk.automodus);
+    document.getElementById('dk-rundenzahl-anzeige').textContent = dk.rundenZahl;
+    document.getElementById('dk-rundenzahl-feld').classList.toggle('hidden', !dk.runden);
+    // Automatik steht zweimal da (Einstellungen und unter dem Spiel) - beide gleich
+    document.querySelectorAll('[data-dk-modus]').forEach(c => { c.checked = !!dk[c.dataset.dkModus]; });
+    document.querySelectorAll('.dk-pause-anzeige').forEach(el => { el.textContent = dk.pause ? dk.pause + ' s' : 'auto'; });
+    document.querySelectorAll('.dk-anzahl-anzeige').forEach(el => { el.textContent = dk.anzahl + '×'; });
+    document.querySelectorAll('.dk-anzahl-feld').forEach(el => el.classList.toggle('hidden', !dk.automodus));
 }
 // Automatik-Schalter gelten sofort (nicht erst ab der naechsten Runde)
 function dkModusGeaendert() {
@@ -257,7 +262,7 @@ function dkStandZeichnen() {
     const erste = dkRunde.ergebnisse.filter(e => e.erster).length;
     const runden = dkRunde.regeln.runden;
     document.getElementById('dk-stand').innerHTML =
-        `<span><b>Aufgabe ${dkRunde.nr}${runden ? ' von ' + ZS_RUNDE : ''}</b> · ${dkRunde.regeln.zeichen} · ${dkRunde.regeln.takte} ${dkRunde.regeln.takte === 1 ? 'Takt' : 'Takte'}</span>` +
+        `<span><b>Aufgabe ${dkRunde.nr}${runden ? ' von ' + dkRunde.regeln.zahl : ''}</b> · ${dkRunde.regeln.zeichen} · ${dkRunde.regeln.takte} ${dkRunde.regeln.takte === 1 ? 'Takt' : 'Takte'}</span>` +
         `<span>Angehört <b>${a.gehoert}×</b></span>` +
         `<span>Versuche <b class="${a.versuche > 1 ? 'zs-rot' : ''}">${a.versuche}</b></span>` +
         `<span>Beim ersten Mal richtig <b>${erste}${runden ? '' : ' von ' + dkRunde.ergebnisse.length}</b></span>`;
@@ -304,7 +309,7 @@ function dkZeichnen() {
             : a.versuche === 1 ? '<b>Perfekt!</b> Beim ersten Versuch richtig.' : `<b>Geschafft</b> – im ${a.versuche}. Versuch.`;
         if (r.fertig) {
             const erste = r.ergebnisse.filter(e => e.erster).length;
-            text += `<br><span class="zs-runde"><b>Runde geschafft: ${erste} von ${ZS_RUNDE}</b> beim ersten Versuch richtig</span>`;
+            text += `<br><span class="zs-runde"><b>Runde geschafft: ${erste} von ${r.regeln.zahl}</b> beim ersten Versuch richtig</span>`;
         }
         document.getElementById('dk-fertig-text').innerHTML = text;
         document.getElementById('dk-weiter-btn').innerHTML = r.fertig
@@ -355,17 +360,24 @@ function spieleAufbauen() {
     document.getElementById('dk-klatsch').addEventListener('change', e => { dk.klatsch = e.target.checked; dkGeaendert(); });
     document.getElementById('dk-ueberlang').addEventListener('change', e => { dk.ueberlang = e.target.checked; dkGeaendert(); dkUeberlangZeigen(); });
     document.querySelectorAll('[data-dk-runden]').forEach(b => b.addEventListener('click', () => { dk.runden = b.dataset.dkRunden === 'ja'; dkGeaendert(); dkZeichnen(); }));
-    document.getElementById('dk-wiederholen').addEventListener('change', e => { dk.wiederholen = e.target.checked; dkModusGeaendert(); });
-    document.getElementById('dk-automodus').addEventListener('change', e => { dk.automodus = e.target.checked; dkModusGeaendert(); });
-    const pauseSchritt = (r) => {
-        const i = Math.max(0, DK_PAUSEN.indexOf(dk.pause));
-        dk.pause = DK_PAUSEN[Math.max(0, Math.min(DK_PAUSEN.length - 1, i + r))];
-        dkModusGeaendert();
+    // Gilt sofort, auch fuer die laufende Runde (aber nie kuerzer als schon gespielt)
+    const rundenzahl = (r) => {
+        dk.rundenZahl = Math.max(1, Math.min(DK_RUNDEN_MAX, dk.rundenZahl + r));
+        if (dkRunde && !dkRunde.fertig && dkRunde.regeln.runden) dkRunde.regeln.zahl = Math.max(dkRunde.nr, dk.rundenZahl);
+        dkSpeichern(); dkEinstellungenZeichnen(); dkStandZeichnen();
     };
-    document.getElementById('dk-pause-minus').addEventListener('click', () => pauseSchritt(-1));
-    document.getElementById('dk-pause-plus').addEventListener('click', () => pauseSchritt(1));
-    document.getElementById('dk-anzahl-minus').addEventListener('click', () => { dk.anzahl = Math.max(1, dk.anzahl - 1); dkModusGeaendert(); });
-    document.getElementById('dk-anzahl-plus').addEventListener('click', () => { dk.anzahl = Math.min(10, dk.anzahl + 1); dkModusGeaendert(); });
+    gedrueckthalten(document.getElementById('dk-rundenzahl-minus'), () => rundenzahl(-1));
+    gedrueckthalten(document.getElementById('dk-rundenzahl-plus'), () => rundenzahl(1));
+    document.querySelectorAll('[data-dk-modus]').forEach(c => c.addEventListener('change', () => { dk[c.dataset.dkModus] = c.checked; dkModusGeaendert(); }));
+    document.querySelectorAll('[data-dk-pause]').forEach(k => k.addEventListener('click', () => {
+        const i = Math.max(0, DK_PAUSEN.indexOf(dk.pause));
+        dk.pause = DK_PAUSEN[Math.max(0, Math.min(DK_PAUSEN.length - 1, i + Number(k.dataset.dkPause)))];
+        dkModusGeaendert();
+    }));
+    document.querySelectorAll('[data-dk-anzahl]').forEach(k => k.addEventListener('click', () => {
+        dk.anzahl = Math.max(1, Math.min(10, dk.anzahl + Number(k.dataset.dkAnzahl)));
+        dkModusGeaendert();
+    }));
     document.getElementById('dk-auto-pause').addEventListener('click', () => {
         dkAutoAnhalten = !dkAutoAnhalten;
         if (dkAutoAnhalten) dkStoppen();

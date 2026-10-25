@@ -450,8 +450,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `rhythmusEditor(…, erlaubt)` (Palette nur aus den gewählten Bausteinen),
   Prüfen je Takt mit `rhythmusGleich` (Klatschmodus), Runden zu `ZS_RUNDE`.
   Tempo/Vorlauf über eine zweite `Metronom.bauen`-Leiste (geteilter Stand).
-  Modi (in `rw-diktat`, gelten sofort): „Runden zu 5 | Endlos“ (`dk.runden`,
-  wirkt ab der nächsten Runde; endlos wird nichts gemeldet), „Automatisch
+  Modi (in `rw-diktat`, gelten sofort): „Runden | Endlos“ (`dk.runden`,
+  wirkt ab der nächsten Runde; endlos wird nichts gemeldet), „Aufgaben je
+  Runde“ (`dk.rundenZahl` 1-50, gilt sofort, Start-Wert `&runden=N` bzw. 5), „Automatisch
   wiederholen“ (spielt nach jeder Pause neu vor, bis gelöst) und „Automodus“
   (`dk.anzahl`-mal vorspielen, Lösung zeigen, mit Noten nochmal vorspielen,
   nächste Aufgabe bzw. Runde - ohne Zutun; eine Runde mit automatischer
@@ -462,6 +463,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   nochmal Leertaste spielt und lässt sie weiterlaufen. Tasten: Leertaste
   vorspielen, → nächste Aufgabe (ungelöst nur endlos oder im Automodus),
   Enter prüfen/weiter, ⌫ letzter Baustein.
+  Wiederholen/Automodus/Pause/Vorspielen stehen zweimal (Einstellungen und
+  `.dk-auto-leiste` unter dem Anhören-Knopf), gleiche `data-dk-…`-Attribute,
+  `dkEinstellungenZeichnen` hält beide gleich.
   Einstellungen in `rw-diktat`. Spielansicht nur fürs Diktat: `?ansicht=diktat`
   (gleiche CSS-Klasse `ansicht-zaehlen`, ändert `rw-spiel` nicht, meldet
   `rw-hoehe`), eingebettet von den Minispielen (Ordner `diktat/`). Meldet je
