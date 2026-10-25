@@ -163,6 +163,7 @@ let lehrerStand = null;      // zuletzt geschriebener Stand unter lehrer
 let spielerListe = {};       // id -> {name, emoji}
 let rundenStand = {};        // id -> Fortschritt der laufenden Runde
 let standAbo = null, uhr = null, autoEnde = null;
+const L_RUNDEN_MAX = 50;
 const L_PAUSEN = [0, 2, 3, 5, 8, 10, 15, 20, 30], L_AUFLOESUNG = [1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60];
 let lAutoTimer = null, lAutoTicker = null, lAutoAnhalten = false, lAutoSchritt = '';
 let lSpielt = false, lGehoert = 0, lNachgehoert = false;
@@ -262,7 +263,7 @@ async function lRundenAendern(schritt) {
     const st = lehrerStand;
     if (!st || st.phase === 'ende') return;
     const min = Math.max(1, st.phase === 'warten' ? 1 : st.runde);
-    const ziel = Math.max(min, Math.min(15, L.plan.length + schritt));
+    const ziel = Math.max(min, Math.min(L_RUNDEN_MAX, L.plan.length + schritt));
     if (ziel === L.plan.length) return;
     while (L.plan.length < ziel) { const a = lWuerfeln(); if (!a) break; L.plan.push(a); }
     L.plan.length = Math.min(L.plan.length, ziel);
@@ -638,9 +639,10 @@ function lehrerAufbauen() {
     document.querySelectorAll('[data-l-zeichen]').forEach(b => b.addEventListener('click', () => { L.zeichen = b.dataset.lZeichen; lSpeichern(); lEinstellungenZeichnen(); }));
     document.querySelectorAll('[data-l-stufe]').forEach(b => b.addEventListener('click', () => { L.stufe = Number(b.dataset.lStufe); lSpeichern(); lEinstellungenZeichnen(); }));
     document.querySelectorAll('[data-l-zeit]').forEach(b => b.addEventListener('click', () => { L.zeit = Number(b.dataset.lZeit); lSpeichern(); lEinstellungenZeichnen(); }));
-    document.querySelectorAll('[data-l-plus]').forEach(b => b.addEventListener('click', () => {
+    // Gedrueckthalten zaehlt schnell weiter (bei bis zu 50 Runden)
+    document.querySelectorAll('[data-l-plus]').forEach(b => gedrueckthalten(b, () => {
         const [feld, schritt] = b.dataset.lPlus.split(':');
-        const grenzen = { takte: [1, 4], runden: [1, 15] }[feld];
+        const grenzen = { takte: [1, 4], runden: [1, L_RUNDEN_MAX] }[feld];
         L[feld] = Math.max(grenzen[0], Math.min(grenzen[1], L[feld] + Number(schritt)));
         lSpeichern(); lEinstellungenZeichnen();
     }));

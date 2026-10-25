@@ -442,7 +442,7 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
   Verlinkt im Zähl-Training („Mit der Klasse spielen“).
   Leiste der Lehrkraft im Raum (`#l-auto-leiste`, Lobby/Runde/Auflösung):
-  Runden −/+ (`lRundenAendern`: hängt gewürfelte Runden an oder kürzt,
+  Runden −/+ (bis `L_RUNDEN_MAX` = 50, auch in den Einstellungen; `lRundenAendern`: hängt gewürfelte Runden an oder kürzt,
   nie unter die laufende; schreibt `lehrer.runden`), Zeit −/+
   (`lZeitAendern`, gilt sofort, auch `lehrer.dauer` der laufenden Runde),
   Notenwerte zum Aufklappen (`#l-palette-live`: würfelt alle noch nicht
