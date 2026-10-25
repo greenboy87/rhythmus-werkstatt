@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=69">
-<link rel="stylesheet" href="css/klasse.css?v=69">
+<link rel="stylesheet" href="css/stil.css?v=70">
+<link rel="stylesheet" href="css/klasse.css?v=70">
 </head>
 <body>
 
@@ -25,100 +25,18 @@
 <!-- =================== LEHRKRAFT =================== -->
 <main id="lehrer" class="hidden">
 
-    <!-- Einstellungen -->
+    <!-- Start: nur Raum oeffnen - eingestellt wird im Raum -->
     <section class="karte" id="l-einstellungen">
-        <div class="leiste" style="justify-content:space-between;">
-            <h2 class="zk-titel">Spiel zusammenstellen</h2>
-            <span class="segment">
-                <button type="button" class="btn" data-l-art="zaehlen"><span class="spiele-symbol">1 e +</span> Zählzeiten</button>
-                <button type="button" class="btn" data-l-art="diktat"><i class="fa-solid fa-ear-listen"></i> Rhythmus-Diktat</button>
-            </span>
-        </div>
-        <p class="zs-hinweis" id="l-art-text" style="margin:.5rem 0 0;"></p>
-        <p class="zs-hinweis" style="margin:.4rem 0 .8rem;">
-            Noten- und Pausenwerte antippen, die vorkommen dürfen. Alle Kinder bekommen in jeder Runde denselben Rhythmus.
+        <h2 class="zk-titel">Klassenspiel</h2>
+        <p class="zs-hinweis" style="margin:.5rem 0 1rem;">
+            Zählzeiten oder Rhythmus-Diktat mit der ganzen Klasse: Raum öffnen, die Kinder scannen den QR-Code
+            und geben ihren Namen ein. Spielart, Notenwerte, Runden, Zeit, Tempo und Automatik stellst du im Raum ein –
+            auch während des Spiels.
         </p>
-        <div class="leiste" id="l-palette" style="margin-bottom:.8rem;"></div>
-        <div class="leiste" style="margin-bottom:.6rem;">
-            <span class="schalter-feld">Taktart</span>
-            <span class="segment">
-                <button type="button" class="btn" data-l-zeichen="2/4">2/4</button>
-                <button type="button" class="btn" data-l-zeichen="3/4">3/4</button>
-                <button type="button" class="btn" data-l-zeichen="4/4">4/4</button>
-            </span>
-            <span class="schalter-feld zk-abstand">Takte</span>
-            <button type="button" class="btn" data-l-plus="takte:-1">−</button>
-            <span class="btn zk-zahl" id="l-takte"></span>
-            <button type="button" class="btn" data-l-plus="takte:1">+</button>
-            <span class="schalter-feld zk-abstand">Runden</span>
-            <button type="button" class="btn" data-l-plus="runden:-1">−</button>
-            <span class="btn zk-zahl" id="l-runden"></span>
-            <button type="button" class="btn" data-l-plus="runden:1">+</button>
-        </div>
-        <div class="leiste" style="margin-bottom:.6rem;" id="l-stufe-zeile">
-            <span class="schalter-feld">Stufe</span>
-            <span class="segment">
-                <button type="button" class="btn" data-l-stufe="1">1 · sofort</button>
-                <button type="button" class="btn" data-l-stufe="2">2 · je Takt</button>
-                <button type="button" class="btn" data-l-stufe="3">3 · ganze Zeile</button>
-            </span>
-            <span class="zs-hinweis" id="l-stufe-text"></span>
-        </div>
-        <div class="leiste" style="margin-bottom:.6rem;">
-            <span class="schalter-feld">Zeit je Runde</span>
-            <span class="segment" id="l-zeiten">
-                <button type="button" class="btn" data-l-zeit="0">ohne</button>
-                <button type="button" class="btn" data-l-zeit="45">45 s</button>
-                <button type="button" class="btn" data-l-zeit="60">60 s</button>
-                <button type="button" class="btn" data-l-zeit="90">90 s</button>
-                <button type="button" class="btn" data-l-zeit="120">2 min</button>
-            </span>
-            <label class="chip zk-abstand"><input type="checkbox" id="l-notenlinien"><span>Notenlinien</span></label>
-            <label class="chip zk-abstand" id="l-klatsch-chip" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="l-klatsch"><span>Klatschmodus</span></label>
-        </div>
-        <div class="leiste" style="margin-bottom:.6rem;">
-            <label class="chip l-nur-diktat" title="Der Beamer spielt die Aufgabe nach jeder Pause von selbst neu vor, bis die Runde endet"><input type="checkbox" data-l-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Vorspielen wiederholen</span></label>
-            <label class="chip" title="Das Spiel läuft von allein: Beim Diktat wird so oft vorgespielt wie eingestellt, dann endet die Runde. Auflösung zeigen (und vorspielen), danach die nächste Runde, am Ende der Endstand. Zeit und „alle fertig“ beenden eine Runde früher."><input type="checkbox" data-l-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
-            <span class="stufen l-nur-diktat" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
-                <span class="stufen-name">Pause</span>
-                <button type="button" class="btn" data-l-pause="-1" aria-label="Kürzere Pause">−</button>
-                <span class="stufen-wert l-pause-anzeige">auto</span>
-                <button type="button" class="btn" data-l-pause="1" aria-label="Längere Pause">+</button>
-            </span>
-            <span class="stufen l-nur-diktat l-nur-auto" title="Automodus: so oft wird vorgespielt, dann endet die Runde (nach einer letzten Pause)">
-                <span class="stufen-name">Vorspielen</span>
-                <button type="button" class="btn" data-l-anzahl="-1" aria-label="Seltener">−</button>
-                <span class="stufen-wert l-anzahl-anzeige">3×</span>
-                <button type="button" class="btn" data-l-anzahl="1" aria-label="Öfter">+</button>
-            </span>
-            <label class="chip" title="Bei der Auflösung den Rhythmus einmal vorspielen - die Noten leuchten mit"><input type="checkbox" data-l-modus="aufloesungSpielen"><span><i class="fa-solid fa-volume-high"></i> Auflösung vorspielen</span></label>
-            <span class="stufen l-nur-auto" title="Automodus: so lange steht die Auflösung da, bevor die nächste Runde startet">
-                <span class="stufen-name">Auflösung</span>
-                <button type="button" class="btn" data-l-aufloesung="-1" aria-label="Kürzer">−</button>
-                <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
-                <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
-            </span>
-        </div>
-        <div class="leiste" style="margin-bottom:.6rem;" title="Tempo und Vorlauf zum Vorspielen - gilt ab Spielstart">
-            <span class="schalter-feld">Metronom</span>
-            <span id="l-metronom-start" class="metronom-gruppen"></span>
-        </div>
-        <details class="zk-eigene">
-            <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
-            <p class="zs-hinweis" style="margin:.5rem 0;">
-                Eine Zeile pro Runde: ein Link aus der Rhythmus-Werkstatt („Link kopieren“) oder Kürzel wie
-                <code>V-AA-Vp-SSSS_H-H</code> (<code>_</code> trennt Takte). Sind hier Zeilen eingetragen, gelten sie –
-                Bausteine, Takte und Runden oben werden dann nicht gebraucht.
-            </p>
-            <textarea id="l-eigene" rows="4" spellcheck="false" placeholder="https://greenboy87.github.io/rhythmus-werkstatt/#t=4/4&r=V-AA-Vp-SSSS&#10;AA-pA-ASS-V_H-Vp-AA"></textarea>
-        </details>
-        <div class="leiste" style="margin-top:.9rem;">
-            <span class="zs-hinweis" id="l-punkte-text"></span>
-            <button type="button" class="btn btn-primär" id="l-oeffnen-btn" style="margin-left:auto;"><i class="fa-solid fa-door-open"></i> Raum öffnen</button>
-        </div>
+        <button type="button" class="btn btn-primär zk-gross-knopf" id="l-oeffnen-btn"><i class="fa-solid fa-door-open"></i> Raum öffnen</button>
     </section>
 
-    <!-- Raum: Lobby, Runde, Auswertung, Ende -->
+    <!-- Raum: Lobby, Runde, Auswertung, Ende - darunter die Einstellungen -->
     <section class="karte hidden" id="l-raum">
         <div class="leiste zk-raumkopf">
             <span class="zk-raumcode">Raum <b id="l-code"></b></span>
@@ -128,56 +46,10 @@
             <button type="button" class="btn hidden" id="l-qr-klein-btn" title="QR-Code zeigen"><i class="fa-solid fa-qrcode"></i></button>
             <button type="button" class="btn" id="l-schliessen-btn" title="Raum schließen"><i class="fa-solid fa-xmark"></i> Schließen</button>
         </div>
-        <!-- Automatik waehrend des Spiels (gleiche Schalter wie in den Einstellungen) -->
-        <div class="hidden" id="l-auto-leiste">
-            <div class="dk-auto-leiste">
-            <span class="stufen" title="Wie viele Runden das Spiel hat - lässt sich auch mitten im Spiel ändern">
-                <span class="stufen-name">Runden</span>
-                <button type="button" class="btn" data-l-runden-live="-1" aria-label="Weniger Runden">−</button>
-                <span class="stufen-wert" id="l-runden-live">5</span>
-                <button type="button" class="btn" data-l-runden-live="1" aria-label="Mehr Runden">+</button>
-            </span>
-            <span class="stufen" title="Zeitlimit je Runde - danach wird ausgewertet, auch wenn noch nicht alle fertig sind. Gilt sofort, auch für die laufende Runde">
-                <span class="stufen-name">Zeit</span>
-                <button type="button" class="btn" data-l-zeit-live="-1" aria-label="Weniger Zeit">−</button>
-                <span class="stufen-wert" id="l-zeit-live">90 s</span>
-                <button type="button" class="btn" data-l-zeit-live="1" aria-label="Mehr Zeit">+</button>
-            </span>
-            <details class="zk-werte-live">
-                <summary class="btn" title="Welche Noten- und Pausenwerte vorkommen - gilt ab der nächsten Runde"><i class="fa-solid fa-music"></i> Notenwerte <i class="fa-solid fa-caret-down"></i></summary>
-                <div class="zk-werte-kasten">
-                    <div class="leiste" id="l-palette-live"></div>
-                    <p class="zs-hinweis" id="l-palette-live-text" style="margin:.4rem 0 0;">Gilt ab der nächsten Runde.</p>
-                </div>
-            </details>
-            </div>
-            <div class="dk-auto-leiste">
-            <label class="chip l-nur-diktat" title="Der Beamer spielt die Aufgabe nach jeder Pause von selbst neu vor, bis die Runde endet"><input type="checkbox" data-l-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Vorspielen wiederholen</span></label>
-            <label class="chip" title="Das Spiel läuft von allein: Beim Diktat wird so oft vorgespielt wie eingestellt, dann endet die Runde. Auflösung zeigen (und vorspielen), danach die nächste Runde, am Ende der Endstand. Zeit und „alle fertig“ beenden eine Runde früher."><input type="checkbox" data-l-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
-            <span class="stufen l-nur-diktat" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
-                <span class="stufen-name">Pause</span>
-                <button type="button" class="btn" data-l-pause="-1" aria-label="Kürzere Pause">−</button>
-                <span class="stufen-wert l-pause-anzeige">auto</span>
-                <button type="button" class="btn" data-l-pause="1" aria-label="Längere Pause">+</button>
-            </span>
-            <span class="stufen l-nur-diktat l-nur-auto" title="Automodus: so oft wird vorgespielt, dann endet die Runde (nach einer letzten Pause)">
-                <span class="stufen-name">Vorspielen</span>
-                <button type="button" class="btn" data-l-anzahl="-1" aria-label="Seltener">−</button>
-                <span class="stufen-wert l-anzahl-anzeige">3×</span>
-                <button type="button" class="btn" data-l-anzahl="1" aria-label="Öfter">+</button>
-            </span>
-            <label class="chip" title="Bei der Auflösung den Rhythmus einmal vorspielen - die Noten leuchten mit"><input type="checkbox" data-l-modus="aufloesungSpielen"><span><i class="fa-solid fa-volume-high"></i> Auflösung vorspielen</span></label>
-            <span class="stufen l-nur-auto" title="Automodus: so lange steht die Auflösung da, bevor die nächste Runde startet">
-                <span class="stufen-name">Auflösung</span>
-                <button type="button" class="btn" data-l-aufloesung="-1" aria-label="Kürzer">−</button>
-                <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
-                <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
-            </span>
-            </div>
-            <div class="dk-auto hidden" id="l-auto">
-                <span id="l-auto-text"></span>
-                <button type="button" class="btn" id="l-auto-pause"></button>
-            </div>
+        <!-- Stand der Automatik (Countdown) -->
+        <div class="dk-auto hidden" id="l-auto">
+            <span id="l-auto-text"></span>
+            <button type="button" class="btn" id="l-auto-pause"></button>
         </div>
 
         <!-- Lobby -->
@@ -193,8 +65,7 @@
                     <div class="zk-namen" id="l-namen"></div>
                 </div>
             </div>
-            <div class="leiste" style="justify-content:space-between; margin-top:1rem;">
-                <span id="l-metronom-lobby" class="metronom-gruppen" title="Tempo zum Vorspielen - so beginnt das Spiel"></span>
+            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
                 <button type="button" class="btn btn-primär zk-gross-knopf" id="l-start-btn"><i class="fa-solid fa-play"></i> Spiel starten</button>
             </div>
         </div>
@@ -206,10 +77,6 @@
                 <p class="zk-gross" style="text-align:center;">Hört gut zu und baut den Rhythmus nach!</p>
                 <div class="leiste" style="justify-content:center; margin:.6rem 0;">
                     <button type="button" class="btn btn-primär zk-gross-knopf" id="l-hoeren-btn"><i class="fa-solid fa-play"></i> Vorspielen</button>
-                </div>
-                <div class="leiste" style="justify-content:center;">
-                    <span id="l-metronom" class="metronom-gruppen"></span>
-                    <label class="chip" title="An: ein im Spiel geändertes Tempo gilt für alle weiteren Runden und wird gemerkt. Aus: jede Runde beginnt wieder mit dem Tempo vom Spielstart."><input type="checkbox" data-l-modus="tempoBehalten"><span><i class="fa-solid fa-lock"></i> Tempo beibehalten</span></label>
                 </div>
                 <div id="l-klang-host" class="hidden"></div>
             </div>
@@ -239,6 +106,98 @@
                 <button type="button" class="btn" id="l-nochmal-btn"><i class="fa-solid fa-rotate-right"></i> Noch ein Spiel (gleiche Klasse)</button>
             </div>
         </div>
+
+        <!-- Einstellungen: nur hier, in Lobby, Runde und Auflösung. Gelten ab der naechsten Runde, Zeit sofort -->
+        <details class="zk-einstellungen" id="l-panel" open>
+            <summary><i class="fa-solid fa-sliders"></i> Einstellungen <span class="zs-hinweis">gelten ab der nächsten Runde, die Zeit sofort</span></summary>
+            <div class="leiste" style="margin:.8rem 0 .4rem;">
+                <span class="segment">
+                    <button type="button" class="btn" data-l-art="zaehlen"><span class="spiele-symbol">1 e +</span> Zählzeiten</button>
+                    <button type="button" class="btn" data-l-art="diktat"><i class="fa-solid fa-ear-listen"></i> Rhythmus-Diktat</button>
+                </span>
+                <span class="zs-hinweis" id="l-art-text"></span>
+            </div>
+            <p class="zs-hinweis" style="margin:.4rem 0;">Noten- und Pausenwerte, die vorkommen dürfen:</p>
+            <div class="leiste" id="l-palette" style="margin-bottom:.8rem;"></div>
+            <div class="leiste" style="margin-bottom:.6rem;">
+                <span class="stufen">
+                    <span class="stufen-name">Taktart</span>
+                    <span class="segment">
+                        <button type="button" class="btn" data-l-zeichen="2/4">2/4</button>
+                        <button type="button" class="btn" data-l-zeichen="3/4">3/4</button>
+                        <button type="button" class="btn" data-l-zeichen="4/4">4/4</button>
+                    </span>
+                </span>
+                <span class="stufen" title="Takte je Aufgabe">
+                    <span class="stufen-name">Takte</span>
+                    <button type="button" class="btn" data-l-plus="takte:-1" aria-label="Weniger Takte">−</button>
+                    <span class="stufen-wert" id="l-takte"></span>
+                    <button type="button" class="btn" data-l-plus="takte:1" aria-label="Mehr Takte">+</button>
+                </span>
+                <span class="stufen" title="Wie viele Runden das Spiel hat (nie weniger als schon gespielt)">
+                    <span class="stufen-name">Runden</span>
+                    <button type="button" class="btn" data-l-runden="-1" aria-label="Weniger Runden">−</button>
+                    <span class="stufen-wert" id="l-runden"></span>
+                    <button type="button" class="btn" data-l-runden="1" aria-label="Mehr Runden">+</button>
+                </span>
+                <span class="stufen" title="Zeitlimit je Runde - danach wird ausgewertet, auch wenn noch nicht alle fertig sind. Gilt sofort, auch für die laufende Runde">
+                    <span class="stufen-name">Zeit</span>
+                    <button type="button" class="btn" data-l-zeit="-1" aria-label="Weniger Zeit">−</button>
+                    <span class="stufen-wert" id="l-zeit"></span>
+                    <button type="button" class="btn" data-l-zeit="1" aria-label="Mehr Zeit">+</button>
+                </span>
+            </div>
+            <div class="leiste" style="margin-bottom:.6rem;">
+                <span class="stufen" id="l-stufe-zeile">
+                    <span class="stufen-name">Stufe</span>
+                    <span class="segment">
+                        <button type="button" class="btn" data-l-stufe="1">1 · sofort</button>
+                        <button type="button" class="btn" data-l-stufe="2">2 · je Takt</button>
+                        <button type="button" class="btn" data-l-stufe="3">3 · ganze Zeile</button>
+                    </span>
+                </span>
+                <label class="chip"><input type="checkbox" id="l-notenlinien"><span>Notenlinien</span></label>
+                <label class="chip" id="l-klatsch-chip" title="An: Eine Viertel mit folgender Pause gilt wie eine Halbe – beim Klatschen klingt beides gleich"><input type="checkbox" id="l-klatsch"><span>Klatschmodus</span></label>
+                <span class="zs-hinweis" id="l-stufe-text"></span>
+            </div>
+            <div class="leiste" style="margin-bottom:.6rem;">
+                <span id="l-metronom" class="metronom-gruppen" title="Tempo und Vorlauf zum Vorspielen"></span>
+                <label class="chip" title="An: ein im Spiel geändertes Tempo gilt für alle weiteren Runden und wird gemerkt. Aus: jede Runde beginnt wieder mit dem Tempo vom Spielstart."><input type="checkbox" data-l-modus="tempoBehalten"><span><i class="fa-solid fa-lock"></i> Tempo beibehalten</span></label>
+            </div>
+            <div class="leiste" style="margin-bottom:.6rem;">
+                <label class="chip l-nur-diktat" title="Der Beamer spielt die Aufgabe nach jeder Pause von selbst neu vor, bis die Runde endet"><input type="checkbox" data-l-modus="wiederholen"><span><i class="fa-solid fa-repeat"></i> Vorspielen wiederholen</span></label>
+                <label class="chip" title="Das Spiel läuft von allein: Beim Diktat wird so oft vorgespielt wie eingestellt, dann endet die Runde. Auflösung zeigen (und vorspielen), danach die nächste Runde, am Ende der Endstand. Zeit und „alle fertig“ beenden eine Runde früher."><input type="checkbox" data-l-modus="automodus"><span><i class="fa-solid fa-wand-magic-sparkles"></i> Automodus</span></label>
+                <label class="chip" title="Bei der Auflösung den Rhythmus einmal vorspielen - die Noten leuchten mit"><input type="checkbox" data-l-modus="aufloesungSpielen"><span><i class="fa-solid fa-volume-high"></i> Auflösung vorspielen</span></label>
+                <span class="stufen l-nur-diktat" title="Pause zwischen zwei Mal Vorspielen. auto = so lang wie die Aufgabe selbst (mindestens 3 s)">
+                    <span class="stufen-name">Pause</span>
+                    <button type="button" class="btn" data-l-pause="-1" aria-label="Kürzere Pause">−</button>
+                    <span class="stufen-wert l-pause-anzeige">auto</span>
+                    <button type="button" class="btn" data-l-pause="1" aria-label="Längere Pause">+</button>
+                </span>
+                <span class="stufen l-nur-diktat l-nur-auto" title="Automodus: so oft wird vorgespielt, dann endet die Runde (nach einer letzten Pause)">
+                    <span class="stufen-name">Vorspielen</span>
+                    <button type="button" class="btn" data-l-anzahl="-1" aria-label="Seltener">−</button>
+                    <span class="stufen-wert l-anzahl-anzeige">3×</span>
+                    <button type="button" class="btn" data-l-anzahl="1" aria-label="Öfter">+</button>
+                </span>
+                <span class="stufen l-nur-auto" title="Automodus: so lange steht die Auflösung da, bevor die nächste Runde startet">
+                    <span class="stufen-name">Auflösung</span>
+                    <button type="button" class="btn" data-l-aufloesung="-1" aria-label="Kürzer">−</button>
+                    <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
+                    <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
+                </span>
+            </div>
+            <details class="zk-eigene">
+                <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
+                <p class="zs-hinweis" style="margin:.5rem 0;">
+                    Eine Zeile pro Runde: ein Link aus der Rhythmus-Werkstatt („Link kopieren“) oder Kürzel wie
+                    <code>V-AA-Vp-SSSS_H-H</code> (<code>_</code> trennt Takte). Sind hier Zeilen eingetragen, gelten sie –
+                    Notenwerte, Takte und Runden oben werden dann nicht gebraucht.
+                </p>
+                <textarea id="l-eigene" rows="4" spellcheck="false" placeholder="https://greenboy87.github.io/rhythmus-werkstatt/#t=4/4&r=V-AA-Vp-SSSS&#10;AA-pA-ASS-V_H-Vp-AA"></textarea>
+            </details>
+            <p class="zs-hinweis" id="l-punkte-text" style="margin:.7rem 0 0;"></p>
+        </details>
     </section>
 
     <!-- QR klein waehrend des Spiels (Nachzuegler) -->
@@ -308,12 +267,12 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=69"></script>
-<script src="js/vendor/qrcode.min.js?v=69"></script>
-<script src="js/noten.js?v=69"></script>
-<script src="js/zaehlkern.js?v=69"></script>
-<script src="js/editor.js?v=69"></script>
-<script src="js/audio.js?v=69"></script>
-<script type="module" src="js/klasse.js?v=69"></script>
+<script src="js/version.js?v=70"></script>
+<script src="js/vendor/qrcode.min.js?v=70"></script>
+<script src="js/noten.js?v=70"></script>
+<script src="js/zaehlkern.js?v=70"></script>
+<script src="js/editor.js?v=70"></script>
+<script src="js/audio.js?v=70"></script>
+<script type="module" src="js/klasse.js?v=70"></script>
 </body>
 </html>

@@ -156,7 +156,6 @@ const L = Object.assign({
     bpm: 90, vorlauf: 1, tempoBehalten: true,   // Tempo vom Spielstart (Metronom)
     code: null,       // offener Raum
     spiel: null,      // Kennung des laufenden Spiels
-    plan: [],         // [{zeichen, kuerzel}] je Runde
     gesamt: {}        // id -> Punkte
 }, lesen(L_SCHLUESSEL, {}));
 let lehrerStand = null;      // zuletzt geschriebener Stand unter lehrer
@@ -170,18 +169,19 @@ let lSpielt = false, lGehoert = 0, lNachgehoert = false;
 const lSpeichern = () => schreiben(L_SCHLUESSEL, L);
 
 function lEinstellungenZeichnen() {
-    document.querySelectorAll('#l-palette .gen-baustein, #l-palette-live .gen-baustein').forEach(k => k.classList.toggle('an', L.auswahl.includes(k.dataset.code)));
+    document.querySelectorAll('#l-palette .gen-baustein').forEach(k => k.classList.toggle('an', L.auswahl.includes(k.dataset.code)));
     document.querySelectorAll('[data-l-zeichen]').forEach(b => b.classList.toggle('an', b.dataset.lZeichen === L.zeichen));
     document.querySelectorAll('[data-l-stufe]').forEach(b => b.classList.toggle('an', Number(b.dataset.lStufe) === L.stufe));
-    document.querySelectorAll('[data-l-zeit]').forEach(b => b.classList.toggle('an', Number(b.dataset.lZeit) === L.zeit));
     $('l-stufe-text').textContent = STUFEN_TEXT[L.stufe];
     $('l-takte').textContent = L.takte;
-    $('l-runden').textContent = L.runden;
+    $('l-runden').textContent = lRundenZahl();
+    $('l-zeit').textContent = !L.zeit ? 'ohne' : L.zeit < 120 ? L.zeit + ' s' : zsZeit(L.zeit);
     $('l-notenlinien').checked = L.notenlinien;
     $('l-klatsch').checked = L.klatsch;
     document.querySelectorAll('[data-l-art]').forEach(b => b.classList.toggle('an', b.dataset.lArt === L.art));
     $('l-art-text').textContent = ART_TEXT[L.art];
     zeigen('l-stufe-zeile', L.art === 'zaehlen');
+    zeigen('l-stufe-text', L.art === 'zaehlen');
     zeigen('l-klatsch-chip', L.art === 'diktat');
     $('l-punkte-text').textContent = L.art === 'diktat'
         ? 'Punkte: richtiger Takt +4, Fehlversuch −1, wer zuerst fertig ist +5 / +3 / +1.'
@@ -196,10 +196,8 @@ function lehrerSetzen(teil) {
     return update(ref(db, pfad(L.code, 'lehrer')), teil);
 }
 
+/* Raum oeffnen - eingestellt wird erst im Raum (Lobby und waehrend des Spiels) */
 async function raumOeffnen() {
-    // Plan pruefen, bevor ein Raum aufgeht
-    const plan = lPlanBauen();
-    if (!plan) return;
     let code = null;
     for (let i = 0; i < 8 && !code; i++) {
         const k = zufall(4, CODE_ZEICHEN);
@@ -207,87 +205,66 @@ async function raumOeffnen() {
         if (!s.exists()) code = k;
     }
     if (!code) { zeigeToast('Kein freier Raumcode gefunden – bitte nochmal.', 'danger'); return; }
-    L.code = code; L.gesamt = {}; L.spiel = null; L.plan = plan;
-    lTempoMerken();
+    L.code = code; L.gesamt = {}; L.spiel = null;
     lSpeichern();
     lehrerStand = null;
-    await set(ref(db, pfad(code, 'lehrer')), { phase: 'warten', art: L.art, runde: 0, runden: plan.length, stufe: L.stufe, offen: serverTimestamp() });
-    lehrerStand = { phase: 'warten', art: L.art, runde: 0, runden: plan.length, stufe: L.stufe };
+    const stand = { phase: 'warten', art: L.art, runde: 0, runden: lRundenZahl(), stufe: L.stufe };
+    await set(ref(db, pfad(code, 'lehrer')), Object.assign({ offen: serverTimestamp() }, stand));
+    lehrerStand = stand;
     lRaumVerbinden();
 }
 
-/* Runden vorab festlegen: eigene Rhythmen oder gewuerfelt */
-function lPlanBauen() {
-    if (L.eigene.trim()) {
-        const e = eigeneLesen(L.eigene, L.zeichen);
-        if (e.fehler) { zeigeToast(e.fehler, 'danger'); return null; }
-        return e.aufgaben.map(a => Object.assign({ gewuerfelt: false }, a));
-    }
-    const plan = [];
-    for (let r = 0; r < L.runden; r++) {
-        const a = lWuerfeln();
-        if (!a) return null;
-        plan.push(a);
-    }
-    return plan;
+/* Der Rhythmus einer Runde entsteht erst beim Rundenstart aus den aktuellen
+   Einstellungen - so gilt jede Aenderung ab der naechsten Runde. Mit eigenen
+   Rhythmen bestimmt deren Liste Aufgaben und Rundenzahl. */
+function lEigene() {
+    if (!L.eigene.trim()) return null;
+    const e = eigeneLesen(L.eigene, L.zeichen);
+    return e.fehler ? null : e.aufgaben;
 }
-function lWuerfeln() {
+function lRundenZahl() {
+    const eigene = lEigene();
+    return eigene ? eigene.length : L.runden;
+}
+function lAufgabe(runde) {
+    const eigene = lEigene();
+    if (eigene) return eigene[runde - 1] || null;
     const w = zkTakteWuerfeln(L.auswahl, L.zeichen, L.takte);
     if (w.fehler) { zeigeToast(w.fehler, 'danger'); return null; }
-    return { zeichen: L.zeichen, kuerzel: zkStueckKuerzel({ takte: w.takte }), gewuerfelt: true };
+    return { zeichen: L.zeichen, kuerzel: zkStueckKuerzel({ takte: w.takte }) };
 }
 
-/* Im Spiel aendern: Runden und Notenwerte. Gespielte Runden (und die
-   laufende) bleiben, wie sie sind; nur was noch kommt, wird angepasst. */
-function lNaechsteRundeIndex() {
-    const st = lehrerStand || {};
-    return st.phase === 'warten' || !st.runde ? 0 : st.runde;   // runde ist 1-basiert = Index der naechsten
+/* Eine Einstellung hat sich geaendert: merken, zeigen und - wo die Kinder es
+   sehen (Rundenzahl, in der Lobby auch Spielart und Stufe) - in den Raum schreiben */
+async function lEinstellungGeaendert() {
+    lSpeichern();
+    lEinstellungenZeichnen();
+    const st = lehrerStand;
+    if (!L.code || !st || st.phase === 'ende') return;
+    const teil = { runden: Math.max(lRundenZahl(), st.runde || 0) };
+    if (st.phase === 'warten') Object.assign(teil, { art: L.art, stufe: L.stufe });
+    await lehrerSetzen(teil);
+    lZeichnen();
 }
+
 const L_ZEITEN = [0, 30, 45, 60, 90, 120, 180, 300];
-function lRundenLiveZeichnen() {
-    $('l-runden-live').textContent = L.plan.length || L.runden;
-    $('l-zeit-live').textContent = !L.zeit ? 'ohne' : L.zeit < 120 ? L.zeit + ' s' : zsZeit(L.zeit);
-}
-/* Zeitlimit im Spiel: gilt sofort - in der laufenden Runde ab ihrem Start
-   gerechnet (ist die neue Zeit schon um, wird gleich ausgewertet). */
+/* Zeitlimit: gilt sofort - in der laufenden Runde ab ihrem Start gerechnet
+   (ist die neue Zeit schon um, wird gleich ausgewertet). */
 async function lZeitAendern(schritt) {
     const i = Math.max(0, L_ZEITEN.indexOf(L.zeit));
     L.zeit = L_ZEITEN[Math.max(0, Math.min(L_ZEITEN.length - 1, i + schritt))];
     lSpeichern();
     lEinstellungenZeichnen();
-    lRundenLiveZeichnen();
     if (lehrerStand && lehrerStand.phase === 'runde') await lehrerSetzen({ dauer: L.zeit });
     lAutoPlanen();
 }
 async function lRundenAendern(schritt) {
-    const st = lehrerStand;
-    if (!st || st.phase === 'ende') return;
-    const min = Math.max(1, st.phase === 'warten' ? 1 : st.runde);
-    const ziel = Math.max(min, Math.min(L_RUNDEN_MAX, L.plan.length + schritt));
-    if (ziel === L.plan.length) return;
-    while (L.plan.length < ziel) { const a = lWuerfeln(); if (!a) break; L.plan.push(a); }
-    L.plan.length = Math.min(L.plan.length, ziel);
-    if (!L.eigene.trim()) L.runden = L.plan.length;
-    lSpeichern();
-    lEinstellungenZeichnen();
-    lRundenLiveZeichnen();
-    await lehrerSetzen({ runden: L.plan.length });
-    lZeichnen();
-    lAutoPlanen();
-}
-function lRestNeuWuerfeln() {
-    const ab = lNaechsteRundeIndex();
-    let neu = 0;
-    for (let i = ab; i < L.plan.length; i++) {
-        if (L.plan[i].gewuerfelt === false) continue;
-        const a = lWuerfeln();
-        if (!a) return;
-        L.plan[i] = a; neu++;
-    }
-    lSpeichern();
-    $('l-palette-live-text').textContent = neu
-        ? `Gilt ab der nächsten Runde – ${neu} ${neu === 1 ? 'Runde' : 'Runden'} neu gewürfelt.`
-        : 'Gilt für das nächste Spiel (keine gewürfelte Runde mehr übrig).';
+    if (lEigene()) { zeigeToast('Mit eigenen Rhythmen bestimmt die Liste die Rundenzahl.', 'info'); return; }
+    const st = lehrerStand || {};
+    const min = Math.max(1, st.phase === 'runde' || st.phase === 'auswertung' ? st.runde : 1);
+    L.runden = Math.max(min, Math.min(L_RUNDEN_MAX, L.runden + schritt));
+    await lEinstellungGeaendert();
+    lAutoPlanen();   // "Naechste Runde" / "Endstand" kann sich geaendert haben
 }
 
 function lRaumVerbinden() {
@@ -374,8 +351,6 @@ function lZeichnen() {
         $('l-phase-info').textContent = 'Endstand';
         lEndeZeichnen();
     }
-    zeigen('l-auto-leiste', st.phase === 'warten' || st.phase === 'runde' || st.phase === 'auswertung');
-    lRundenLiveZeichnen();
     // Neue Phase (oder neue Runde): Automatik von vorn planen. Andere Anlaesse
     // zum Neuzeichnen (Kind kommt dazu, Fenstergroesse) lassen den Countdown laufen.
     const schritt = `${st.phase}:${st.runde}`;
@@ -482,7 +457,7 @@ function lUhr() {
    Rhythmen vorkommt - sonst liesse sich ein Takt gar nicht nachbauen. */
 function lWerte() {
     const w = new Set(L.auswahl);
-    L.plan.forEach(p => p.kuerzel.split(/[_-]/).forEach(c => w.add(c)));
+    (lEigene() || []).forEach(p => p.kuerzel.split(/[_-]/).forEach(c => w.add(c)));
     return ZS_BAUSTEINE.map(b => b.code).filter(c => w.has(c));
 }
 function lVorspielen() {
@@ -510,12 +485,12 @@ async function lRundeStarten() {
     if (runde === 1 || L.tempoBehalten) lTempoMerken();
     else { Metronom.tempoSetzen(L.bpm); Metronom.vorlaufSetzen(L.vorlauf); }
     lSpeichern();
-    const aufgabe = L.plan[runde - 1];
+    const aufgabe = lAufgabe(runde);
     if (!aufgabe) return;
     if (!L.spiel) { L.spiel = zufall(6, 'abcdefghijkmnpqrstuvwxyz23456789'); lSpeichern(); }
     rundenStand = {};
     await lehrerSetzen({
-        phase: 'runde', art: L.art, klatsch: L.klatsch, werte: lWerte(), runde, runden: L.plan.length, stufe: L.stufe, zeichen: aufgabe.zeichen,
+        phase: 'runde', art: L.art, klatsch: L.klatsch, werte: lWerte(), runde, runden: Math.max(runde, lRundenZahl()), stufe: L.stufe, zeichen: aufgabe.zeichen,
         notenlinien: L.notenlinien, aufgabe: aufgabe.kuerzel, dauer: L.zeit, spiel: L.spiel,
         start: serverTimestamp(), wertung: null
     });
@@ -597,11 +572,9 @@ async function lWeiter() {
 }
 
 async function lNochmal() {
-    const plan = lPlanBauen();
-    if (!plan) return;
-    L.plan = plan; L.gesamt = {}; L.spiel = null;
+    L.gesamt = {}; L.spiel = null;
     lSpeichern();
-    await lehrerSetzen({ phase: 'warten', runde: 0, runden: plan.length, stufe: L.stufe, wertung: null, aufgabe: null });
+    await lehrerSetzen({ phase: 'warten', art: L.art, runde: 0, runden: lRundenZahl(), stufe: L.stufe, wertung: null, aufgabe: null });
     lZeichnen();
 }
 
@@ -618,37 +591,32 @@ async function lSchliessen() {
 function lehrerAufbauen() {
     zeigen('lehrer', true);
     zeigen('zurueck-link', true);   // nur fuer die Lehrkraft - Kinder sollen im Spiel bleiben
-    // Zwei Paletten: in den Einstellungen und im Spiel (dort wird der Rest neu gewuerfelt)
-    for (const [palette, live] of [[$('l-palette'), false], [$('l-palette-live'), true]]) {
-        ZS_BAUSTEINE.forEach(b => {
-            const k = document.createElement('button');
-            k.type = 'button'; k.className = 'gen-baustein'; k.dataset.code = b.code; k.title = b.wort;
-            k.innerHTML = bausteinSvg(b);
-            k.addEventListener('click', () => {
-                const neu = L.auswahl.includes(b.code) ? L.auswahl.filter(c => c !== b.code) : [...L.auswahl, b.code];
-                if (live && !neu.length) { zeigeToast('Mindestens ein Notenwert muss bleiben.', 'danger'); return; }
-                L.auswahl = neu;
-                lSpeichern(); lEinstellungenZeichnen();
-                if (live) lRestNeuWuerfeln();
-            });
-            palette.appendChild(k);
+    // Einstellungen (nur im Raum, unter dem Spiel) - gelten ab der naechsten Runde
+    const palette = $('l-palette');
+    ZS_BAUSTEINE.forEach(b => {
+        const k = document.createElement('button');
+        k.type = 'button'; k.className = 'gen-baustein'; k.dataset.code = b.code; k.title = b.wort;
+        k.innerHTML = bausteinSvg(b);
+        k.addEventListener('click', () => {
+            const neu = L.auswahl.includes(b.code) ? L.auswahl.filter(c => c !== b.code) : [...L.auswahl, b.code];
+            if (!neu.length) { zeigeToast('Mindestens ein Notenwert muss bleiben.', 'danger'); return; }
+            L.auswahl = neu;
+            lEinstellungGeaendert();
         });
-    }
-    document.querySelectorAll('[data-l-zeit-live]').forEach(k => k.addEventListener('click', () => lZeitAendern(Number(k.dataset.lZeitLive))));
-    document.querySelectorAll('[data-l-runden-live]').forEach(k => gedrueckthalten(k, () => lRundenAendern(Number(k.dataset.lRundenLive))));
-    document.querySelectorAll('[data-l-zeichen]').forEach(b => b.addEventListener('click', () => { L.zeichen = b.dataset.lZeichen; lSpeichern(); lEinstellungenZeichnen(); }));
-    document.querySelectorAll('[data-l-stufe]').forEach(b => b.addEventListener('click', () => { L.stufe = Number(b.dataset.lStufe); lSpeichern(); lEinstellungenZeichnen(); }));
-    document.querySelectorAll('[data-l-zeit]').forEach(b => b.addEventListener('click', () => { L.zeit = Number(b.dataset.lZeit); lSpeichern(); lEinstellungenZeichnen(); }));
-    // Gedrueckthalten zaehlt schnell weiter (bei bis zu 50 Runden)
+        palette.appendChild(k);
+    });
+    document.querySelectorAll('[data-l-zeit]').forEach(k => gedrueckthalten(k, () => lZeitAendern(Number(k.dataset.lZeit))));
+    document.querySelectorAll('[data-l-runden]').forEach(k => gedrueckthalten(k, () => lRundenAendern(Number(k.dataset.lRunden))));
     document.querySelectorAll('[data-l-plus]').forEach(b => gedrueckthalten(b, () => {
         const [feld, schritt] = b.dataset.lPlus.split(':');
-        const grenzen = { takte: [1, 4], runden: [1, L_RUNDEN_MAX] }[feld];
-        L[feld] = Math.max(grenzen[0], Math.min(grenzen[1], L[feld] + Number(schritt)));
-        lSpeichern(); lEinstellungenZeichnen();
+        L[feld] = Math.max(1, Math.min(4, L[feld] + Number(schritt)));
+        lEinstellungGeaendert();
     }));
-    $('l-notenlinien').addEventListener('change', e => { L.notenlinien = e.target.checked; lSpeichern(); });
-    $('l-klatsch').addEventListener('change', e => { L.klatsch = e.target.checked; lSpeichern(); });
-    document.querySelectorAll('[data-l-art]').forEach(b => b.addEventListener('click', () => { L.art = b.dataset.lArt; lSpeichern(); lEinstellungenZeichnen(); }));
+    document.querySelectorAll('[data-l-zeichen]').forEach(b => b.addEventListener('click', () => { L.zeichen = b.dataset.lZeichen; lEinstellungGeaendert(); }));
+    document.querySelectorAll('[data-l-stufe]').forEach(b => b.addEventListener('click', () => { L.stufe = Number(b.dataset.lStufe); lEinstellungGeaendert(); }));
+    $('l-notenlinien').addEventListener('change', e => { L.notenlinien = e.target.checked; lEinstellungGeaendert(); });
+    $('l-klatsch').addEventListener('change', e => { L.klatsch = e.target.checked; lEinstellungGeaendert(); });
+    document.querySelectorAll('[data-l-art]').forEach(b => b.addEventListener('click', () => { L.art = b.dataset.lArt; lEinstellungGeaendert(); lAutoPlanen(); }));
     $('l-hoeren-btn').addEventListener('click', lVorspielen);
     document.querySelectorAll('[data-l-modus]').forEach(c => c.addEventListener('change', () => {
         L[c.dataset.lModus] = c.checked;
@@ -684,12 +652,14 @@ function lehrerAufbauen() {
     });
     const taktart = () => (lehrerStand && lehrerStand.zeichen) || L.zeichen || '4/4';
     Metronom.tempoSetzen(L.bpm); Metronom.vorlaufSetzen(L.vorlauf);
-    ['l-metronom-start', 'l-metronom-lobby', 'l-metronom'].forEach(id => Metronom.bauen($(id), taktart));
-    // Vor dem Raum: Aenderungen am Metronom gleich merken
-    window.addEventListener('pagehide', () => { if (!L.code || L.tempoBehalten) { lTempoMerken(); lSpeichern(); } });
+    Metronom.bauen($('l-metronom'), taktart);
+    // In der Lobby oder mit "Tempo beibehalten": Aenderungen am Metronom merken
+    window.addEventListener('pagehide', () => {
+        if (!lehrerStand || lehrerStand.phase === 'warten' || L.tempoBehalten) { lTempoMerken(); lSpeichern(); }
+    });
     $('l-eigene').value = L.eigene;
     if (L.eigene.trim()) $('l-eigene').closest('details').open = true;
-    $('l-eigene').addEventListener('input', e => { L.eigene = e.target.value; lSpeichern(); lEinstellungenZeichnen(); });
+    $('l-eigene').addEventListener('input', e => { L.eigene = e.target.value; lEinstellungGeaendert(); });
     $('l-oeffnen-btn').addEventListener('click', raumOeffnen);
     $('l-start-btn').addEventListener('click', lRundeStarten);
     $('l-beenden-btn').addEventListener('click', lAuswerten);

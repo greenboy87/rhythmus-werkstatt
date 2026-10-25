@@ -431,9 +431,11 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `lehrer` (nur Lehrkraft: phase warten|runde|auswertung|ende, runde,
   runden, stufe, zeichen, aufgabe als Kürzel, start/dauer, spiel, wertung,
   entfernt), `spieler/<geraet>` ({name, emoji, seit}), `stand/<spiel>_<runde>/
-  <geraet>` (Fortschritt, `fertigAm` als Serverzeit). Die Lehrkraft legt alle
-  Runden vorab fest (`L.plan`: gewürfelt oder eigene Rhythmen - Werkstatt-Link
-  oder Kürzel je Zeile, `eigeneLesen`) und rechnet die Punkte: richtiges
+  <geraet>` (Fortschritt, `fertigAm` als Serverzeit). Der Rhythmus einer Runde
+  entsteht erst beim Rundenstart aus den aktuellen Einstellungen (`lAufgabe`:
+  gewürfelt oder die passende Zeile der eigenen Rhythmen - Werkstatt-Link
+  oder Kürzel je Zeile, `eigeneLesen`; dann bestimmt deren Anzahl die Runden,
+  `lRundenZahl`). Die Lehrkraft rechnet die Punkte: richtiges
   Kästchen +2, Fehler -1 (Runde nicht unter 0), die ersten drei Fertigen
   +5/+3/+1. Runde endet nach der Zeit, per Knopf oder 1,5 s nachdem alle
   fertig sind. Lehrkraft-Stand in `localStorage` `zk-lehrer` (Neuladen nimmt
@@ -441,13 +443,14 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   `zk-aufgabe` (eigener Stand der laufenden Runde). „Schließen“ löscht den
   Raumknoten. QR: `js/vendor/qrcode.min.js` (davidshimjs, aus musik-quiz).
   Verlinkt im Zähl-Training („Mit der Klasse spielen“).
-  Leiste der Lehrkraft im Raum (`#l-auto-leiste`, Lobby/Runde/Auflösung):
-  Runden −/+ (bis `L_RUNDEN_MAX` = 50, auch in den Einstellungen; `lRundenAendern`: hängt gewürfelte Runden an oder kürzt,
-  nie unter die laufende; schreibt `lehrer.runden`), Zeit −/+
-  (`lZeitAendern`, gilt sofort, auch `lehrer.dauer` der laufenden Runde),
-  Notenwerte zum Aufklappen (`#l-palette-live`: würfelt alle noch nicht
-  gespielten gewürfelten Runden neu, `plan[i].gewuerfelt`; eigene Rhythmen
-  bleiben). Automatik (nur Lehrkraft, in `zk-lehrer`): „Vorspielen
+  Startbildschirm der Lehrkraft = nur „Raum öffnen“. Alle Einstellungen
+  stehen genau einmal im Raum unter dem Spiel (`details#l-panel`, Lobby,
+  Runde, Auflösung, Ende): Spielart, Notenwerte, Taktart, Takte, Runden
+  (bis `L_RUNDEN_MAX` = 50, nie unter die laufende), Zeit (`lZeitAendern`,
+  gilt sofort, auch `lehrer.dauer` der laufenden Runde), Stufe, Notenlinien,
+  Klatschmodus, Metronom + „Tempo beibehalten“, Automatik, eigene Rhythmen.
+  Alles andere gilt ab der nächsten Runde; `lEinstellungGeaendert` schreibt
+  `lehrer.runden` (in der Lobby auch `art`, `stufe`). Automatik (nur Lehrkraft, in `zk-lehrer`): „Vorspielen
   wiederholen“ (Diktat) und „Automodus“ (Diktat: nach `L.anzahl`-mal
   Vorspielen + Pause endet die Runde; Auflösung `L.aufloesung` s (1-60),
   dann nächste Runde bzw. Endstand). „Auflösung vorspielen“
