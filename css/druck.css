@@ -52,6 +52,10 @@
     .anzeige-system .linien-fuenf { color: #666 !important; }
     [data-ab], .handsatz { opacity: 1 !important; }
     .anzeige-system .handsatz { fill: #000 !important; }   /* "Verdecken" soll auf Papier nie greifen */
+    /* stil.css fuellt Taktangabe und Zaehlzeiten mit var(--text) - im dunklen
+       Layout hellgrau, auf weissem Papier also fast unsichtbar. */
+    .anzeige-system .kopf, .anzeige-system .zaehlzeit,
+    .bw-system .kopf, .bw-system .zaehlzeit { fill: #000 !important; }
 
     /* Beat-Werkstatt (Klasse druck-beat am body, solange der Beat-Reiter
        offen ist): statt der Rhythmus-Karte das eigene Blatt #bw-druck. */
