@@ -172,11 +172,16 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
 - Ansichten über den Suchteil der URL (nicht im Hash, das Link-Format bleibt
   unberührt): `?ansicht=uebung` = schlanke Übungsansicht zum Einbetten
   (Klasse `ansicht-uebung` auf `<html>`, alles mit `.nicht-in-uebung`
-  verschwindet, immer dunkel), meldet eingebettet ihre Höhe per
+  verschwindet), meldet eingebettet ihre Höhe per
   `postMessage({typ:'rw-hoehe', hoehe})`. `?ansicht=pdf` baut nur das PDF
   und schickt es an die einbettende Seite: `{typ:'rw-pdf', pdf: ArrayBuffer,
   name}` bzw. `{typ:'rw-pdf', fehler}`. Genutzt von Beat Vault
   (Aufgaben unter „Aktuell“: Übung aufklappen, „Als Noten öffnen“).
+  Hell/Dunkel eingebettet: `?ansicht=uebung` und `?ansicht=spiele` starten
+  dunkel (passt zu Beat Vault) und haben einen eigenen Umschalter
+  (`.theme-knopf-uebung`, sichtbar über `.nur-in-uebung`/`.nur-in-spiele`).
+  Die Wahl steht in `localStorage` `rw-theme-eingebettet`, getrennt von
+  `rw-theme` der normalen Seite. Beat Vault selbst ändert dafür nichts.
 - Zählzeiten stehen über den Noten (`ZAEHL_Y`), der Handsatz darunter
   (`HANDSATZ_Y`) - fest für alle Zeilen, damit sie bei „Als Übung“
   untereinander stehen.

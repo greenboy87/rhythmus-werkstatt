@@ -22,18 +22,22 @@ if (ANSICHT === 'zaehlen' || ANSICHT === 'diktat') document.documentElement.clas
 if (ANSICHT === 'spiele') document.documentElement.classList.add('ansicht-spiele');
 
 /* ---------- Theme ---------- */
+// Eingebettet (Beat Vault) startet dunkel, egal was das Geraet eingestellt
+// hat, und merkt sich die eigene Wahl getrennt von der normalen Seite.
+const THEME_EINGEBETTET = ANSICHT === 'uebung' || ANSICHT === 'spiele';
+const THEME_SCHLUESSEL = THEME_EINGEBETTET ? 'rw-theme-eingebettet' : 'rw-theme';
+function themeGespeichert() { try { return localStorage.getItem(THEME_SCHLUESSEL); } catch (e) { return null; } }
 (function () {
-    // Eingebettet immer dunkel - passt zu Beat Vault, egal was das Geraet eingestellt hat
-    if (ANSICHT === 'uebung' || ANSICHT === 'spiele') return;
-    const gespeichert = localStorage.getItem('rw-theme');
-    const hell = gespeichert ? gespeichert === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    const gespeichert = themeGespeichert();
+    const hell = gespeichert ? gespeichert === 'light'
+        : !THEME_EINGEBETTET && window.matchMedia('(prefers-color-scheme: light)').matches;
     if (hell) document.documentElement.setAttribute('data-theme', 'light');
 })();
 function themeUmschalten() {
     const hell = document.documentElement.getAttribute('data-theme') === 'light';
     if (hell) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', 'light');
-    localStorage.setItem('rw-theme', hell ? 'dark' : 'light');
+    try { localStorage.setItem(THEME_SCHLUESSEL, hell ? 'dark' : 'light'); } catch (e) { /* Speicher gesperrt: gilt nur bis zum Neuladen */ }
 }
 
 /* Zeigt im Fuss, von wann die geladene Fassung ist (document.lastModified -
@@ -635,7 +639,7 @@ async function audioHerunterladen(e) {
 }
 
 function init() {
-    document.getElementById('theme-knopf').addEventListener('click', themeUmschalten);
+    document.querySelectorAll('#theme-knopf, .theme-knopf-uebung').forEach(k => k.addEventListener('click', themeUmschalten));
 
     const taktartWahl = document.getElementById('taktart-wahl');
     TAKTARTEN.forEach(z => {

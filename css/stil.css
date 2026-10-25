@@ -326,6 +326,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
    Nur Notenbild, Abspielen, Tempo und Metronom - ohne Editor, Speichern,
    Export und Druck. Gleiches Notenbild, gleicher Klang wie die volle Seite. */
 .ansicht-uebung .nicht-in-uebung { display: none !important; }
+.nur-in-uebung { display: none !important; }
+.ansicht-uebung .nur-in-uebung { display: inline-flex !important; }
+.nur-in-spiele { display: none !important; }
+.ansicht-spiele .nur-in-spiele { display: inline-flex !important; }
 .ansicht-uebung body { min-height: 0; padding-bottom: 0; background: transparent; }
 .ansicht-uebung main { padding: 0; max-width: none; }
 .ansicht-uebung .anzeige-karte { margin: 0; }
