@@ -150,7 +150,9 @@ function bausteinPasstAn(b, pos, zeichen) {
 // bleibt auch zwischen Sechzehnteln gut ein halber Kopf Luft.
 const VORSCHUB = { 4: 120, 2: 78, 1: 50, 0.75: 40, 0.5: 34, 0.25: 26, [1 / 3]: 30, [1 / 6]: 24 };
 const VORSCHUB_SONST = 50;
-const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 4.5, BALKEN_LUFT = 3.5;
+const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 3.8, BALKEN_LUFT = 3.8;
+// Halsstaerke: bewusst leicht, damit das Notenbild nicht zu dick wirkt
+const HALS_DICKE = 1.7;
 // Zaehlzeiten stehen ueber den Noten (oberhalb von Haelsen, Balken und
 // Triolenziffern), der Handsatz darunter - fuer alle Zeilen auf derselben
 // Hoehe, damit sie bei "Als Uebung" genau untereinander stehen.
@@ -192,7 +194,7 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
-            teile.push(`<rect x="${a - 1.2}" y="${H - 1}" width="${b - a + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
+            teile.push(`<rect x="${a - HALS_DICKE / 2}" y="${H - 1}" width="${b - a + HALS_DICKE}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
             const stummel = 9;
             for (let i = 0; i < gruppe.length; i++) {
                 if (gruppe[i].d > 0.25) continue;
@@ -203,8 +205,8 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
                 else if (nachbarLinks) continue;
                 else if (i > 0) { von = gruppe[i].hx - stummel; bis = gruppe[i].hx; }
                 else { von = gruppe[i].hx; bis = gruppe[i].hx + stummel; }
-                teile.push(`<rect x="${von - 1.2}" y="${H - 1 + BALKEN_DICKE + BALKEN_LUFT}" ` +
-                           `width="${bis - von + 2.4}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
+                teile.push(`<rect x="${von - HALS_DICKE / 2}" y="${H - 1 + BALKEN_DICKE + BALKEN_LUFT}" ` +
+                           `width="${bis - von + HALS_DICKE}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
                 ink(von - 2, bis + 2, H - 1, Y + 7);
             }
             if (baustein.triole) {
@@ -237,18 +239,18 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
             } else if (t.d >= 1) {
                 teile.push(`<path d="M${px - 5} ${Y - 15} L${px + 4} ${Y - 5.5}` +
                            ` L${px - 4} ${Y + 1} L${px + 5} ${Y + 10.5}"` +
-                           ` fill="none" stroke="${tinte}" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/>`);
+                           ` fill="none" stroke="${tinte}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
                 teile.push(`<path d="M${px + 5} ${Y + 10.5} c -7 -3.5 -11 2 -5.5 7.5"` +
-                           ` fill="none" stroke="${tinte}" stroke-width="3" stroke-linecap="round"/>`);
+                           ` fill="none" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round"/>`);
                 ink(px - 8, px + 8, Y - 16, Y + 19);
             } else if (t.d <= 0.25) {
-                teile.push(`<path d="M${px + 5} ${Y - 11} L${px - 4} ${Y + 12}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
-                           `<circle cx="${px}" cy="${Y - 9}" r="3.2" fill="${tinte}"/>` +
-                           `<circle cx="${px - 3.5}" cy="${Y}" r="3.2" fill="${tinte}"/>`);
+                teile.push(`<path d="M${px + 5} ${Y - 11} L${px - 4} ${Y + 12}" stroke="${tinte}" stroke-width="1.9" stroke-linecap="round" fill="none"/>` +
+                           `<circle cx="${px}" cy="${Y - 9}" r="2.9" fill="${tinte}"/>` +
+                           `<circle cx="${px - 3.5}" cy="${Y}" r="2.9" fill="${tinte}"/>`);
                 ink(px - 7, px + 7, Y - 13, Y + 13);
             } else {
-                teile.push(`<path d="M${px + 4} ${Y - 10} L${px - 3} ${Y + 10}" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round" fill="none"/>` +
-                           `<circle cx="${px - 1}" cy="${Y - 8}" r="3.2" fill="${tinte}"/>`);
+                teile.push(`<path d="M${px + 4} ${Y - 10} L${px - 3} ${Y + 10}" stroke="${tinte}" stroke-width="1.9" stroke-linecap="round" fill="none"/>` +
+                           `<circle cx="${px - 1}" cy="${Y - 8}" r="2.9" fill="${tinte}"/>`);
                 ink(px - 5, px + 6, Y - 12, Y + 11);
                 if (istPunktiert(t.d)) punktSetzen(px + 9);
             }
@@ -260,12 +262,12 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         if (istAkzent(baustein, teilNr)) {
             // Akzent > ueber Hals und Balken (bei Triolen ueber der Ziffer)
             const ax = px + 3, ay = H - (baustein.triole ? 19 : 9);
-            teile.push(`<path class="akzent" d="M${ax - 5.5} ${ay - 3.6} L${ax + 5.5} ${ay} L${ax - 5.5} ${ay + 3.6}" fill="none" stroke="${tinte}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`);
+            teile.push(`<path class="akzent" d="M${ax - 5.5} ${ay - 3.6} L${ax + 5.5} ${ay} L${ax - 5.5} ${ay + 3.6}" fill="none" stroke="${tinte}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`);
             ink(ax - 7, ax + 7, ay - 6, ay + 6);
         }
         const hohl = t.d >= 2;
-        teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.5" ry="5.4" transform="rotate(-18 ${px} ${Y})"` +
-                   (hohl ? ` class="kopf-hohl" fill="none" stroke="${tinte}" stroke-width="2.6"/>` : ` fill="${tinte}"/>`));
+        teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.2" ry="5.1" transform="rotate(-18 ${px} ${Y})"` +
+                   (hohl ? ` class="kopf-hohl" fill="none" stroke="${tinte}" stroke-width="2"/>` : ` fill="${tinte}"/>`));
         ink(px - 9, px + 9, Y - 7, Y + 7);
         if (istPunktiert(t.d)) punktSetzen(px + 12.5);
         if (t.d >= 4) return;
@@ -273,9 +275,9 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         // Kopfs (x+7), unten ein Stueck in den Kopf hinein - so geht er
         // nahtlos ueber. Gerades Ende (butt): ein rundes ragte oben ueber den
         // Balken. Beim hohlen Kopf endet er am Rand, nicht im Loch.
-        const hx = px + 5.8;
+        const hx = px + 7 - HALS_DICKE / 2;
         ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), H - 1, Y + 7);
-        teile.push(`<line x1="${hx}" y1="${Y - (hohl ? 3 : 1)}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="2.4" stroke-linecap="butt"/>`);
+        teile.push(`<line x1="${hx}" y1="${Y - (hohl ? 3 : 1)}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="${HALS_DICKE}" stroke-linecap="butt"/>`);
         if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
     });
     gruppeAbschliessen();

@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=59">
-<link rel="stylesheet" href="css/druck.css?v=59">
+<link rel="stylesheet" href="css/stil.css?v=60">
+<link rel="stylesheet" href="css/druck.css?v=60">
 </head>
 <body>
 
@@ -97,63 +97,7 @@
     <!-- ---------- Metronom + Anzeige: zusammen, auch als Vollbild fuer den Beamer ---------- -->
     <section class="karte anzeige-karte" id="anzeige-karte">
         <div class="vollbild-kopf">
-        <!-- Zeile 1: Spielen -->
-        <div class="leiste steuer-zeile">
-            <button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button>
-            <label class="chip" title="Endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst">
-                <input type="checkbox" id="opt-loop"><span><i class="fa-solid fa-repeat"></i> Loop</span>
-            </label>
-            <span class="segment" role="group" aria-label="Abspiel-Modus">
-                <button type="button" class="btn an" data-modus="vorklatschen" title="Vorspielen: der Rhythmus erklingt, die Klasse hört zu"><i class="fa-solid fa-volume-high"></i> Vorspielen</button>
-                <button type="button" class="btn" data-modus="selbstklatschen" title="Selbst klatschen: nur der Puls läuft, die Markierung zeigt, wo man gerade ist"><i class="fa-solid fa-hands-clapping"></i> Selbst</button>
-            </span>
-            <select id="abspielen-modus" class="hidden" aria-hidden="true">
-                <option value="vorklatschen">Vorklatschen</option>
-                <option value="selbstklatschen">Selbstklatschen</option>
-            </select>
-            <span class="segment" role="group" aria-label="Klang des Rhythmus" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
-                <button type="button" class="btn an" data-klang="snare">🥁 Snare</button>
-                <button type="button" class="btn" data-klang="klatschen">👏 Klatschen</button>
-                <button type="button" class="btn" data-klang="holzblock">🪵 Holzblock</button>
-                <button type="button" class="btn" data-klang="klick">Klick</button>
-                <button type="button" class="btn" data-klang="trommel">🪘 Conga</button>
-            </span>
-            <select id="klatsch-sound-wahl" class="hidden" aria-hidden="true">
-                <option value="snare">Snare</option>
-                <option value="klatschen">Klatschen</option>
-                <option value="holzblock">Holzblock</option>
-                <option value="klick">Klick</option>
-                <option value="trommel">Conga</option>
-            </select>
-            <span id="metronom" class="metronom-gruppen"></span>
-        </div>
-
-        <!-- Zeile 2: Notenbild -->
-        <div class="leiste steuer-zeile">
-            <label class="chip"><input type="checkbox" id="opt-notenlinien"><span>Linien</span></label>
-            <label class="chip" title="Zählzeiten über den Noten"><input type="checkbox" id="opt-zaehlzeiten"><span>Zählzeiten</span></label>
-            <label class="chip hidden" id="und-plus-feld" title="An: „1 + 2 +“, aus: „1 und 2 und“"><input type="checkbox" id="opt-und-als-plus"><span>1 + 2</span></label>
-            <label class="chip" title="Rechts/Links unter jede Note: R L R L im Raster des Schlags"><input type="checkbox" id="opt-handsatz"><span>R / L</span></label>
-            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen"><input type="checkbox" id="opt-als-uebung"><span>Als Übung</span></label>
-            <input type="checkbox" id="opt-wiederholung" class="hidden" aria-hidden="true">
-            <label class="regler" title="Wie oft das Stück insgesamt gespielt wird - ab 2× mit Wiederholungszeichen">
-                <span class="regler-name">Durchgänge</span>
-                <input type="range" id="wiederholung-regler" min="1" max="10" step="1" value="1">
-                <span class="regler-wert" id="wiederholung-wert">1×</span>
-            </label>
-            <label class="regler" title="Größe des Notenbilds - wirkt auch im Vollbild und (soweit es passt) auf dem Ausdruck">
-                <span class="regler-name">Größe</span>
-                <input type="range" id="groesse-regler" min="60" max="300" step="10" value="100">
-                <span class="regler-wert" id="anzeige-groesse-anzeige">100%</span>
-            </label>
-            <label class="regler" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck">
-                <span class="regler-name">Takte/Zeile</span>
-                <input type="range" class="takte-zeile-regler" min="0" max="8" step="1" value="0">
-                <span class="regler-wert takte-zeile-anzeige">auto</span>
-            </label>
-        </div>
-
-        <!-- Zeile 3: Blatt -->
+        <!-- Zeile 1: Blatt (Titel, Verdecken, Vollbild, Speichern) -->
         <div class="leiste steuer-zeile">
             <label class="feld nicht-in-uebung" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift über den Noten - auf dem Bildschirm, im Vollbild und auf dem Ausdruck">
                 Titel
@@ -173,12 +117,78 @@
                 </div>
             </details>
         </div>
-        <div class="leiste antipp-leiste">
-            <span>Note antippen:</span>
-            <span class="segment" role="group" aria-label="Was Antippen im Notenbild macht">
-                <button type="button" class="btn an" data-antippen="akzent" title="Note antippen = Akzent an/aus, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-chevron-right"></i> Akzent</button>
-                <button type="button" class="btn" data-antippen="start" title="Note antippen = ab dieser Note abspielen, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-forward-step"></i> Startpunkt</button>
+
+        <!-- Zeile 2: Notenbild (was auf dem Blatt steht) -->
+        <div class="leiste steuer-zeile">
+            <label class="chip"><input type="checkbox" id="opt-notenlinien"><span>Linien</span></label>
+            <label class="chip" title="Zählzeiten über den Noten"><input type="checkbox" id="opt-zaehlzeiten"><span>Zählzeiten</span></label>
+            <label class="chip hidden" id="und-plus-feld" title="An: „1 + 2 +“, aus: „1 und 2 und“"><input type="checkbox" id="opt-und-als-plus"><span>1 + 2</span></label>
+            <label class="chip" title="Rechts/Links unter jede Note: R L R L im Raster des Schlags"><input type="checkbox" id="opt-handsatz"><span>R / L</span></label>
+            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen"><input type="checkbox" id="opt-als-uebung"><span>Als Übung</span></label>
+            <span class="trenner"></span>
+            <input type="checkbox" id="opt-wiederholung" class="hidden" aria-hidden="true">
+            <input type="range" id="wiederholung-regler" class="hidden" min="1" max="10" step="1" value="1" aria-hidden="true">
+            <span class="stufen" title="Wie oft das Stück insgesamt gespielt wird - ab 2× mit Wiederholungszeichen">
+                <span class="stufen-name">Durchgänge</span>
+                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="-1" aria-label="Weniger Durchgänge">−</button>
+                <span class="stufen-wert" id="wiederholung-wert">1×</span>
+                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="1" aria-label="Mehr Durchgänge">+</button>
             </span>
+            <input type="range" id="groesse-regler" class="hidden" min="60" max="300" step="10" value="100" aria-hidden="true">
+            <span class="stufen" title="Größe des Notenbilds - wirkt auch im Vollbild und (soweit es passt) auf dem Ausdruck">
+                <span class="stufen-name">Größe</span>
+                <button type="button" class="btn" data-stufe-fuer="groesse-regler" data-schritt="-10" aria-label="Kleiner">−</button>
+                <span class="stufen-wert" id="anzeige-groesse-anzeige">100%</span>
+                <button type="button" class="btn" data-stufe-fuer="groesse-regler" data-schritt="10" aria-label="Größer">+</button>
+            </span>
+            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
+                <span class="stufen-name">Takte/Zeile</span>
+                <button type="button" class="btn takte-zeile-minus" aria-label="Weniger Takte je Zeile">−</button>
+                <span class="stufen-wert takte-zeile-anzeige">auto</span>
+                <button type="button" class="btn takte-zeile-plus" aria-label="Mehr Takte je Zeile">+</button>
+            </span>
+        </div>
+
+        <!-- Zeile 3: Klang und was Antippen im Notenbild macht -->
+        <div class="leiste steuer-zeile">
+            <label class="stufen" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
+                <span class="stufen-name">Klang</span>
+                <select id="klatsch-sound-wahl">
+                    <option value="snare">🥁 Snare</option>
+                    <option value="klatschen">👏 Klatschen</option>
+                    <option value="holzblock">🪵 Holzblock</option>
+                    <option value="klick">Klick</option>
+                    <option value="trommel">🪘 Conga</option>
+                </select>
+            </label>
+            <span class="stufen antipp-leiste" title="Note antippen = Akzent an/aus oder ab dieser Note abspielen. Neben die Noten tippen = Takt loopen">
+                <span class="stufen-name">Note antippen</span>
+                <span class="segment" role="group" aria-label="Was Antippen im Notenbild macht">
+                    <button type="button" class="btn an" data-antippen="akzent" title="Note antippen = Akzent an/aus, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-chevron-right"></i> Akzent</button>
+                    <button type="button" class="btn" data-antippen="start" title="Note antippen = ab dieser Note abspielen, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-forward-step"></i> Startpunkt</button>
+                </span>
+            </span>
+            <details class="hilfe" id="loop-tipp">
+                <summary class="btn btn-icon" title="Tipps und Tastatur"><i class="fa-solid fa-circle-question"></i></summary>
+                <p class="anzeige-tipp">Note antippen = Akzent an/aus (mit „Startpunkt“: ab dieser Note abspielen). Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück bzw. von vorn</span></p>
+            </details>
+        </div>
+
+        <!-- Abspielen + Metronom: alles zusammen, direkt über dem Notenbild -->
+        <div class="spieler-leiste">
+            <button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <label class="chip" title="Endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst">
+                <input type="checkbox" id="opt-loop"><span><i class="fa-solid fa-repeat"></i> Loop</span>
+            </label>
+            <span class="segment" role="group" aria-label="Abspiel-Modus">
+                <button type="button" class="btn an" data-modus="vorklatschen" title="Vorspielen: der Rhythmus erklingt, die Klasse hört zu"><i class="fa-solid fa-volume-high"></i> Vorspielen</button>
+                <button type="button" class="btn" data-modus="selbstklatschen" title="Selbst klatschen: nur der Puls läuft, die Markierung zeigt, wo man gerade ist"><i class="fa-solid fa-hands-clapping"></i> Selbst</button>
+            </span>
+            <select id="abspielen-modus" class="hidden" aria-hidden="true">
+                <option value="vorklatschen">Vorklatschen</option>
+                <option value="selbstklatschen">Selbstklatschen</option>
+            </select>
+            <span id="metronom" class="metronom-gruppen"></span>
         </div>
         <div class="leiste hidden" id="startpunkt-info" style="margin-bottom:.5rem;">
             <span><i class="fa-solid fa-forward-step"></i> <b id="startpunkt-text"></b> – Abspielen (und Loop) beginnt hier</span>
@@ -188,7 +198,6 @@
             <span><i class="fa-solid fa-repeat"></i> <b id="loop-auswahl-text"></b> – nur dieser Teil wird abgespielt</span>
             <button type="button" class="btn" id="loop-auswahl-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
         </div>
-        <p class="anzeige-tipp" id="loop-tipp">Tipp: Note antippen = Akzent an/aus (mit „Startpunkt“: ab dieser Note abspielen). Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück bzw. von vorn</span></p>
         <h2 id="anzeige-titel" class="hidden" style="text-align:center; margin:0 0 .6rem;"></h2>
         </div>
         <div id="anzeige"></div>
@@ -589,21 +598,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=59"></script>
-<script src="js/noten.js?v=59"></script>
-<script src="js/editor.js?v=59"></script>
-<script src="js/audio.js?v=59"></script>
-<script src="js/generator.js?v=59"></script>
-<script src="js/link.js?v=59"></script>
-<script src="js/vendor/lame.min.js?v=59"></script>
-<script src="js/export.js?v=59"></script>
-<script src="js/pdf.js?v=59"></script>
-<script src="js/app.js?v=59"></script>
-<script src="js/beat.js?v=59"></script>
-<script src="js/drumset.js?v=59"></script>
-<script src="js/zaehlkern.js?v=59"></script>
-<script src="js/zaehlspiel.js?v=59"></script>
-<script src="js/spiele.js?v=59"></script>
-<script src="js/reiter.js?v=59"></script>
+<script src="js/version.js?v=60"></script>
+<script src="js/noten.js?v=60"></script>
+<script src="js/editor.js?v=60"></script>
+<script src="js/audio.js?v=60"></script>
+<script src="js/generator.js?v=60"></script>
+<script src="js/link.js?v=60"></script>
+<script src="js/vendor/lame.min.js?v=60"></script>
+<script src="js/export.js?v=60"></script>
+<script src="js/pdf.js?v=60"></script>
+<script src="js/app.js?v=60"></script>
+<script src="js/beat.js?v=60"></script>
+<script src="js/drumset.js?v=60"></script>
+<script src="js/zaehlkern.js?v=60"></script>
+<script src="js/zaehlspiel.js?v=60"></script>
+<script src="js/spiele.js?v=60"></script>
+<script src="js/reiter.js?v=60"></script>
 </body>
 </html>

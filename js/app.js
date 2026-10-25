@@ -94,7 +94,6 @@ function takteProZeileAnzeigen() {
     document.querySelectorAll('.takte-zeile-anzeige').forEach(el => {
         el.textContent = takteProZeile === 0 ? 'auto' : takteProZeile;
     });
-    document.querySelectorAll('.takte-zeile-regler').forEach(el => { el.value = takteProZeile; });
     if (editor) editor.takteProZeileSetzen(takteProZeile);
 }
 
@@ -109,8 +108,6 @@ function leisteAnzeigen() {
     document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
     const modus = document.getElementById('abspielen-modus').value;
     document.querySelectorAll('[data-modus]').forEach(b => b.classList.toggle('an', b.dataset.modus === modus));
-    const klang = document.getElementById('klatsch-sound-wahl').value;
-    document.querySelectorAll('[data-klang]').forEach(b => b.classList.toggle('an', b.dataset.klang === klang));
 }
 
 function anzeigeNeuZeichnen() {
@@ -690,7 +687,7 @@ function init() {
         clearTimeout(takteProZeileTimer);
         takteProZeileTimer = setTimeout(anzeigeNeuZeichnen, 1500);
     };
-    // Zwei Regler (Eingabe unten, Anzeige oben), ein Wert.
+    // Zwei −/+-Paare (Eingabe und Anzeige), ein Wert.
     document.querySelectorAll('.takte-zeile-minus').forEach(k => k.addEventListener('click', () => {
         takteProZeile = Math.max(0, takteProZeile - 1);
         takteProZeileAnzeigen();
@@ -701,10 +698,15 @@ function init() {
         takteProZeileAnzeigen();
         takteProZeileVerzoegert();
     }));
-    document.querySelectorAll('.takte-zeile-regler').forEach(r => r.addEventListener('input', () => {
-        takteProZeile = Number(r.value);
-        takteProZeileAnzeigen();
-        takteProZeileVerzoegert();
+
+    // −/+ fuer Durchgaenge und Groesse: verstellen den (versteckten) Regler
+    // und loesen dessen input aus - Link, Blatt und Export lesen weiter dort.
+    document.querySelectorAll('[data-stufe-fuer]').forEach(k => gedrueckthalten(k, () => {
+        const r = document.getElementById(k.dataset.stufeFuer);
+        const wert = Math.max(Number(r.min), Math.min(Number(r.max), Number(r.value) + Number(k.dataset.schritt)));
+        if (wert === Number(r.value)) return;
+        r.value = wert;
+        r.dispatchEvent(new Event('input'));
     }));
 
     document.getElementById('groesse-regler').addEventListener('input', (e) => {
@@ -790,15 +792,12 @@ function init() {
     }));
 
     // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf).
-    // Die Knoepfe setzen die versteckte Auswahl - Link, Blatt und Export lesen weiter dort.
     const klangWahl = document.getElementById('klatsch-sound-wahl');
-    document.querySelectorAll('[data-klang]').forEach(b => b.addEventListener('click', () => {
-        klangWahl.value = b.dataset.klang;
+    klangWahl.addEventListener('change', () => {
         klatschSoundSetzen(klangWahl.value);
-        leisteAnzeigen();
         const probe = () => { const ctx = tonBereit(probe); if (ctx) klatschSoundSpielen(ctx, ctx.currentTime + 0.05); };
         probe();
-    }));
+    });
     document.addEventListener('keydown', rhythmusTaste);
 
     let resizeTimer = null;

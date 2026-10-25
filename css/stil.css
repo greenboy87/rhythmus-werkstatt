@@ -336,7 +336,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .anzeige-system .startpunkt { stroke: var(--akzent); fill: var(--akzent); pointer-events: none; }
 #startpunkt-info { font-size: .85rem; color: var(--text-gedaempft); }
 #startpunkt-info b { color: var(--akzent); }
-.antipp-leiste { justify-content: center; margin-bottom: .4rem; font-size: .85rem; color: var(--text-gedaempft); }
 .antipp-modus-start .anzeige-system .noten-feld { cursor: crosshair; }
 #loop-auswahl-info { font-size: .85rem; color: var(--text-gedaempft); }
 #loop-auswahl-info b { color: var(--akzent); }
@@ -535,9 +534,54 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
    einheitliche Bausteine - Chips zum Umschalten, Regler mit Name und Wert,
    ein Menue fuer alles zum Speichern.
    ============================================================ */
-.steuer-zeile { margin-bottom: .6rem; row-gap: .5rem; }
-.steuer-zeile + .steuer-zeile { padding-top: .6rem; border-top: 1px solid var(--rand-schwach); }
-.metronom-gruppen { display: contents; }
+.steuer-zeile { margin-bottom: .5rem; row-gap: .45rem; gap: .45rem; }
+.steuer-zeile .trenner { width: 1px; align-self: stretch; background: var(--rand-schwach); margin: 0 .15rem; }
+
+/* Abspielen + Metronom in einem Kasten, direkt ueber dem Notenbild */
+.spieler-leiste {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .45rem;
+    margin: .7rem 0 .9rem; padding: .55rem .7rem;
+    border: 1px solid var(--rand); border-radius: 14px; background: var(--bg-erhoben);
+}
+/* Metronom als EIN Kasten: Puls | Tempo | Vorlauf | Lautstaerke + freies Metronom */
+.metronom-gruppen {
+    display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center;
+    border: 1px solid var(--rand-schwach); border-radius: 10px; background: var(--bg-karte);
+}
+.metronom-gruppen > .stufen, .metronom-gruppen > .metronom-puls { border: none; background: none; border-radius: 0; }
+.metronom-gruppen > * + * { border-left: 1px solid var(--rand-schwach) !important; }
+@media (max-width: 640px) { .metronom-gruppen > * + * { border-left: none !important; } }
+.metronom-gruppen .metronom-puls { padding: 0 .55rem; align-self: stretch; align-items: center; }
+
+/* Stufen: Name, −, Wert, + (statt Schieberegler) */
+.stufen {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .35rem .2rem .6rem; border: 1px solid var(--rand-schwach); border-radius: 10px; background: var(--bg-erhoben);
+}
+.stufen-name { font-size: .72rem; font-weight: 700; color: var(--text-gedaempft); white-space: nowrap; margin-right: .15rem; }
+.stufen > .btn { padding: .2rem .55rem; min-width: 1.9rem; font-size: .95rem; line-height: 1.2; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.stufen-wert { min-width: 2.6rem; text-align: center; font-size: .82rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-rolle="vorlauf-anzeige"] { min-width: 1.8rem; }
+.stufen-eingabe {
+    width: 3.2rem; padding: .15rem .1rem; border: 1px solid transparent; border-radius: 6px;
+    background: transparent; color: var(--text); font-family: inherit; -moz-appearance: textfield; appearance: textfield;
+}
+.stufen-eingabe::-webkit-outer-spin-button, .stufen-eingabe::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stufen-eingabe:hover, .stufen-eingabe:focus { border-color: var(--rand); outline: none; background: var(--bg-karte); }
+.stufen select { padding: .2rem .4rem; font-size: .8rem; }
+.stufen .segment .btn { padding: .25rem .6rem; font-size: .78rem; }
+.metronom-feld input[type="range"] { width: 4.5rem; accent-color: var(--akzent); }
+
+/* Tipps hinter einem ?-Knopf */
+.hilfe { position: relative; }
+.hilfe summary { list-style: none; cursor: pointer; }
+.hilfe summary::-webkit-details-marker { display: none; }
+.hilfe[open] summary { border-color: var(--akzent); color: var(--akzent); }
+.hilfe .anzeige-tipp {
+    position: absolute; z-index: 5; right: 0; top: calc(100% + .3rem); width: min(28rem, 80vw);
+    text-align: left; margin: 0; padding: .6rem .8rem; font-size: .78rem; line-height: 1.5;
+    background: var(--bg-erhoben); border: 1px solid var(--rand); border-radius: 10px; box-shadow: var(--schatten); color: var(--text-gedaempft);
+}
 
 /* Chip = Schalter als Knopf: versteckte Checkbox, angezeigt wird der span */
 .chip { display: inline-flex; cursor: pointer; }

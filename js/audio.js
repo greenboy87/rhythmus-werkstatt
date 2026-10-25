@@ -254,6 +254,23 @@ function metronomKlick(ctx, zeit, betont, ziel) {
     return o;
 }
 
+/* −/+-Knopf: Tippen = ein Schritt, Gedrückthalten wiederholt (erst nach
+   0,4 s, dann alle 0,1 s) - auch auf dem iPad (Pointer-Events). */
+function gedrueckthalten(knopf, schritt) {
+    let warten = null, takt = null;
+    const aufhoeren = () => { clearTimeout(warten); clearInterval(takt); warten = takt = null; };
+    knopf.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        aufhoeren();
+        schritt();
+        warten = setTimeout(() => { takt = setInterval(schritt, 100); }, 400);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(art => knopf.addEventListener(art, aufhoeren));
+    // Tastatur (Enter/Leertaste auf dem fokussierten Knopf)
+    knopf.addEventListener('click', (e) => { if (e.detail === 0) schritt(); });
+}
+
 /* ============================================================
    METRONOM
    zeichenGetter() liefert die aktuelle Taktart (z.B. aus dem Editor),
@@ -298,9 +315,8 @@ const Metronom = (function () {
     }
     function tempoZeichnen() {
         jedeAnsicht((w, teil) => {
-            const anzeige = teil('tempo'), regler = teil('regler');
-            if (anzeige) anzeige.textContent = bpm;
-            if (regler) regler.value = bpm;
+            const anzeige = teil('tempo');
+            if (anzeige && document.activeElement !== anzeige) anzeige.value = bpm;
         });
     }
     function tempoSetzen(wert) { bpm = Math.max(40, Math.min(200, Math.round(Number(wert) || 90))); tempoZeichnen(); }
@@ -328,9 +344,7 @@ const Metronom = (function () {
     function vorlaufZeichnen() {
         jedeAnsicht((w, teil) => {
             const anzeige = teil('vorlauf-anzeige');
-            if (anzeige) anzeige.textContent = vorlaufTakte;
-            const regler = teil('vorlauf-regler');
-            if (regler) regler.value = vorlaufTakte;
+            if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? 'aus' : vorlaufTakte;
         });
     }
     function vorlaufSetzen(wert) {
@@ -370,29 +384,40 @@ const Metronom = (function () {
 
     function bauen(wurzel, zeichenGetterFn) {
         if (zeichenGetterFn) zeichenGetter = zeichenGetterFn;
-        // Regler statt −/+ - gleicher Aufbau wie die anderen Regler der Leiste
-        // (Name, Schieber, Wert). Steht direkt in der Abspiel-Zeile.
+        // Tempo und Vorlauf mit −/+ (Tempo in 5er-Schritten, Gedrückthalten
+        // wiederholt, die Zahl selbst ist eintippbar), alles in einem Kasten:
+        // Puls, Tempo, Vorlauf, Lautstärke, freies Metronom.
         wurzel.innerHTML = `
-            <label class="regler" title="Tempo in Schlägen pro Minute">
-                <span class="regler-name">Tempo</span>
-                <input type="range" min="40" max="200" value="90" step="1" data-rolle="regler">
-                <span class="regler-wert" data-rolle="tempo">90</span>
-            </label>
-            <label class="regler" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
-                <span class="regler-name">Vorlauf</span>
-                <input type="range" min="0" max="${VORLAUF_MAX}" value="1" step="1" data-rolle="vorlauf-regler" style="width:4.5rem">
-                <span class="regler-wert" data-rolle="vorlauf-anzeige">1</span>
-            </label>
-            <span class="regler metronom-feld" title="Metronom: Lautstärke, stumm, frei laufen lassen">
-                <span class="metronom-puls" data-rolle="puls"></span>
+            <span class="metronom-puls" data-rolle="puls" title="Puls - leuchtet beim Abspielen mit"></span>
+            <span class="stufen" title="Tempo in Schlägen pro Minute - −/+ in 5er-Schritten, Zahl antippen zum Eintippen, Pfeiltasten ↑↓">
+                <span class="stufen-name">Tempo</span>
+                <button type="button" class="btn" data-rolle="tempo-minus" aria-label="Langsamer">−</button>
+                <input type="number" class="stufen-wert stufen-eingabe" min="40" max="200" step="1" value="90" data-rolle="tempo" aria-label="Tempo in bpm">
+                <button type="button" class="btn" data-rolle="tempo-plus" aria-label="Schneller">+</button>
+            </span>
+            <span class="stufen" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
+                <span class="stufen-name">Vorlauf</span>
+                <button type="button" class="btn" data-rolle="vorlauf-minus" aria-label="Weniger Vorlauf">−</button>
+                <span class="stufen-wert" data-rolle="vorlauf-anzeige">1</span>
+                <button type="button" class="btn" data-rolle="vorlauf-plus" aria-label="Mehr Vorlauf">+</button>
+            </span>
+            <span class="stufen metronom-feld" title="Metronom: Lautstärke, stumm, frei laufen lassen">
                 <button type="button" class="btn btn-icon" data-rolle="mute" title="Metronom stummschalten - das Aufleuchten im Notenbild läuft trotzdem immer mit"><i class="fa-solid fa-volume-high"></i></button>
-                <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" style="width:4.5rem" aria-label="Lautstärke des Metronoms">
+                <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" aria-label="Lautstärke des Metronoms">
                 <button type="button" data-rolle="start" class="btn btn-icon" title="Metronom frei laufen lassen (ohne Rhythmus), bis du stoppst"><i class="fa-solid fa-play"></i></button>
             </span>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
-        teil('regler').addEventListener('input', (e) => tempoSetzen(e.target.value));
+        // Auf das naechste Vielfache von 5 springen, dann in 5er-Schritten
+        const tempoSchritt = (richtung) => tempoSetzen(richtung > 0 ? Math.floor(bpm / 5) * 5 + 5 : Math.ceil(bpm / 5) * 5 - 5);
+        gedrueckthalten(teil('tempo-minus'), () => tempoSchritt(-1));
+        gedrueckthalten(teil('tempo-plus'), () => tempoSchritt(1));
+        const tempoFeld = teil('tempo');
+        tempoFeld.addEventListener('change', () => tempoSetzen(tempoFeld.value));
+        tempoFeld.addEventListener('blur', tempoZeichnen);
+        tempoFeld.addEventListener('keydown', (e) => { if (e.key === 'Enter') tempoFeld.blur(); });
         teil('start').addEventListener('click', umschalten);
-        teil('vorlauf-regler').addEventListener('input', (e) => vorlaufSetzen(e.target.value));
+        teil('vorlauf-minus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte - 1));
+        teil('vorlauf-plus').addEventListener('click', () => vorlaufSetzen(vorlaufTakte + 1));
         teil('mute').addEventListener('click', stummUmschalten);
         teil('lautstaerke').addEventListener('input', (e) => lautstaerkeSetzen(e.target.value / 100));
         ansichten = ansichten.filter(a => a.isConnected && a !== wurzel);

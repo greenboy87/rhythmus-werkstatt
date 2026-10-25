@@ -24,7 +24,7 @@
     /* #anzeige ist die Bildschirm-Ansicht (an die Fensterbreite angepasst,
        beliebig viele Takte je Zeile) - fuers Papier zeichnet #druck-anzeige
        eigens mit fester Takte-pro-Zeile-Zahl, Groesse und Titel. */
-    .anzeige-karte .leiste, .anzeige-karte #verdecken-btn, .anzeige-karte h2, #anzeige { display: none; }
+    .anzeige-karte .leiste, .anzeige-karte .spieler-leiste, .anzeige-karte #verdecken-btn, .anzeige-karte h2, #anzeige { display: none; }
     .anzeige-hinweis { display: none !important; }
     .nur-druck { display: block; }
 

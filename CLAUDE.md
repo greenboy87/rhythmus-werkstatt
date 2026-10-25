@@ -271,13 +271,13 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `#reiter-beat`), Standard schwarz-weiß.
   - Notenhälse mit geradem Ende (`stroke-linecap="butt"`), auch in
     noten.js - ein rundes Ende ragte über den Balken. Die rechte Halskante
-    sitzt bündig am rechten Rand des schrägen Kopfs (noten.js `px + 5.8`,
+    sitzt bündig am rechten Rand des schrägen Kopfs (noten.js `px + 7 - HALS_DICKE / 2`,
     beat.js `±4.6`) und reicht in den Kopf hinein - sonst steht der Hals
     seitlich über und sieht abgeschnitten aus.
     Bei einem Becken-Kreuz als unterstem Kopf beginnt der Hals am rechten
     oberen Arm des Kreuzes (`y - 4.5`), nicht in der Mitte.
 - Abstände im Notenbild (`VORSCHUB` in noten.js) sind bewusst großzügig
-  (Sechzehntel 26, Viertel 50), Balken 4,5 dick mit 3,5 Luft dazwischen.
+  (Sechzehntel 26, Viertel 50), Balken 3,8 dick mit 3,8 Luft dazwischen.
   - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
@@ -456,19 +456,26 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Link-Übernahme/-Kopieren (`linkUebernehmen`, `linkKopieren`) und der
   Herunterladen-Knopf (`audioHerunterladen`, Dateiname über
   `exportDateiname`, Download per Blob-URL + `<a download>`).
-- Leiste „Metronom & Anzeige“: drei Zeilen (`.steuer-zeile`): Spielen,
-  Notenbild, Blatt. Einheitliche Bausteine in stil.css: `.chip` (Checkbox
-  als Knopf - die alten `opt-…`-IDs bleiben, `change` wirkt wie vorher),
-  `.regler` (Name, Schieber, Wert), `.segment`, Menü `details.menue`
-  („Speichern“: PDF, Drucken, MP3, WAV - Format über `data-format`).
-  Intern unverändert und versteckt: `#abspielen-modus` (Umschalter
-  „Vorspielen | Selbst“ setzt den Wert), `#klatsch-sound-wahl` (Knöpfe
-  `[data-klang]`, Snare zuerst und Standard) und `#opt-wiederholung` (Regler
-  „Durchgänge“, 1 = aus). `leisteAnzeigen()` (läuft in jedem
-  `anzeigeNeuZeichnen`) bringt Regler und Umschalter auf den Stand - so
-  stimmen sie auch nach Link oder Blatt laden. Metronom-Teil (Tempo,
-  Vorlauf, Lautstärke, freies Metronom) baut `Metronom.bauen` in audio.js
-  direkt in diese Zeile. Klang wechseln spielt ihn einmal vor.
+- Leiste „Metronom & Anzeige“ (Player): oben drei kompakte Zeilen
+  (`.steuer-zeile`): Blatt (Titel, Verdecken, Vollbild, Menü „Speichern“),
+  Notenbild (Chips, Durchgänge, Größe, Takte/Zeile), Klang + „Note antippen“
+  + `?`-Knopf mit Tipps (`details.hilfe#loop-tipp`). Darunter, direkt über dem
+  Notenbild, die `.spieler-leiste`: Abspielen, Loop, Vorspielen|Selbst und
+  das Metronom als EIN Kasten (`#metronom.metronom-gruppen`: Puls | Tempo |
+  Vorlauf | Lautstärke + freies Metronom). Keine Schieberegler mehr außer der
+  Lautstärke: `.stufen` = Name, −, Wert, +. Tempo −/+ springt auf 5er-Schritte,
+  die Zahl ist eintippbar; `gedrueckthalten` (audio.js) wiederholt beim
+  Halten. Durchgänge und Größe: Knöpfe `[data-stufe-fuer][data-schritt]`
+  verstellen die versteckten Regler `#wiederholung-regler`/`#groesse-regler`
+  und lösen deren `input` aus. Klang = sichtbare Auswahl `#klatsch-sound-wahl`
+  (Snare zuerst und Standard, Wechsel spielt ihn einmal vor). Intern
+  unverändert: `.chip` (alte `opt-…`-IDs), `#abspielen-modus` (versteckt,
+  Umschalter setzt den Wert), `#opt-wiederholung`. Link, Blatt und Export
+  lesen weiter dieselben Felder. `leisteAnzeigen()` (läuft in jedem
+  `anzeigeNeuZeichnen`) bringt Werte und Umschalter auf den Stand.
+  `Metronom.bauen` baut denselben Kasten auch im Rhythmus-Diktat.
+- Notenbild bewusst leicht: `HALS_DICKE` 1,7, Balken 3,8 (noten.js), Kopf
+  7,2 × 5,1 - rechte Halskante bleibt bei `px + 7`.
 - Tastatur im Rhythmus-Reiter (`rhythmusTaste` in app.js, nicht in
   Textfeldern): Leertaste Abspielen/Stopp, ↑/↓ Tempo ±5 (wirkt live),
   ←/→ Takt davor/danach als Loop-Bereich, Esc ganzes Stück.
