@@ -452,7 +452,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   Vorspielen + Pause endet die Runde; Auflösung `L.aufloesung` s (1-60),
   dann nächste Runde bzw. Endstand). „Auflösung vorspielen“
   (`L.aufloesungSpielen`, Standard an, auch ohne Automodus): bei der
-  Auflösung den Rhythmus einmal mit Noten vorspielen. Zeit und
+  Auflösung den Rhythmus einmal mit Noten vorspielen.
+  Metronom (Tempo, Vorlauf) in Einstellungen, Lobby und Runde, ein geteilter
+  Stand. `L.bpm`/`L.vorlauf` = Tempo vom Spielstart (gemerkt beim Raum
+  öffnen und beim Start von Runde 1). Haken „Tempo beibehalten“
+  (`L.tempoBehalten`, Standard an): ein im Spiel geändertes Tempo gilt
+  weiter und wird gemerkt; aus: jede Runde beginnt wieder mit `L.bpm`. Zeit und
   „alle fertig“ beenden eine Runde früher. `lAutoPlanen` plant nur bei
   neuer Phase/Runde neu (`lAutoSchritt`). Tasten am Beamer: Leertaste
   vorspielen, → Spiel starten bzw. nächste Runde.

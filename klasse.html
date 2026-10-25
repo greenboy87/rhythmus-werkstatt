@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=67">
-<link rel="stylesheet" href="css/klasse.css?v=67">
+<link rel="stylesheet" href="css/stil.css?v=68">
+<link rel="stylesheet" href="css/klasse.css?v=68">
 </head>
 <body>
 
@@ -98,6 +98,10 @@
                 <span class="stufen-wert l-aufloesung-anzeige">10 s</span>
                 <button type="button" class="btn" data-l-aufloesung="1" aria-label="Länger">+</button>
             </span>
+        </div>
+        <div class="leiste" style="margin-bottom:.6rem;" title="Tempo und Vorlauf zum Vorspielen - gilt ab Spielstart">
+            <span class="schalter-feld">Metronom</span>
+            <span id="l-metronom-start" class="metronom-gruppen"></span>
         </div>
         <details class="zk-eigene">
             <summary>Eigene Rhythmen statt würfeln <span class="zs-hinweis" id="l-eigene-info"></span></summary>
@@ -189,7 +193,8 @@
                     <div class="zk-namen" id="l-namen"></div>
                 </div>
             </div>
-            <div class="leiste" style="justify-content:flex-end; margin-top:1rem;">
+            <div class="leiste" style="justify-content:space-between; margin-top:1rem;">
+                <span id="l-metronom-lobby" class="metronom-gruppen" title="Tempo zum Vorspielen - so beginnt das Spiel"></span>
                 <button type="button" class="btn btn-primär zk-gross-knopf" id="l-start-btn"><i class="fa-solid fa-play"></i> Spiel starten</button>
             </div>
         </div>
@@ -202,7 +207,10 @@
                 <div class="leiste" style="justify-content:center; margin:.6rem 0;">
                     <button type="button" class="btn btn-primär zk-gross-knopf" id="l-hoeren-btn"><i class="fa-solid fa-play"></i> Vorspielen</button>
                 </div>
-                <div class="leiste" id="l-metronom" style="justify-content:center;"></div>
+                <div class="leiste" style="justify-content:center;">
+                    <span id="l-metronom" class="metronom-gruppen"></span>
+                    <label class="chip" title="An: ein im Spiel geändertes Tempo gilt für alle weiteren Runden und wird gemerkt. Aus: jede Runde beginnt wieder mit dem Tempo vom Spielstart."><input type="checkbox" data-l-modus="tempoBehalten"><span><i class="fa-solid fa-lock"></i> Tempo beibehalten</span></label>
+                </div>
                 <div id="l-klang-host" class="hidden"></div>
             </div>
             <div class="zk-fortschritt" id="l-fortschritt"></div>
@@ -300,12 +308,12 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=67"></script>
-<script src="js/vendor/qrcode.min.js?v=67"></script>
-<script src="js/noten.js?v=67"></script>
-<script src="js/zaehlkern.js?v=67"></script>
-<script src="js/editor.js?v=67"></script>
-<script src="js/audio.js?v=67"></script>
-<script type="module" src="js/klasse.js?v=67"></script>
+<script src="js/version.js?v=68"></script>
+<script src="js/vendor/qrcode.min.js?v=68"></script>
+<script src="js/noten.js?v=68"></script>
+<script src="js/zaehlkern.js?v=68"></script>
+<script src="js/editor.js?v=68"></script>
+<script src="js/audio.js?v=68"></script>
+<script type="module" src="js/klasse.js?v=68"></script>
 </body>
 </html>

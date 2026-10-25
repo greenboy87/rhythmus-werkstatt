@@ -31,7 +31,11 @@
    L.anzahl-mal Vorspielen und einer letzten Pause endet die Runde; beide
    Spielarten: Aufloesung L.aufloesung Sekunden zeigen, dann naechste Runde
    bzw. Endstand). "Aufloesung vorspielen" (L.aufloesungSpielen, auch ohne
-   Automodus): bei der Aufloesung den Rhythmus einmal mit Noten vorspielen. lAutoPlanen
+   Automodus): bei der Aufloesung den Rhythmus einmal mit Noten vorspielen.
+   Tempo: Metronom in Einstellungen, Lobby und Runde (geteilter Stand).
+   L.bpm/L.vorlauf = Tempo vom Spielstart (gemerkt beim Raum oeffnen und beim
+   Start von Runde 1). "Tempo beibehalten" an: ein im Spiel geaendertes Tempo
+   gilt weiter und wird gemerkt; aus: jede Runde beginnt mit L.bpm. lAutoPlanen
    entscheidet nach jedem Schritt neu; Zeit und "alle fertig" gelten weiter.
    ============================================================ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
@@ -149,6 +153,7 @@ const L = Object.assign({
     art: 'zaehlen', klatsch: true,
     zeichen: '4/4', takte: 2, runden: 5, stufe: 1, zeit: 90, notenlinien: false, eigene: '',
     wiederholen: false, automodus: false, pause: 0, anzahl: 3, aufloesung: 10, aufloesungSpielen: true,
+    bpm: 90, vorlauf: 1, tempoBehalten: true,   // Tempo vom Spielstart (Metronom)
     code: null,       // offener Raum
     spiel: null,      // Kennung des laufenden Spiels
     plan: [],         // [{zeichen, kuerzel}] je Runde
@@ -202,6 +207,7 @@ async function raumOeffnen() {
     }
     if (!code) { zeigeToast('Kein freier Raumcode gefunden – bitte nochmal.', 'danger'); return; }
     L.code = code; L.gesamt = {}; L.spiel = null; L.plan = plan;
+    lTempoMerken();
     lSpeichern();
     lehrerStand = null;
     await set(ref(db, pfad(code, 'lehrer')), { phase: 'warten', art: L.art, runde: 0, runden: plan.length, stufe: L.stufe, offen: serverTimestamp() });
@@ -495,9 +501,14 @@ function lVorspielen() {
     lAutoPlanen();
 }
 
+function lTempoMerken() { L.bpm = Metronom.bpm(); L.vorlauf = Metronom.vorlaufTakte(); }
 async function lRundeStarten() {
     const st = lehrerStand;
     const runde = (st.runde || 0) + 1;
+    // Runde 1 nimmt das Tempo aus der Lobby als Start-Tempo; danach je nach Haken
+    if (runde === 1 || L.tempoBehalten) lTempoMerken();
+    else { Metronom.tempoSetzen(L.bpm); Metronom.vorlaufSetzen(L.vorlauf); }
+    lSpeichern();
     const aufgabe = L.plan[runde - 1];
     if (!aufgabe) return;
     if (!L.spiel) { L.spiel = zufall(6, 'abcdefghijkmnpqrstuvwxyz23456789'); lSpeichern(); }
@@ -575,6 +586,7 @@ function lEndeZeichnen() {
 async function lWeiter() {
     const st = lehrerStand;
     if (st.phase !== 'auswertung') return;   // Automatik und Knopf zugleich
+    if (L.tempoBehalten) { lTempoMerken(); lSpeichern(); }
     lSpielt = false;
     if (Vorklatschen.istAn()) Vorklatschen.stoppen(true);
     if (st.runde >= st.runden) {
@@ -636,7 +648,11 @@ function lehrerAufbauen() {
     $('l-klatsch').addEventListener('change', e => { L.klatsch = e.target.checked; lSpeichern(); });
     document.querySelectorAll('[data-l-art]').forEach(b => b.addEventListener('click', () => { L.art = b.dataset.lArt; lSpeichern(); lEinstellungenZeichnen(); }));
     $('l-hoeren-btn').addEventListener('click', lVorspielen);
-    document.querySelectorAll('[data-l-modus]').forEach(c => c.addEventListener('change', () => { L[c.dataset.lModus] = c.checked; lAutoModusGeaendert(); }));
+    document.querySelectorAll('[data-l-modus]').forEach(c => c.addEventListener('change', () => {
+        L[c.dataset.lModus] = c.checked;
+        if (c.dataset.lModus === 'tempoBehalten') { if (c.checked) lTempoMerken(); lSpeichern(); lAutoSchalterZeichnen(); }
+        else lAutoModusGeaendert();
+    }));
     const stufe = (liste, wert, r) => liste[Math.max(0, Math.min(liste.length - 1, Math.max(0, liste.indexOf(wert)) + r))];
     document.querySelectorAll('[data-l-pause]').forEach(k => k.addEventListener('click', () => { L.pause = stufe(L_PAUSEN, L.pause, Number(k.dataset.lPause)); lAutoModusGeaendert(); }));
     document.querySelectorAll('[data-l-aufloesung]').forEach(k => k.addEventListener('click', () => { L.aufloesung = stufe(L_AUFLOESUNG, L.aufloesung, Number(k.dataset.lAufloesung)); lAutoModusGeaendert(); }));
@@ -664,7 +680,11 @@ function lehrerAufbauen() {
     Vorklatschen.aufZustandAendern((laeuft) => {
         if (!laeuft) setTimeout(() => { if (lSpielt && !Vorklatschen.istAn()) { lSpielt = false; lAutoPlanen(); } }, 0);
     });
-    Metronom.bauen($('l-metronom'), () => (lehrerStand && lehrerStand.zeichen) || '4/4');
+    const taktart = () => (lehrerStand && lehrerStand.zeichen) || L.zeichen || '4/4';
+    Metronom.tempoSetzen(L.bpm); Metronom.vorlaufSetzen(L.vorlauf);
+    ['l-metronom-start', 'l-metronom-lobby', 'l-metronom'].forEach(id => Metronom.bauen($(id), taktart));
+    // Vor dem Raum: Aenderungen am Metronom gleich merken
+    window.addEventListener('pagehide', () => { if (!L.code || L.tempoBehalten) { lTempoMerken(); lSpeichern(); } });
     $('l-eigene').value = L.eigene;
     if (L.eigene.trim()) $('l-eigene').closest('details').open = true;
     $('l-eigene').addEventListener('input', e => { L.eigene = e.target.value; lSpeichern(); lEinstellungenZeichnen(); });
