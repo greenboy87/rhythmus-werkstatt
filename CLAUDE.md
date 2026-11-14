@@ -287,11 +287,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
   - Klang: Hi-Hat/Crash als 808-artige Rechteck-Oszillatoren + Rauschen.
-    Ride (`bwRide`) nicht mehr 808 (klang blechern), sondern ein einmal je
-    Audiokontext berechneter Puffer (`bwRidePuffer`): ~95 unharmonische
-    Sinus-Teiltöne (Schwerpunkt 3-6 kHz = „Ping“, tiefe klingen länger =
-    „Wash“), Stockklick und leises Rauschen, fester Zufallsstartwert; je
-    Schlag ±1,5 % Abspielrate. Pegel 0,085: unter Snare, über Hi-Hat. Bassdrum
+    Ride (`bwRide`): einmal je Audiokontext berechneter Puffer
+    (`bwRidePuffer`), hell und klar - sechs hohe Sinustöne (3050 Hz mit
+    leicht verstimmtem Partner fürs Schimmern, dazu 4,4/5,5/6,9/8,7 kHz),
+    Stockklick, nur ein Hauch Rauschen. Tom fand 808 „blechern“ und ein
+    dichtes Gemisch aus ~95 Teiltönen „verwaschen, irritierend“ - also
+    nicht wieder dorthin. Pegel 0,075: unter Snare, über Hi-Hat. Bassdrum
     als Sinus mit Tonhöhenabfall, Snare = `snareKlang` aus audio.js (nimmt
     dafür optional einen Ziel-Knoten). Alles läuft durch eine Summe mit
     Begrenzer (`bwSummeBauen`); Stopp blendet sie aus statt Knoten einzeln
@@ -302,11 +303,27 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     (`bwPlatzFolge`), nicht von Takten. Tempo 20-200 (`BW_BPM_MIN`; auch
     Drumset und Beat-/Drum-Link ab 20).
   - Cursor: `BeatSpieler` merkt sich jede geplante Sechzehntel (`spur`:
-    Zeit, Platz, k, Dauer); `requestAnimationFrame` setzt einen Strich
-    `line.bw-cursor` in die Notenzeile des Platzes (über `[data-spiel]`),
-    zeitgenau an der Audiouhr (minus `outputLatency`). Innerhalb einer
-    Zählzeit stehen Sechzehntel `BW_ZEIT/4` auseinander, die letzte reicht
-    bis zur nächsten Zählzeit (`cursorX`).
+    Zeit, Platz, k, Dauer); `requestAnimationFrame` setzt über die
+    gemeinsamen Helfer (`spurJetzt`, `cursorImSchlag`, `cursorZeigen`,
+    in beat.js) einen Strich `line.bw-cursor` in die Notenzeile des Platzes
+    (über `[data-spiel]`), zeitgenau an der Audiouhr (minus `outputLatency`).
+  - Mitlesen (alle drei Werkstätten): Knopf `.mitlesen-knopf` „Mitlesen:
+    Cursor | Feld“, `mitlesenArt` in beat.js, gemerkt in `rw-mitlesen`,
+    Klasse `mitlesen-feld` am `<body>`. Cursor = Strich, Feld = alte
+    Markierung (Beat/Drumset: `.bw-spiel.jetzt`, Rhythmus: `[data-ab].jetzt`).
+    Nie beides. Rhythmus-Werkstatt: `rhythmusCursor` (noten.js) läuft
+    zwischen den Einsätzen eines Bausteins (`data-xs` = „Viertel:x“,
+    `data-xe`); `Vorklatschen` merkt die letzte Markierung als Anker und
+    rechnet per `schlagVon` × Pulswert weiter - nur für Hosts in
+    `#reiter-rhythmus` (Klassenspiel, Diktat, Zähl-Training unverändert).
+  - Takt kopieren (Beat und Drumset): `plaetzeTaktEinfuegen` - die Kopie
+    kommt direkt dahinter, alle folgenden Takte rutschen weiter (vorher
+    wurde der nächste Takt überschrieben).
+  - „Ins Drumset anhängen“ (`#bw-ins-drumset`, `dsBeatAnhaengen` in
+    drumset.js): Beat-Takte (mit Loop-Bereich nur dessen Takte) HINTEN an
+    die Drumset-Werkstatt, nie überschreiben. Beide Ebenen samt Backbeat
+    werden eine Stimme im Sechzehntelraster, Ghost → normale Snare. Leeres
+    Drumset übernimmt die Taktart, sonst muss sie gleich sein.
   - „Beat abspielen“/„Stopp“ haben eine feste Mindestbreite (auch
     `#ds-abspielen`), damit Tempo-Knöpfe und Metronom nicht springen.
   - Vollbild (`#bw-anzeige-karte`, Klasse `vollbild`): `bwEinpassen`
@@ -324,12 +341,17 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     von vorn, sonst stoppt `BeatSpieler`). Gespielt wird `bwTaktFolge()`:
     Loop-Bereich oder ganzes Stück bzw. jede Zeile einzeln, je
     `durchgaenge`-mal; im Loop wird die Folge bei jedem Neubeginn neu
-    berechnet. Loop-Bereich `bwLoopAuswahl = {von, bis, s}` in PLÄTZEN
-    (Zählzeiten), `s` = Schläge beim Wählen (andere Taktart → verfällt);
+    berechnet. Loop-Bereich `bwLoopAuswahl = {von, bis, s}` in ACHTELN
+    (Platz × 2 + 0/1 für Zählzeit/„+“; `achtelAn`: linke/rechte Hälfte der
+    Spielfläche), `s` = Schläge beim Wählen (andere Taktart → verfällt);
+    Beat- und Drumset-Spieler planen deshalb Achtel für Achtel (Folge aus
+    `loopFolge` = Achtel-Nummern; Triolen: Stellen 0 und 1/3 in der ersten,
+    2/3 in der zweiten Hälfte). Notenbild hat `user-select: none`, sonst
+    markiert das Ziehen die Zählzeiten wie Text;
     nicht gespeichert. Takt im Notenbild antippen (`.takt-feld[data-takt]`)
     wählt den ganzen Takt, Übungsnummer (`.uebung-nr`) die Zeile - Regeln
     wie `anzeigeAngetippt`. Über die Noten ziehen (`bwLoopZiehenEinrichten`,
-    ab 12 px, `touch-action: pan-y`) wählt zählzeitgenau, auch über Zeilen;
+    ab 12 px, `touch-action: pan-y`) wählt achtelgenau, auch über Zeilen;
     der Klick danach wird verschluckt (`bwLoopGezogen`). Hervorhebung nur
     über den gewählten Zählzeiten. Wird der Bereich beim Abspielen geändert,
     springt `BeatSpieler.folgeNeu` sofort um (läuft die aktuelle Zählzeit
@@ -353,6 +375,9 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     `.bw-takt-weg`) -> `bwTaktLoeschen`/`dsTaktLoeschen` über
     `plaetzeTaktLoeschen`; die folgenden Takte rücken nach, der einzige
     Takt wird nur geleert.
+    Loop-Bereich, Cursor und Folge sind gemeinsame Helfer in beat.js
+    (`loopTakte`, `loopText`, `loopNachTippen`, `platzAn`,
+    `loopZiehenEinrichten`, `loopAuswahlRect`, `loopFolge`).
 - Rückgängig: `verlaufAnlegen(stand, setzen)` und `verlaufTaste` in app.js,
   je ein Verlauf für Rhythmus (`rhythmusVerlauf`), Beat (`bwVerlauf`) und
   Drumset (`dsVerlauf`). Strg/⌘+Z zurück, Strg+Y bzw. Strg/⌘+Shift+Z
@@ -399,6 +424,12 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     (`dsTom`, 210/155/105 Hz). `DrumSpieler` wie `BeatSpieler`.
   - Vorlagen: Takt 1 Groove mit Crash auf 1, Takt 2 Fill - im Loop landet
     der Fill auf dem Crash. Erster Besuch startet mit der ersten Vorlage.
+  - Wie in der Beat-Werkstatt: Loop (`ds.loop`, Standard an - der Spieler
+    lief früher immer im Kreis; im Link daher umgekehrt als `n` = einmal),
+    „Als Übung“, Durchgänge, Takte/Zeile, Loop-Bereich zählzeitgenau
+    (`dsLoopAuswahl`), Cursor. `DrumSpieler` plant jede Rasterstelle
+    0,12 s voraus (Tempo/Metronom live); das Raster einer Zählzeit gilt ab
+    ihrem Beginn, eine leere Zählzeit ist ein Schritt.
   - Druck/PDF wie in der Beat-Werkstatt: Blatt `#ds-druck` (Klasse
     `bw-nur-druck`), `dsDruckZeichnen`, `blattPdf`.
   - Zustand in `localStorage` `rw-drumset`, benannte Blätter in

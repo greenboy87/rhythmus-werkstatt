@@ -570,7 +570,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 marken.push({ ab: gelaufen, px: x, dauer: b.dauer });
                 const globalAb = index * taktSoll(stueck.zeichen) + gelaufen;
                 const r = bausteinTeileZeichnen(b, x, tinte, notenVersatz, proViertel);
-                teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}">${r.teile.join('')}</g>`);
+                // data-xs: Einsaetze als "Viertel ab Bausteinbeginn:x", data-xe: x danach
+                // (naechster Baustein) - damit der Cursor zeitgenau mitlaeuft.
+                let vx = 0;
+                const xs = r.einsaetze.map(e => { const t = vx + ':' + e.px.toFixed(1); vx += e.d; return t; }).join(',');
+                teileSvg.push(`<g data-ab="${globalAb}" data-bis="${globalAb + b.dauer}" data-xs="${xs}" data-xe="${r.x.toFixed(1)}">${r.teile.join('')}</g>`);
                 merge(r);
                 r.treffer.forEach(f => notenFelder.push(`<rect class="noten-feld" data-takt="${index}" data-baustein="${bausteinNr}" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
                 if (opt.pausenFelder) r.pausenTreffer.forEach(f => notenFelder.push(`<rect class="pausen-feld" data-takt="${index}" data-baustein="${bausteinNr}" data-teil="${f.teil}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
@@ -736,6 +740,40 @@ function stueckAnzeigeHtml(stueck, optionen) {
     });
 
     return svgListe.join('');
+}
+
+/* Mitlese-Cursor (Rhythmus-Werkstatt): senkrechter Strich an der globalen
+   Position (Takt-Index, Viertel seit Taktanfang, auch Bruchteile) -
+   zwischen den Einsaetzen eines Bausteins (data-xs) linear, nach dem
+   letzten bis zum naechsten Baustein (data-xe). null/-1 blendet aus. */
+function rhythmusCursor(host, zeichen, taktIndex, viertelInTakt) {
+    if (!host) return;
+    const weg = () => host.querySelectorAll('.bw-cursor').forEach(el => el.remove());
+    if (taktIndex === null || taktIndex === undefined || taktIndex < 0) { weg(); return; }
+    const global = taktIndex * taktSoll(zeichen) + viertelInTakt;
+    let g = null;
+    for (const k of host.querySelectorAll('[data-ab][data-xs]')) {
+        if (global >= Number(k.dataset.ab) - 0.001 && global < Number(k.dataset.bis) - 0.001) { g = k; break; }
+    }
+    if (!g) return;
+    const v = global - Number(g.dataset.ab), dauer = Number(g.dataset.bis) - Number(g.dataset.ab);
+    const punkte = g.dataset.xs.split(',').map(t => t.split(':').map(Number));
+    punkte.push([dauer, Number(g.dataset.xe)]);
+    let x = punkte[0][1];
+    for (let i = 0; i < punkte.length - 1; i++) {
+        const [v0, x0] = punkte[i], [v1, x1] = punkte[i + 1];
+        if (v >= v0 && v <= v1) { x = x0 + (v1 > v0 ? (v - v0) / (v1 - v0) : 0) * (x1 - x0); break; }
+    }
+    const svg = g.ownerSVGElement;
+    let strich = svg.querySelector('.bw-cursor');
+    if (!strich) {
+        weg();
+        strich = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        strich.setAttribute('class', 'bw-cursor');
+        strich.setAttribute('y1', LINIE_Y - 30); strich.setAttribute('y2', LINIE_Y + 24);
+        svg.appendChild(strich);
+    }
+    strich.setAttribute('x1', x); strich.setAttribute('x2', x);
 }
 
 /* Findet in einem gerade gezeichneten Stueck die Note/Pause an der globalen

@@ -548,6 +548,13 @@ const Vorklatschen = (function () {
     let laeuft = false, uhr = null, ctx = null, summe = null, klicks = [];
     let folge = [], anzeigeFolge = [], anker = null, horizont = 0;
     let letzterHost = null, letztesZeichen = '4/4';
+    // Mitlese-Cursor (nur in der Rhythmus-Werkstatt, wenn "Mitlesen: Cursor"):
+    // zuletzt erreichte Markierung als Anker, dazwischen per Audiouhr
+    let cursorAnker = null, cursorBild = null;
+    function cursorModus(host) {
+        return !!(host && host.closest && host.closest('#reiter-rhythmus')) &&
+            typeof mitlesenArt !== 'undefined' && mitlesenArt === 'cursor';
+    }
     const zustandCallbacks = [];   // Werkstatt-Knopf und Rhythmus-Diktat (Automatik)
     function zustandMelden() { zustandCallbacks.forEach(fn => fn(laeuft)); }
 
@@ -569,7 +576,9 @@ const Vorklatschen = (function () {
         folge = []; anzeigeFolge = [];
         if (laeuft && !leise) zeigeToast('Abgebrochen.', 'info');
         laeuft = false;
-        if (letzterHost) stueckMarkieren(letzterHost, letztesZeichen, -1, 0);
+        if (letzterHost) { stueckMarkieren(letzterHost, letztesZeichen, -1, 0); rhythmusCursor(letzterHost, letztesZeichen, -1, 0); }
+        if (cursorBild) { cancelAnimationFrame(cursorBild); cursorBild = null; }
+        cursorAnker = null;
         Metronom.pulsZeichnen(-1);
         zustandMelden();
     }
@@ -625,6 +634,9 @@ const Vorklatschen = (function () {
             if (summe) { const alt = summe; setTimeout(() => { try { alt.disconnect(); } catch (e) { /* schon weg */ } }, 500); }
             summe = null;
             stueckMarkieren(host, stueck.zeichen, -1, 0);
+            rhythmusCursor(host, stueck.zeichen, -1, 0);
+            if (cursorBild) { cancelAnimationFrame(cursorBild); cursorBild = null; }
+            cursorAnker = null;
             Metronom.pulsZeichnen(-1);
             zustandMelden();
         }
@@ -646,7 +658,16 @@ const Vorklatschen = (function () {
                 } else if (e.art === 'klatsch') {
                     klatschSoundSpielen(ctx, wann, e.akzent ? 'akzent' : null, summe);
                 } else if (e.art === 'markierung') {
-                    anzeigen(wann, () => stueckMarkieren(host, stueck.zeichen, e.taktNr + versatz, e.ab));
+                    anzeigen(wann, () => {
+                        if (cursorModus(host)) {
+                            stueckMarkieren(host, stueck.zeichen, -1, 0);
+                            cursorAnker = { schlag: e.schlag, takt: e.taktNr + versatz, ab: e.ab };
+                        } else {
+                            rhythmusCursor(host, stueck.zeichen, -1, 0);
+                            cursorAnker = null;
+                            stueckMarkieren(host, stueck.zeichen, e.taktNr + versatz, e.ab);
+                        }
+                    });
                 } else if (e.art === 'wechsel') {
                     anzeigen(wann, () => zeigeToast(e.zeile ? `Übung ${e.zeile}: Durchgang ${e.nr} von ${durchgaenge}…` : `Durchgang ${e.nr} von ${durchgaenge}…`, 'info'));
                 } else if (e.art === 'ende') {
@@ -673,6 +694,18 @@ const Vorklatschen = (function () {
         klicks = [];
         uhr = setInterval(tick, 20);
         tick();
+        // Cursor: Viertel seit dem Anker = Schlaege × Pulswert
+        const pw = pulsWert(stueck.zeichen);
+        cursorAnker = null;
+        const cursorZeichnen = () => {
+            if (!laeuft) return;
+            cursorBild = requestAnimationFrame(cursorZeichnen);
+            if (!cursorModus(host)) { rhythmusCursor(host, stueck.zeichen, -1, 0); return; }
+            if (!cursorAnker) return;
+            const s = schlagVon(ctx.currentTime - (ctx.outputLatency || 0));
+            rhythmusCursor(host, stueck.zeichen, cursorAnker.takt, cursorAnker.ab + Math.max(0, s - cursorAnker.schlag) * pw);
+        };
+        cursorBild = requestAnimationFrame(cursorZeichnen);
         const ziel = nurMetronom ? 'läuft es mit' : 'kommt der Rhythmus';
         const wiederholHinweis = durchgaenge > 1 ? (zeilen && zeilen.length > 1 ? ` (jede Zeile ${durchgaenge}×)` : ` (${durchgaenge}× hintereinander)`) : '';
         const loopHinweis = loop() ? ' Loop: läuft, bis du Stopp drückst.' : '';

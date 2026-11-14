@@ -165,10 +165,15 @@ const BEAT_LINK_STANDARD = {
     backbeat: true, zaehlzeiten: true, farbe: false, metronom: false,
     loop: true, alsUebung: false, durchgaenge: 1, proZeile: 0
 };
-const DRUM_LINK_STANDARD = { schlaege: 4, titel: '', bpm: 90, zaehlzeiten: true, farbe: false, metronom: false };
+const DRUM_LINK_STANDARD = {
+    schlaege: 4, titel: '', bpm: 90, zaehlzeiten: true, farbe: false, metronom: false,
+    einmal: false, alsUebung: false, durchgaenge: 1, proZeile: 0
+};
 /* Schalter in "o": Buchstabe = an. Fehlt "o", gilt der Standard. */
 const BEAT_LINK_SCHALTER = { a: 'backbeat', z: 'zaehlzeiten', f: 'farbe', m: 'metronom', e: 'loop', u: 'alsUebung' };
-const DRUM_LINK_SCHALTER = { z: 'zaehlzeiten', f: 'farbe', m: 'metronom' };
+/* Drumset: n = einmal (ohne Loop) - der Drumset-Player lief frueher immer
+   im Kreis, alte Links mit o= ohne n bleiben deshalb im Loop. */
+const DRUM_LINK_SCHALTER = { z: 'zaehlzeiten', f: 'farbe', m: 'metronom', n: 'einmal', u: 'alsUebung' };
 
 function linkWerte(hash) {
     const werte = {};
@@ -292,7 +297,8 @@ function beatLinkLesen(hash) {
 }
 
 /* Drumset: x = { schlaege, takte, plaetze: {r, n} oder null, titel, bpm,
-   zaehlzeiten, farbe, metronom }. Lesen liefert dazu unbekannt. */
+   zaehlzeiten, farbe, metronom, einmal, alsUebung, durchgaenge, proZeile }.
+   Lesen liefert dazu unbekannt. */
 function drumLinkBauen(x) {
     const platzText = (p) => p.n.map(inst => inst.map(k => DRUM_LINK_INST[k] || '').join('')).join('.');
     return ['d=' + linkPlaetzeBauen(x.plaetze, x.takte, x.schlaege, platzText)]

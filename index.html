@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=71">
-<link rel="stylesheet" href="css/druck.css?v=71">
+<link rel="stylesheet" href="css/stil.css?v=73">
+<link rel="stylesheet" href="css/druck.css?v=73">
 </head>
 <body>
 
@@ -189,6 +189,7 @@
                 <option value="vorklatschen">Vorklatschen</option>
                 <option value="selbstklatschen">Selbstklatschen</option>
             </select>
+            <button type="button" class="btn mitlesen-knopf" title="Beim Abspielen mitlesen: als laufender Cursor oder als farbige Note"></button>
             <span id="metronom" class="metronom-gruppen"></span>
         </div>
         <div class="leiste hidden" id="startpunkt-info" style="margin-bottom:.5rem;">
@@ -278,6 +279,7 @@
             <select id="bw-blatt-wahl" aria-label="Gespeichertes Blatt laden"><option value="">Blatt laden…</option></select>
             <button type="button" class="btn" id="bw-blatt-loeschen" title="Ausgewähltes Blatt löschen"><i class="fa-solid fa-trash"></i></button>
             <button type="button" class="btn" id="bw-link-kopieren" title="Link mit dem ganzen Beat und den Einstellungen in die Zwischenablage - wer ihn öffnet, landet genau bei diesem Stand"><i class="fa-solid fa-link"></i> Link kopieren</button>
+            <button type="button" class="btn" id="bw-ins-drumset" title="Die Takte dieses Beats (bzw. die Takte im Loop-Bereich) hinten an die Drumset-Werkstatt anhängen – dort wird nichts überschrieben"><i class="fa-solid fa-drum"></i> Ins Drumset anhängen</button>
         </div>
         <p class="bw-legende" id="bw-legende"></p>
 
@@ -308,6 +310,7 @@
                 <label class="schalter"><input type="checkbox" id="bw-metronom"><span class="schalter-schieber"></span></label>
                 <span class="schalter-feld">Metronom</span>
             </span>
+            <button type="button" class="btn mitlesen-knopf" title="Beim Abspielen mitlesen: als laufender Cursor oder als farbiges Feld über der Zählzeit"></button>
             <span class="fuellt" style="flex:1"></span>
             <span class="schalter-feld">Hören:</span>
             <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="becken"><span class="bw-punkt bw-becken"></span> Becken</button>
@@ -426,12 +429,25 @@
                 <label class="schalter"><input type="checkbox" id="ds-metronom"><span class="schalter-schieber"></span></label>
                 <span class="schalter-feld">Metronom</span>
             </span>
+            <button type="button" class="btn mitlesen-knopf" title="Beim Abspielen mitlesen: als laufender Cursor oder als farbiges Feld über der Zählzeit"></button>
             <span class="leiste" style="gap:.4rem;">
                 <label class="schalter"><input type="checkbox" id="ds-zaehlzeiten"><span class="schalter-schieber"></span></label>
                 <span class="schalter-feld">Zählzeiten</span>
             </span>
         </div>
         <div class="leiste" style="margin-bottom:.6rem; padding-top:.6rem; border-top:1px solid var(--rand-schwach);">
+            <label class="chip" title="Endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst"><input type="checkbox" id="ds-loop"><span><i class="fa-solid fa-repeat"></i> Loop</span></label>
+            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="ds-als-uebung"><span>Als Übung</span></label>
+            <label class="regler" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
+                <span class="regler-name">Durchgänge</span>
+                <input type="range" id="ds-durchgaenge" min="1" max="10" step="1" value="1">
+                <span class="regler-wert" id="ds-durchgaenge-wert">1×</span>
+            </label>
+            <label class="regler" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
+                <span class="regler-name">Takte/Zeile</span>
+                <input type="range" id="ds-pro-zeile" min="0" max="8" step="1" value="0">
+                <span class="regler-wert" id="ds-pro-zeile-wert">auto</span>
+            </label>
             <label class="feld bw-nicht-im-vollbild" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift auf dem Ausdruck und im PDF">
                 Titel
                 <input type="text" id="ds-titel" placeholder="Drumset-Werkstatt" maxlength="80" style="width:11rem;">
@@ -442,6 +458,11 @@
             <button type="button" class="btn bw-nicht-im-vollbild" id="ds-drucken" title="Öffnet den Druckdialog (A4, mit Name/Klasse/Datum)"><i class="fa-solid fa-print"></i> Drucken</button>
         </div>
         </div>
+        <div class="leiste hidden" id="ds-loop-info" style="margin-bottom:.5rem;">
+            <span><i class="fa-solid fa-repeat"></i> <b id="ds-loop-text"></b> – nur dieser Teil wird abgespielt</span>
+            <button type="button" class="btn" id="ds-loop-weg"><i class="fa-solid fa-xmark"></i> Ganzes Stück</button>
+        </div>
+        <p class="anzeige-tipp bw-nicht-im-vollbild" style="margin:0 0 .4rem;">Tipp: In einen Takt im Notenbild tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Über die Noten ziehen = genau diese Zählzeiten loopen (auch nur ein Teil eines Takts). Bei „Als Übung“ wählt die Nummer die ganze Übung.</p>
         <div id="ds-anzeige" class="bw-anzeige"></div>
     </section>
 </main>
@@ -655,21 +676,21 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=71"></script>
-<script src="js/noten.js?v=71"></script>
-<script src="js/editor.js?v=71"></script>
-<script src="js/audio.js?v=71"></script>
-<script src="js/generator.js?v=71"></script>
-<script src="js/link.js?v=71"></script>
-<script src="js/vendor/lame.min.js?v=71"></script>
-<script src="js/export.js?v=71"></script>
-<script src="js/pdf.js?v=71"></script>
-<script src="js/app.js?v=71"></script>
-<script src="js/beat.js?v=71"></script>
-<script src="js/drumset.js?v=71"></script>
-<script src="js/zaehlkern.js?v=71"></script>
-<script src="js/zaehlspiel.js?v=71"></script>
-<script src="js/spiele.js?v=71"></script>
-<script src="js/reiter.js?v=71"></script>
+<script src="js/version.js?v=73"></script>
+<script src="js/noten.js?v=73"></script>
+<script src="js/editor.js?v=73"></script>
+<script src="js/audio.js?v=73"></script>
+<script src="js/generator.js?v=73"></script>
+<script src="js/link.js?v=73"></script>
+<script src="js/vendor/lame.min.js?v=73"></script>
+<script src="js/export.js?v=73"></script>
+<script src="js/pdf.js?v=73"></script>
+<script src="js/app.js?v=73"></script>
+<script src="js/beat.js?v=73"></script>
+<script src="js/drumset.js?v=73"></script>
+<script src="js/zaehlkern.js?v=73"></script>
+<script src="js/zaehlspiel.js?v=73"></script>
+<script src="js/spiele.js?v=73"></script>
+<script src="js/reiter.js?v=73"></script>
 </body>
 </html>
