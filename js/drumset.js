@@ -498,7 +498,7 @@ const DrumSpieler = (function () {
         Metronom.stoppen();
         BeatSpieler.stoppen();
         ctx = c;
-        bwRidePuffer(ctx);
+        bwRideLaden(ctx);
         summe = bwSummeBauen(ctx);
         laeuft = true;
         folge = dsPlatzFolge(); folgePos = 0; spur = [];

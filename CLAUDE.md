@@ -312,12 +312,15 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
   - Klang: Hi-Hat/Crash als 808-artige Rechteck-Oszillatoren + Rauschen.
-    Ride (`bwRide`): einmal je Audiokontext berechneter Puffer
-    (`bwRidePuffer`), hell und klar - sechs hohe Sinustöne (3050 Hz mit
-    leicht verstimmtem Partner fürs Schimmern, dazu 4,4/5,5/6,9/8,7 kHz),
-    Stockklick, nur ein Hauch Rauschen. Tom fand 808 „blechern“ und ein
-    dichtes Gemisch aus ~95 Teiltönen „verwaschen, irritierend“ - also
-    nicht wieder dorthin. Pegel 0,075: unter Snare, über Hi-Hat. Bassdrum
+    Ride (`bwRide`) ist eine AUFNAHME: `audio/ride1-3.m4a` (Virtuosity
+    Drums, CC0, Herkunft und Bearbeitung in `audio/LIZENZ.txt`), abwechselnd
+    gespielt. `bwRideHolen` lädt die Dateien beim Seitenaufruf,
+    `bwRideLaden(ctx)` dekodiert je Audiokontext, sucht den Anschlag
+    (`versatz`, AAC hat je nach Browser Stille davor) und gleicht die
+    Lautheit an (`pegel`, RMS 0,018). Bis dahin bzw. wenn es scheitert:
+    berechneter Ersatz `bwRidePuffer`. Tom fand 808 „blechern“, ~95
+    Teiltöne „verwaschen“ und sechs Sinustöne „wie ein Glockenspiel“ -
+    deshalb die Aufnahme; nicht wieder synthetisieren. Bassdrum
     als Sinus mit Tonhöhenabfall, Snare = `snareKlang` aus audio.js (nimmt
     dafür optional einen Ziel-Knoten). Alles läuft durch eine Summe mit
     Begrenzer (`bwSummeBauen`); Stopp blendet sie aus statt Knoten einzeln

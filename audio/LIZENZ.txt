@@ -1,0 +1,12 @@
+ride1.m4a, ride2.m4a, ride3.m4a
+
+Quelle: Virtuosity Drums von Versilian Studios
+https://github.com/sfzinstruments/virtuosity_drums
+Dateien: Samples/oh/ride/oh_ride_ride_vl2_rr1.flac, _rr2.flac, _rr3.flac
+(Overhead-Mikrofon, Ride, mittlere Lautstaerke, drei Anschlaege)
+
+Lizenz: CC0 1.0 (gemeinfrei) - keine Namensnennung noetig, freie Nutzung.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Bearbeitet am 14.11.2026: auf Mono gemischt, ab dem Anschlag 2,2 s
+geschnitten, die letzten 0,8 s ausgeblendet, normalisiert, als AAC 96 kbit/s.

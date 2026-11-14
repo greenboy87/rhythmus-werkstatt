@@ -538,7 +538,7 @@ function bwHuelle(ctx, zeit, laut, dauer) {
 /* Hi-Hat und Crash: sechs Rechteck-Oszillatoren mit "schiefen" Frequenzen (wie bei
    der Roland 808) ergeben den metallischen Klang, dazu etwas Rauschen;
    Band- und Hochpass bestimmen, ob es nach Hi-Hat oder Crash klingt. */
-/* Ride: hell und klar statt 808-Rechtecken (klang blechern) oder dichtem
+/* Ersatz-Ride (nur bis die Aufnahme bereit ist): hell und klar statt 808-Rechtecken (klang blechern) oder dichtem
    Teiltongemisch (klang verwaschen). Ein "Ping" aus wenigen hohen
    Sinustoenen - der Grundton mit leicht verstimmtem Partner fuer ein
    kleines Schimmern -, ein kurzer Stockklick und nur ein Hauch Rauschen.
@@ -584,14 +584,70 @@ const bwRidePuffer = (function () {
         return puffer;
     };
 })();
+/* Ride als echte Aufnahme: drei Anschlaege eines Jazz-Rides (Virtuosity
+   Drums, CC0, siehe audio/LIZENZ.txt), abwechselnd gespielt. Die Dateien
+   werden beim Laden der Seite geholt (bwRideHolen) und je Audiokontext
+   einmal dekodiert (bwRideLaden). Der Anschlag wird nach dem Dekodieren
+   gesucht (versatz) - AAC-Decoder setzen je nach Browser etwas Stille davor.
+   Bis alles bereit ist (oder wenn es scheitert), klingt der berechnete
+   Ersatz (bwRidePuffer). */
+const BW_RIDE_DATEIEN = ['audio/ride1.m4a', 'audio/ride2.m4a', 'audio/ride3.m4a'];
+let bwRideRoh = null;   // Promise auf die ArrayBuffer der Dateien
+function bwRideHolen() {
+    if (!bwRideRoh) {
+        const v = typeof APP_VERSION !== 'undefined' ? '?v=' + APP_VERSION : '';
+        bwRideRoh = Promise.all(BW_RIDE_DATEIEN.map(d => fetch(d + v).then(r => {
+            if (!r.ok) throw new Error(d + ': ' + r.status);
+            return r.arrayBuffer();
+        }))).catch(() => null);
+    }
+    return bwRideRoh;
+}
+const bwRideProben = new WeakMap();   // ctx -> [{ puffer, versatz, pegel }] (leer = laedt noch)
+let bwRideNr = 0;
+function bwRideLaden(ctx) {
+    if (bwRideProben.has(ctx)) return;
+    bwRideProben.set(ctx, []);
+    bwRideHolen().then(roh => {
+        if (!roh) return;
+        return Promise.all(roh.map(b => new Promise((ja, nein) => ctx.decodeAudioData(b.slice(0), ja, nein))))
+            .then(puffer => {
+                bwRideProben.set(ctx, puffer.map(p => {
+                    const d = p.getChannelData(0);
+                    let spitze = 0;
+                    for (let i = 0; i < d.length; i++) spitze = Math.max(spitze, Math.abs(d[i]));
+                    let i0 = 0;
+                    while (i0 < d.length && Math.abs(d[i0]) < spitze * 0.05) i0++;
+                    // Lautheit der ersten 0,3 s - alle drei klingen gleich laut
+                    const n = Math.min(d.length - i0, Math.floor(p.sampleRate * 0.3));
+                    let q = 0;
+                    for (let i = 0; i < n; i++) q += d[i0 + i] * d[i0 + i];
+                    const rms = Math.sqrt(q / Math.max(1, n)) || 1;
+                    return { puffer: p, versatz: Math.max(0, i0 - Math.floor(p.sampleRate * 0.001)) / p.sampleRate, pegel: 0.018 / rms };
+                }));
+            });
+    }).catch(() => { bwRideProben.set(ctx, []); });
+}
 function bwRide(ctx, zeit, ziel, staerke) {
+    bwRideLaden(ctx);
+    const proben = bwRideProben.get(ctx) || [];
     const q = ctx.createBufferSource();
-    q.buffer = bwRidePuffer(ctx);
     const g = ctx.createGain();
-    g.gain.value = 0.075 * (staerke || 1);   // eingepegelt: unter der Snare, ueber der Hi-Hat
+    if (proben.length) {
+        const pr = proben[bwRideNr++ % proben.length];
+        q.buffer = pr.puffer;
+        // eingepegelt wie vorher: unter der Snare, ueber der Hi-Hat
+        g.gain.value = pr.pegel * (staerke || 1);
+        q.connect(g); g.connect(ziel);
+        q.start(zeit, pr.versatz);
+        return;
+    }
+    q.buffer = bwRidePuffer(ctx);
+    g.gain.value = 0.075 * (staerke || 1);
     q.connect(g); g.connect(ziel);
     q.start(zeit);
 }
+document.addEventListener('DOMContentLoaded', () => { if (typeof ANSICHT === 'undefined' || !ANSICHT) bwRideHolen(); });
 function bwBecken(ctx, zeit, ziel, art, staerke) {
     if (art === 'ride') { bwRide(ctx, zeit, ziel, staerke); return; }
     const P = {
@@ -750,7 +806,7 @@ const BeatSpieler = (function () {
         Vorklatschen.stoppen(true);
         Metronom.stoppen();
         ctx = c;
-        bwRidePuffer(ctx);   // einmal vorab berechnen, nicht beim ersten Schlag
+        bwRideLaden(ctx);   // Aufnahme dekodieren, bevor das erste Ride faellt
         summe = bwSummeBauen(ctx);
         laeuft = true;
         folge = bwPlatzFolge(); folgePos = 0; spur = [];
