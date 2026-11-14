@@ -47,6 +47,84 @@ const RHYTHMUS_BAUSTEINE = [
 const RHYTHMUS_NACH_CODE = {};
 RHYTHMUS_BAUSTEINE.forEach(b => { RHYTHMUS_NACH_CODE[b.code] = b; });
 
+/* ---------- Eigene Bausteine ----------
+   Selbst gebaut im Baukasten (eigene.js). Der Code beschreibt den Baustein
+   vollstaendig, deshalb funktioniert er auch in Links, auf anderen Geraeten
+   und im Klassenspiel, ohne dass dort etwas gespeichert ist:
+     "X" + [Tuplet "3t." | "5t." | "6t." | "7t."] + Noten mit "." getrennt,
+     je Note Wert 1 2 4 8 16 32 (Ganze ... Zweiunddreissigstel),
+     dann "d" = punktiert, "p" = Pause. Beispiele:
+     X4d.8 = punktierte Viertel + Achtel, X3t.4.8 = Triole Viertel + Achtel,
+     X16p.16.8 = Sechzehntelpause, Sechzehntel, Achtel.
+   Tuplets: n Noten in der Zeit von m (Triole 3:2, Quintole 5:4, Sextole
+   6:4, Septole 7:4) - jede Dauer mal m/n, gezeichnet wird der geschriebene
+   Wert (Teil-Feld w) mit Zahl bzw. Klammer.
+   Namen stehen nur in diesem Browser (localStorage rw-eigene-bausteine:
+   [{ code, name }]); ohne Namen beschreibt sich der Baustein selbst. */
+const EIGEN_WERTE = { 1: 4, 2: 2, 4: 1, 8: 0.5, 16: 0.25, 32: 0.125 };
+const EIGEN_WERT_NAME = { 1: 'Ganze', 2: 'Halbe', 4: 'Viertel', 8: 'Achtel', 16: 'Sechzehntel', 32: 'Zweiunddreißigstel' };
+const EIGEN_TUPLETS = { 3: 2, 5: 4, 6: 4, 7: 4 };
+const EIGEN_TUPLET_NAME = { 3: 'Triole', 5: 'Quintole', 6: 'Sextole', 7: 'Septole' };
+const EIGEN_SCHLUESSEL = 'rw-eigene-bausteine';
+const EIGEN_MAX_NOTEN = 16;
+function eigenerCode(e) {
+    return 'X' + (e.tuplet ? e.tuplet + 't.' : '') +
+        e.noten.map(n => n.wert + (n.punkt ? 'd' : '') + (n.pause ? 'p' : '')).join('.');
+}
+function eigenerCodeLesen(code) {
+    const m = /^X(?:([3567])t\.)?((?:1|2|4|8|16|32)d?p?(?:\.(?:1|2|4|8|16|32)d?p?)*)$/.exec(String(code || ''));
+    if (!m) return null;
+    const noten = m[2].split('.').map(t => {
+        const x = /^(\d+)(d?)(p?)$/.exec(t);
+        return { wert: Number(x[1]), punkt: !!x[2], pause: !!x[3] };
+    });
+    if (noten.length > EIGEN_MAX_NOTEN) return null;
+    return { tuplet: m[1] ? Number(m[1]) : 0, noten };
+}
+function eigeneListe() {
+    try {
+        const x = JSON.parse(localStorage.getItem(EIGEN_SCHLUESSEL) || '[]');
+        return Array.isArray(x) ? x.filter(e => e && eigenerCodeLesen(e.code)).map(e => ({ code: e.code, name: String(e.name || '').slice(0, 40) })) : [];
+    } catch (e) { return []; }
+}
+function eigeneListeSpeichern(liste) {
+    try { localStorage.setItem(EIGEN_SCHLUESSEL, JSON.stringify(liste)); } catch (e) { /* privates Fenster */ }
+    liste.forEach(e => { const b = RHYTHMUS_NACH_CODE[e.code]; if (b) b.wort = e.name || eigenBeschreibung(eigenerCodeLesen(e.code)); });
+}
+function eigenBeschreibung(e) {
+    const t = e.noten.map(n => (n.punkt ? 'punkt. ' : '') + EIGEN_WERT_NAME[n.wert] + (n.pause ? 'pause' : '')).join(', ');
+    return 'Eigener Baustein: ' + (e.tuplet ? EIGEN_TUPLET_NAME[e.tuplet] + ' aus ' : '') + t;
+}
+/* Baustein-Objekt aus einem Code bauen (ohne es zu merken) - auch fuer die
+   Vorschau im Baukasten. */
+function eigenerBausteinBauen(code, name) {
+    const e = eigenerCodeLesen(code);
+    if (!e) return null;
+    const faktor = e.tuplet ? EIGEN_TUPLETS[e.tuplet] / e.tuplet : 1;
+    const teile = e.noten.map(n => {
+        const w = EIGEN_WERTE[n.wert] * (n.punkt ? 1.5 : 1);
+        const t = { d: w * faktor, w };
+        if (n.pause) t.p = true;
+        return t;
+    });
+    const dauer = Math.round(teile.reduce((s, t) => s + t.d, 0) * 1e9) / 1e9;
+    const b = { code, dauer, wort: name || eigenBeschreibung(e), teile, eigen: true };
+    if (e.tuplet) b.triole = e.tuplet;
+    return b;
+}
+/* Code -> Baustein: eingebaute aus der Tabelle, eigene ("X...") werden beim
+   ersten Mal gebaut und gemerkt. */
+function bausteinNachCode(code) {
+    if (RHYTHMUS_NACH_CODE[code]) return RHYTHMUS_NACH_CODE[code];
+    if (!/^X/.test(String(code || ''))) return undefined;
+    const eintrag = eigeneListe().find(e => e.code === code);
+    const b = eigenerBausteinBauen(code, eintrag && eintrag.name);
+    if (b) RHYTHMUS_NACH_CODE[code] = b;
+    return b || undefined;
+}
+/* Die gespeicherten eigenen Bausteine (fuer die Palette). */
+function eigeneBausteine() { return eigeneListe().map(e => bausteinNachCode(e.code)).filter(Boolean); }
+
 /* ---------- Akzente ----------
    Ein Akzent gehoert zu einer einzelnen Note (einem Teil) eines Bausteins.
    Die Baustein-Objekte oben sind geteilt - ein akzentuierter Baustein ist
@@ -55,7 +133,7 @@ RHYTHMUS_BAUSTEINE.forEach(b => { RHYTHMUS_NACH_CODE[b.code] = b; });
    Kuerzel im Link: Code + "!" + Teilnummern 1-basiert, z.B. "SSSS!13" =
    erste und dritte Sechzehntel betont, "V!1" = betonte Viertel. */
 function bausteinMitAkzenten(baustein, akzente) {
-    const basis = RHYTHMUS_NACH_CODE[baustein.code] || baustein;
+    const basis = bausteinNachCode(baustein.code) || baustein;
     const liste = [...new Set(akzente || [])]
         .filter(i => Number.isInteger(i) && i >= 0 && i < basis.teile.length && !basis.teile[i].p)
         .sort((a, b) => a - b);
@@ -73,7 +151,7 @@ function bausteinKuerzel(baustein) {
 /* "SSSS!13" -> Baustein (mit Akzenten), unbekannter Code -> null */
 function bausteinAusKuerzel(text) {
     const [code, akz] = String(text || '').split('!');
-    const b = RHYTHMUS_NACH_CODE[code];
+    const b = bausteinNachCode(code);
     if (!b) return null;
     return akz ? bausteinMitAkzenten(b, akz.split('').map(z => Number(z) - 1)) : b;
 }
@@ -82,7 +160,7 @@ function hatAkzente(stueck) {
 }
 
 function rhythmusLesen(text) {
-    return String(text || '').split('-').map(c => RHYTHMUS_NACH_CODE[c]).filter(Boolean);
+    return String(text || '').split('-').map(c => bausteinNachCode(c)).filter(Boolean);
 }
 function rhythmusSchreiben(liste) { return liste.map(b => b.code).join('-'); }
 function rhythmusDauer(liste) { return liste.reduce((a, b) => a + b.dauer, 0); }
@@ -150,6 +228,13 @@ function bausteinPasstAn(b, pos, zeichen) {
 // bleibt auch zwischen Sechzehnteln gut ein halber Kopf Luft.
 const VORSCHUB = { 4: 120, 2: 78, 1: 50, 0.75: 40, 0.5: 34, 0.25: 26, [1 / 3]: 30, [1 / 6]: 24 };
 const VORSCHUB_SONST = 50;
+/* Platz fuer eine Dauer, die nicht in der Tabelle steht (eigene Bausteine:
+   Quintolen, Zweiunddreissigstel, punktierte Halbe ...): ungefaehr wie die
+   Nachbarn in der Tabelle. */
+function vorschub(d) {
+    if (VORSCHUB[d]) return VORSCHUB[d];
+    return d < 1 ? Math.round(19 + 26 * d) : Math.round(50 + (d - 1) * 24);
+}
 const LINIE_Y = 46, HALS_OBEN = 13, BALKEN_DICKE = 3.8, BALKEN_LUFT = 3.8;
 // Halsstaerke: bewusst leicht, damit das Notenbild nicht zu dick wirkt
 const HALS_DICKE = 1.7;
@@ -161,7 +246,7 @@ const HALS_DICKE = 1.7;
 const ZAEHL_Y = HALS_OBEN - 22, ZAEHL_Y_AKZENT = HALS_OBEN - 34, HANDSATZ_Y = LINIE_Y + 30;
 
 function istPunktiert(d) {
-    return Math.abs(d - 0.75) < 0.001 || Math.abs(d - 1.5) < 0.001 || Math.abs(d - 3) < 0.001;
+    return [0.1875, 0.375, 0.75, 1.5, 3, 6].some(x => Math.abs(d - x) < 0.001);
 }
 
 /* Zeichnet die Teile EINES Bausteins ab der Position x in der uebergebenen
@@ -191,25 +276,30 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
     const einsaetze = [];   // x und Dauer je Teil - fuer den Handsatz darunter
     const treffer = [];     // Tippflaeche je Note (fuer Akzente per Klick)
     const pausenTreffer = [];   // dasselbe fuer Pausen kuerzer als eine Viertel (Zaehl-Training)
+    let balkenGruppen = 0;   // fuer die Tuplet-Zahl: ein Balken ueber allem = Zahl ueber dem Balken
     const gruppeAbschliessen = () => {
         if (gruppe.length >= 2) {
+            balkenGruppen++;
             const a = gruppe[0].hx, b = gruppe[gruppe.length - 1].hx;
             teile.push(`<rect x="${a - HALS_DICKE / 2}" y="${H - 1}" width="${b - a + HALS_DICKE}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
             const stummel = 9;
-            for (let i = 0; i < gruppe.length; i++) {
-                if (gruppe[i].d > 0.25) continue;
-                const nachbarRechts = i < gruppe.length - 1 && gruppe[i + 1].d <= 0.25;
-                const nachbarLinks = i > 0 && gruppe[i - 1].d <= 0.25;
-                let von, bis;
-                if (nachbarRechts) { von = gruppe[i].hx; bis = gruppe[i + 1].hx; }
-                else if (nachbarLinks) continue;
-                else if (i > 0) { von = gruppe[i].hx - stummel; bis = gruppe[i].hx; }
-                else { von = gruppe[i].hx; bis = gruppe[i].hx + stummel; }
-                teile.push(`<rect x="${von - HALS_DICKE / 2}" y="${H - 1 + BALKEN_DICKE + BALKEN_LUFT}" ` +
-                           `width="${bis - von + HALS_DICKE}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
-                ink(von - 2, bis + 2, H - 1, Y + 7);
-            }
-            if (baustein.triole) {
+            // 2. Balken ab Sechzehntel, 3. ab Zweiunddreissigstel
+            [[0.25, 1], [0.125, 2]].forEach(([grenze, ebene]) => {
+                for (let i = 0; i < gruppe.length; i++) {
+                    if (gruppe[i].d > grenze + 1e-9) continue;
+                    const nachbarRechts = i < gruppe.length - 1 && gruppe[i + 1].d <= grenze + 1e-9;
+                    const nachbarLinks = i > 0 && gruppe[i - 1].d <= grenze + 1e-9;
+                    let von, bis;
+                    if (nachbarRechts) { von = gruppe[i].hx; bis = gruppe[i + 1].hx; }
+                    else if (nachbarLinks) continue;
+                    else if (i > 0) { von = gruppe[i].hx - stummel; bis = gruppe[i].hx; }
+                    else { von = gruppe[i].hx; bis = gruppe[i].hx + stummel; }
+                    teile.push(`<rect x="${von - HALS_DICKE / 2}" y="${H - 1 + ebene * (BALKEN_DICKE + BALKEN_LUFT)}" ` +
+                               `width="${bis - von + HALS_DICKE}" height="${BALKEN_DICKE}" fill="${tinte}"/>`);
+                    ink(von - 2, bis + 2, H - 1, Y + 7);
+                }
+            });
+            if (baustein.triole && !baustein.eigen) {
                 const mitte = (a + b) / 2, zahlY = H - 6;
                 teile.push(`<text x="${mitte}" y="${zahlY}" font-size="11" font-weight="800" text-anchor="middle" font-family="DM Sans, sans-serif" fill="${tinte}">${baustein.triole}</text>`);
                 ink(mitte - 6, mitte + 6, zahlY - 10, zahlY);
@@ -217,42 +307,49 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
         } else if (gruppe.length === 1 && gruppe[0].d <= 0.75) {
             const hx = gruppe[0].hx;
             teile.push(`<path d="M${hx} ${H} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
-            if (gruppe[0].d <= 0.25) teile.push(`<path d="M${hx} ${H + 9} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
+            if (gruppe[0].d <= 0.25 + 1e-9) teile.push(`<path d="M${hx} ${H + 9} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
+            if (gruppe[0].d <= 0.125 + 1e-9) teile.push(`<path d="M${hx} ${H + 18} q 11 5 9 16 q -2 -8 -9 -9" fill="${tinte}"/>`);
             ink(hx - 2, hx + 12, H - 1, Y + 7);
         }
         gruppe.length = 0;
     };
     baustein.teile.forEach((t, teilNr) => {
+        // w = geschriebener Wert (eigene Bausteine mit Tuplet), d = echte Dauer
+        const w = t.w || t.d;
         const px = x;
-        x += proViertel ? t.d * proViertel : (VORSCHUB[t.d] || VORSCHUB_SONST);
+        x += proViertel ? t.d * proViertel : vorschub(t.d);
         einsaetze.push({ px, d: t.d, pause: !!t.p });
         if (t.p) {
-            if (t.d >= 2) {
+            if (w >= 2) {
                 // Ganze/halbe Pause haengen mittig im Platz, den sie fuellen -
                 // nicht an dessen linkem Rand wie eine Note an ihrem Einsatz.
                 const mitteX = (px + x) / 2;
-                const haengt = t.d >= 4;
+                const haengt = w >= 4;
                 const oben = haengt ? Y : Y - 8;
                 teile.push(`<rect x="${mitteX - 11}" y="${oben}" width="22" height="8" fill="${tinte}"/>`);
                 teile.push(`<line x1="${mitteX - 18}" y1="${Y}" x2="${mitteX + 18}" y2="${Y}" stroke="${tinte}" stroke-width="2" opacity=".8"/>`);
                 ink(mitteX - 19, mitteX + 19, Y - 10, Y + 10);
-            } else if (t.d >= 1) {
+                if (istPunktiert(w)) punktSetzen(mitteX + 16);
+            } else if (w >= 1) {
                 teile.push(`<path d="M${px - 5} ${Y - 15} L${px + 4} ${Y - 5.5}` +
                            ` L${px - 4} ${Y + 1} L${px + 5} ${Y + 10.5}"` +
                            ` fill="none" stroke="${tinte}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
                 teile.push(`<path d="M${px + 5} ${Y + 10.5} c -7 -3.5 -11 2 -5.5 7.5"` +
                            ` fill="none" stroke="${tinte}" stroke-width="2.5" stroke-linecap="round"/>`);
                 ink(px - 8, px + 8, Y - 16, Y + 19);
-            } else if (t.d <= 0.25) {
+                if (istPunktiert(w)) punktSetzen(px + 10);
+            } else if (w <= 0.25 + 1e-9) {
                 teile.push(`<path d="M${px + 5} ${Y - 11} L${px - 4} ${Y + 12}" stroke="${tinte}" stroke-width="1.9" stroke-linecap="round" fill="none"/>` +
                            `<circle cx="${px}" cy="${Y - 9}" r="2.9" fill="${tinte}"/>` +
-                           `<circle cx="${px - 3.5}" cy="${Y}" r="2.9" fill="${tinte}"/>`);
-                ink(px - 7, px + 7, Y - 13, Y + 13);
+                           `<circle cx="${px - 3.5}" cy="${Y}" r="2.9" fill="${tinte}"/>` +
+                           (w <= 0.125 + 1e-9 ? `<circle cx="${px - 7}" cy="${Y + 9}" r="2.9" fill="${tinte}"/>` : ''));
+                ink(px - 10, px + 7, Y - 13, Y + 13);
+                if (istPunktiert(w)) punktSetzen(px + 9);
             } else {
                 teile.push(`<path d="M${px + 4} ${Y - 10} L${px - 3} ${Y + 10}" stroke="${tinte}" stroke-width="1.9" stroke-linecap="round" fill="none"/>` +
                            `<circle cx="${px - 1}" cy="${Y - 8}" r="2.9" fill="${tinte}"/>`);
                 ink(px - 5, px + 6, Y - 12, Y + 11);
-                if (istPunktiert(t.d)) punktSetzen(px + 9);
+                if (istPunktiert(w)) punktSetzen(px + 9);
             }
             if (t.d < 1) pausenTreffer.push({ teil: teilNr, x0: px - 10, x1: px + 13, y0: H - 16, y1: Y + 9 });
             gruppeAbschliessen();
@@ -265,22 +362,35 @@ function bausteinTeileZeichnen(baustein, x, tinte, yVersatz, proViertel) {
             teile.push(`<path class="akzent" d="M${ax - 5.5} ${ay - 3.6} L${ax + 5.5} ${ay} L${ax - 5.5} ${ay + 3.6}" fill="none" stroke="${tinte}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`);
             ink(ax - 7, ax + 7, ay - 6, ay + 6);
         }
-        const hohl = t.d >= 2;
+        const hohl = w >= 2;
         teile.push(`<ellipse cx="${px}" cy="${Y}" rx="7.2" ry="5.1" transform="rotate(-18 ${px} ${Y})"` +
                    (hohl ? ` class="kopf-hohl" fill="none" stroke="${tinte}" stroke-width="2"/>` : ` fill="${tinte}"/>`));
         ink(px - 9, px + 9, Y - 7, Y + 7);
-        if (istPunktiert(t.d)) punktSetzen(px + 12.5);
-        if (t.d >= 4) return;
+        if (istPunktiert(w)) punktSetzen(px + 12.5);
+        if (w >= 4) return;
         // Hals: rechte Kante buendig mit dem rechten Rand des (schraegen)
         // Kopfs (x+7), unten ein Stueck in den Kopf hinein - so geht er
         // nahtlos ueber. Gerades Ende (butt): ein rundes ragte oben ueber den
         // Balken. Beim hohlen Kopf endet er am Rand, nicht im Loch.
         const hx = px + 7 - HALS_DICKE / 2;
-        ink(px - 9, hx + (t.d <= 0.75 ? 11 : 2), H - 1, Y + 7);
+        ink(px - 9, hx + (w <= 0.75 ? 11 : 2), H - 1, Y + 7);
         teile.push(`<line x1="${hx}" y1="${Y - (hohl ? 3 : 1)}" x2="${hx}" y2="${H}" stroke="${tinte}" stroke-width="${HALS_DICKE}" stroke-linecap="butt"/>`);
-        if (t.d <= 0.75) gruppe.push({ hx: hx, d: t.d });
+        if (w <= 0.75) gruppe.push({ hx: hx, d: w });
     });
     gruppeAbschliessen();
+    // Eigene Tuplets: Zahl ueber dem Balken, wenn genau ein Balken alles
+    // umfasst - sonst (Pausen, Viertel, mehrere Gruppen) mit Klammer.
+    if (baustein.triole && baustein.eigen && einsaetze.length) {
+        const ohneKlammer = balkenGruppen === 1 && baustein.teile.every(t => !t.p && (t.w || t.d) <= 0.75);
+        const a = einsaetze[0].px, b = einsaetze[einsaetze.length - 1].px + 7;
+        const mitte = (a + b) / 2, zahlY = H - 6;
+        teile.push(`<text x="${mitte}" y="${zahlY}" font-size="11" font-weight="800" text-anchor="middle" font-family="DM Sans, sans-serif" fill="${tinte}">${baustein.triole}</text>`);
+        if (!ohneKlammer) {
+            const ky = zahlY - 4;
+            teile.push(`<path d="M${a - 4} ${ky + 5} L${a - 4} ${ky} L${mitte - 8} ${ky} M${mitte + 8} ${ky} L${b + 2} ${ky} L${b + 2} ${ky + 5}" fill="none" stroke="${tinte}" stroke-width="1.2"/>`);
+        }
+        ink(a - 5, b + 3, zahlY - 10, zahlY);
+    }
     return { teile, x, inkVon, inkBis, inkOben, inkUnten, einsaetze, treffer, pausenTreffer };
 }
 
@@ -424,13 +534,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
     if (opt.alsUebung || opt.takteProZeile > 0) {
         proViertel = VORSCHUB[1];
         takte.forEach(t => t.bausteine.forEach(b => b.teile.forEach(teil => {
-            if (teil.d > 0) proViertel = Math.max(proViertel, (VORSCHUB[teil.d] || VORSCHUB_SONST) / teil.d);
+            if (teil.d > 0) proViertel = Math.max(proViertel, vorschub(teil.d) / teil.d);
         })));
     }
 
     function taktBreite(takt) {
         if (proViertel) return takt.bausteine.reduce((s, b) => s + b.dauer, 0) * proViertel + RAND_TAKT;
-        return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + (VORSCHUB[t.d] || VORSCHUB_SONST), 0), 0) + RAND_TAKT;
+        return takt.bausteine.reduce((s, b) => s + b.teile.reduce((s2, t) => s2 + vorschub(t.d), 0), 0) + RAND_TAKT;
     }
 
     // Takte auf Systeme (Zeilen) verteilen: entweder feste Anzahl je Zeile

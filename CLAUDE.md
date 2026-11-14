@@ -69,6 +69,31 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   denselben Zeitplan offline - Änderungen am Timing also nur dort,
   sonst laufen Live und Datei auseinander. `metronomKlick` nimmt optional
   einen eigenen Ziel-Knoten (Export), sonst den Live-Knoten `metronomZiel`.
+- `js/eigene.js` - **Eigene Bausteine** (alle drei Werkstätten).
+  - Rhythmus: Baukasten `#eigen-kasten` unter der Palette. Werte Ganze bis
+    Zweiunddreißigstel, „punktiert“/„Pause“ (gelten, solange an), Tuplet für
+    den ganzen Baustein (Triole 3:2, Quintole 5:4, Sextole 6:4, Septole 7:4).
+    Code selbstbeschreibend (noten.js `eigenerCode`/`eigenerCodeLesen`):
+    `X` + optional `3t.` + Noten mit `.`, je Note `1 2 4 8 16 32` + `d`
+    (punktiert) + `p` (Pause), z.B. `X4d.8`, `X3t.4.8`. `bausteinNachCode`
+    baut ihn beim ersten Gebrauch und legt ihn in `RHYTHMUS_NACH_CODE` -
+    dadurch gehen Links (link.js prüft über `bausteinNachCode`), Akzente,
+    Abspielen, Export ohne weitere Änderung. Namen nur lokal
+    (`rw-eigene-bausteine`: [{code, name}]); ohne Namen `eigenBeschreibung`.
+    Palette zeigt sie gestrichelt hinten (`editor.paletteZeichnen`), der
+    Übungs-Würfel (generator) und die Spiele kennen sie nicht.
+    Zeichnen: Teil-Feld `w` = geschriebener Wert (Tuplets), `d` = echte
+    Dauer; dritter Balken/Fähnchen für Zweiunddreißigstel; Tuplet-Zahl bei
+    eigenen über dem Balken bzw. mit Klammer (`balkenGruppen`), eingebaute
+    Triolen unverändert. `vorschub(d)` schätzt Abstände für Dauern, die
+    nicht in `VORSCHUB` stehen.
+  - Beat/Drumset: „Gewählte Zählzeit speichern“ (`#bw-eigene`/`#ds-eigene`)
+    = Stempel mit Rhythmus und Instrumenten (`rw-beat-eigene`: 4
+    Sechzehntel-Instrumentlisten, `rw-drumset-eigene`: Platz {r, n}).
+    Antippen ersetzt die gewählte Zählzeit und geht weiter; zwei Ebenen:
+    Becken oben, Bassdrum/Snare (samt Ghost) unten. Im Stück stehen normale
+    Noten, Links bleiben unverändert. Neue Raster (Quintolen u.ä.) gibt es
+    dort bewusst nicht - die Spieler kennen nur 16tel/Triole/Sextole.
 - `js/generator.js` - würfelt Übungen aus den ausgewählten Bausteinen.
 - Balken bleiben in ihrer Zählzeit (noten.js `bausteinPasstAn`,
   `taktGrenzen`): beide Würfel (generator.js und `zsTaktWuerfeln` für

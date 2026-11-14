@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=73">
-<link rel="stylesheet" href="css/druck.css?v=73">
+<link rel="stylesheet" href="css/stil.css?v=75">
+<link rel="stylesheet" href="css/druck.css?v=75">
 </head>
 <body>
 
@@ -73,6 +73,34 @@
         </div>
 
         <div class="leiste" id="palette" style="padding-top:.6rem; border-top:1px solid var(--rand-schwach);"></div>
+        <details class="eigen-kasten" id="eigen-kasten">
+            <summary><i class="fa-solid fa-puzzle-piece"></i> Eigene Bausteine bauen</summary>
+            <p class="anzeige-tipp" style="text-align:left; margin:.5rem 0;">Für Rhythmen, die oben fehlen: Notenwerte nacheinander antippen. „punktiert“ und „Pause“ gelten für die nächsten Werte, solange sie an sind. Ein Tuplet (z.&nbsp;B. Triole) gilt für den ganzen Baustein. Eigene Bausteine stehen danach hinten in der Palette und funktionieren auch im Link.</p>
+            <div class="leiste" id="eigen-werte"></div>
+            <div class="leiste" style="margin-top:.4rem;">
+                <label class="chip"><input type="checkbox" id="eigen-punkt"><span>punktiert</span></label>
+                <label class="chip"><input type="checkbox" id="eigen-pause"><span>Pause</span></label>
+                <select id="eigen-tuplet" aria-label="Tuplet" title="Gilt für den ganzen Baustein: so viele Noten in der Zeit von 2 bzw. 4">
+                    <option value="0">ohne Tuplet</option>
+                    <option value="3">Triole (3 in der Zeit von 2)</option>
+                    <option value="5">Quintole (5 in der Zeit von 4)</option>
+                    <option value="6">Sextole (6 in der Zeit von 4)</option>
+                    <option value="7">Septole (7 in der Zeit von 4)</option>
+                </select>
+                <button type="button" class="btn" id="eigen-zurueck" title="Letzten Wert wieder wegnehmen"><i class="fa-solid fa-delete-left"></i></button>
+                <button type="button" class="btn" id="eigen-leeren">Leeren</button>
+            </div>
+            <div class="eigen-vorschau-zeile">
+                <span class="eigen-vorschau" id="eigen-vorschau"></span>
+                <span class="schalter-feld" id="eigen-laenge"></span>
+            </div>
+            <div class="leiste">
+                <input type="text" id="eigen-name" maxlength="40" placeholder="Name (optional)" style="width:13rem;" aria-label="Name des Bausteins">
+                <button type="button" class="btn btn-primär" id="eigen-speichern"></button>
+                <button type="button" class="btn hidden" id="eigen-abbrechen">Abbrechen</button>
+            </div>
+            <div class="eigen-liste" id="eigen-liste"></div>
+        </details>
     </section>
 
     <!-- ---------- Uebung erzeugen: eingeklappt, bis gebraucht ---------- -->
@@ -288,6 +316,7 @@
         <div class="bw-werkzeug">
             <div class="leiste" id="bw-stifte"></div>
             <div class="palette" id="bw-palette"></div>
+            <div class="leiste bw-eigene" id="bw-eigene"></div>
             <div class="leiste">
                 <button type="button" class="btn" id="bw-mehr"></button>
                 <button type="button" class="btn" id="bw-auffuellen" title="Kopiert den zuletzt gesetzten Baustein in alle leeren Plätze dieser Reihe"><i class="fa-solid fa-fill-drip"></i> Leere Plätze auffüllen</button>
@@ -410,6 +439,7 @@
             <div class="leiste ds-stifte" id="ds-stifte"></div>
             <p class="bw-ziel" id="ds-ziel" style="margin:0;"></p>
             <div class="leiste ds-palette" id="ds-palette"></div>
+            <div class="leiste bw-eigene" id="ds-eigene"></div>
             <div class="leiste">
                 <button type="button" class="btn" id="ds-mehr"></button>
             </div>
@@ -676,21 +706,22 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=73"></script>
-<script src="js/noten.js?v=73"></script>
-<script src="js/editor.js?v=73"></script>
-<script src="js/audio.js?v=73"></script>
-<script src="js/generator.js?v=73"></script>
-<script src="js/link.js?v=73"></script>
-<script src="js/vendor/lame.min.js?v=73"></script>
-<script src="js/export.js?v=73"></script>
-<script src="js/pdf.js?v=73"></script>
-<script src="js/app.js?v=73"></script>
-<script src="js/beat.js?v=73"></script>
-<script src="js/drumset.js?v=73"></script>
-<script src="js/zaehlkern.js?v=73"></script>
-<script src="js/zaehlspiel.js?v=73"></script>
-<script src="js/spiele.js?v=73"></script>
-<script src="js/reiter.js?v=73"></script>
+<script src="js/version.js?v=75"></script>
+<script src="js/noten.js?v=75"></script>
+<script src="js/editor.js?v=75"></script>
+<script src="js/audio.js?v=75"></script>
+<script src="js/generator.js?v=75"></script>
+<script src="js/link.js?v=75"></script>
+<script src="js/vendor/lame.min.js?v=75"></script>
+<script src="js/export.js?v=75"></script>
+<script src="js/pdf.js?v=75"></script>
+<script src="js/app.js?v=75"></script>
+<script src="js/beat.js?v=75"></script>
+<script src="js/drumset.js?v=75"></script>
+<script src="js/eigene.js?v=75"></script>
+<script src="js/zaehlkern.js?v=75"></script>
+<script src="js/zaehlspiel.js?v=75"></script>
+<script src="js/spiele.js?v=75"></script>
+<script src="js/reiter.js?v=75"></script>
 </body>
 </html>

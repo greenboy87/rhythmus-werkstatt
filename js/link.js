@@ -59,13 +59,15 @@ function linkLesen(hash) {
     const t = String(werte.t || '').replace(/\s+/g, '');
     if (t && (!taktarten || taktarten.includes(t))) erg.zeichen = t;
 
-    const bekannt = typeof RHYTHMUS_NACH_CODE !== 'undefined' ? RHYTHMUS_NACH_CODE : null;
+    // Eigene Bausteine ("X...") beschreiben sich selbst - bausteinNachCode baut sie
+    const bekannt = typeof bausteinNachCode === 'function' ? { pruefen: bausteinNachCode }
+        : typeof RHYTHMUS_NACH_CODE !== 'undefined' ? { pruefen: (c) => RHYTHMUS_NACH_CODE[c] } : null;
     const r = werte.r.replace(/\s+/g, '');
     if (r) {
         erg.takte = r.split(/[_|]/).map((taktText, taktNr) =>
             // "SSSS!13": Code + Akzente - geprueft wird nur der Code
             taktText.split('-').filter(Boolean).filter(code => {
-                if (!bekannt || bekannt[code.split('!')[0]]) return true;
+                if (!bekannt || bekannt.pruefen(code.split('!')[0])) return true;
                 erg.unbekannt.push({ code, takt: taktNr + 1 });
                 return false;
             }));

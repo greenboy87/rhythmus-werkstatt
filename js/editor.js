@@ -155,18 +155,24 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart, erlaubt) {
         });
     }
 
-    if (paletteWurzel) {
+    /* Palette: eingebaute Bausteine, dahinter die eigenen (eigene.js) -
+       bei einer festen Auswahl (erlaubt) nur, was darin steht. Neu zeichnen,
+       sobald sich die eigenen aendern (paletteZeichnen). */
+    function paletteZeichnen() {
+        if (!paletteWurzel) return;
         paletteWurzel.innerHTML = '';
-        RHYTHMUS_BAUSTEINE.filter(b => !erlaubt || erlaubt.includes(b.code)).forEach(b => {
-            const knopf = document.createElement('button');
-            knopf.type = 'button';
-            knopf.className = 'palette-baustein';
-            knopf.title = b.wort;
-            knopf.innerHTML = bausteinSvg(b);
-            ziehenEinrichten(knopf, b);
-            paletteWurzel.appendChild(knopf);
-        });
+        RHYTHMUS_BAUSTEINE.concat(typeof eigeneBausteine === 'function' ? eigeneBausteine() : [])
+            .filter(b => !erlaubt || erlaubt.includes(b.code)).forEach(b => {
+                const knopf = document.createElement('button');
+                knopf.type = 'button';
+                knopf.className = 'palette-baustein' + (b.eigen ? ' palette-eigen' : '');
+                knopf.title = b.wort;
+                knopf.innerHTML = bausteinSvg(b);
+                ziehenEinrichten(knopf, b);
+                paletteWurzel.appendChild(knopf);
+            });
     }
+    paletteZeichnen();
 
     function zeichnen() {
         anzeige.innerHTML = '';
@@ -227,6 +233,7 @@ function rhythmusEditor(wurzel, paletteWurzel, zeichenStart, erlaubt) {
             zeichnen();
         },
         akzentUmschalten: akzentBei,
+        paletteZeichnen,
         leeren, zurueck, taktHinzufuegen, letztenTaktLoeschen, taktartSetzen,
         takteProZeileSetzen: (n) => { takteProZeile = n; zeichnen(); },
         zeichen: () => zeichen,
