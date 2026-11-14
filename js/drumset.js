@@ -102,7 +102,7 @@ function dsLaden() {
         if (!x || typeof x !== 'object') return false;
         ds.takte = Math.max(1, Math.min(DS_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         ds.schlaege = Math.max(1, Math.min(DS_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
-        ds.bpm = Math.max(40, Math.min(200, Math.round(Number(x.bpm) || 90)));
+        ds.bpm = Math.max(20, Math.min(200, Math.round(Number(x.bpm) || 90)));
         ['zaehlzeiten', 'farbe', 'metronom', 'mehr'].forEach(k => { if (typeof x[k] === 'boolean') ds[k] = x[k]; });
         if (DS[x.stift]) ds.stift = x.stift;
         if (typeof x.titel === 'string') ds.titel = x.titel.slice(0, 80);
@@ -866,7 +866,7 @@ function dsEinrichten() {
         vollKnopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i> Verlassen' : '<i class="fa-solid fa-expand"></i> Vollbild';
         setTimeout(dsAnzeigeZeichnen, 50);
     });
-    const tempo = (w) => { ds.bpm = Math.max(40, Math.min(200, Math.round(Number(w) || 90))); dsSpeichern(); dsSchalterZeichnen(); };
+    const tempo = (w) => { ds.bpm = Math.max(20, Math.min(200, Math.round(Number(w) || 90))); dsSpeichern(); dsSchalterZeichnen(); };
     document.getElementById('ds-tempo-minus').addEventListener('click', () => tempo(ds.bpm - 5));
     document.getElementById('ds-tempo-plus').addEventListener('click', () => tempo(ds.bpm + 5));
     document.getElementById('ds-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));

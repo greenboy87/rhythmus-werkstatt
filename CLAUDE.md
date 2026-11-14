@@ -286,12 +286,29 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
   - Notensatz: eigene Drum-Notation (`bwStimme`, `bwSystemSvg`), Lage wie
     üblich (Bassdrum 1. Zwischenraum, Snare 3., Ride oberste Linie, Hi-Hat
     darüber, Crash Hilfslinie; Becken mit x-Kopf), zeitgetreue Abstände.
-  - Klang: Becken als 808-artige Rechteck-Oszillatoren + Rauschen, Bassdrum
+  - Klang: Hi-Hat/Crash als 808-artige Rechteck-Oszillatoren + Rauschen.
+    Ride (`bwRide`) nicht mehr 808 (klang blechern), sondern ein einmal je
+    Audiokontext berechneter Puffer (`bwRidePuffer`): ~95 unharmonische
+    Sinus-Teiltöne (Schwerpunkt 3-6 kHz = „Ping“, tiefe klingen länger =
+    „Wash“), Stockklick und leises Rauschen, fester Zufallsstartwert; je
+    Schlag ±1,5 % Abspielrate. Pegel 0,085: unter Snare, über Hi-Hat. Bassdrum
     als Sinus mit Tonhöhenabfall, Snare = `snareKlang` aus audio.js (nimmt
     dafür optional einen Ziel-Knoten). Alles läuft durch eine Summe mit
     Begrenzer (`bwSummeBauen`); Stopp blendet sie aus statt Knoten einzeln
-    zu stoppen. `BeatSpieler` plant Takt für Takt 0,3 s voraus aus dem
-    aktuellen Stand - Änderungen und Tempo wirken im nächsten Takt.
+    zu stoppen. `BeatSpieler` plant Sechzehntel für Sechzehntel nur 0,12 s
+    voraus aus dem aktuellen Stand - Tempo, Metronom-Schalter und Noten
+    wirken also sofort, ohne Stopp (vorher ganze Takte: bei langsamem Tempo
+    mehrere Sekunden Verzögerung). Gespielt wird eine Folge von Plätzen
+    (`bwPlatzFolge`), nicht von Takten. Tempo 20-200 (`BW_BPM_MIN`; auch
+    Drumset und Beat-/Drum-Link ab 20).
+  - Cursor: `BeatSpieler` merkt sich jede geplante Sechzehntel (`spur`:
+    Zeit, Platz, k, Dauer); `requestAnimationFrame` setzt einen Strich
+    `line.bw-cursor` in die Notenzeile des Platzes (über `[data-spiel]`),
+    zeitgenau an der Audiouhr (minus `outputLatency`). Innerhalb einer
+    Zählzeit stehen Sechzehntel `BW_ZEIT/4` auseinander, die letzte reicht
+    bis zur nächsten Zählzeit (`cursorX`).
+  - „Beat abspielen“/„Stopp“ haben eine feste Mindestbreite (auch
+    `#ds-abspielen`), damit Tempo-Knöpfe und Metronom nicht springen.
   - Vollbild (`#bw-anzeige-karte`, Klasse `vollbild`): `bwEinpassen`
     wählt Takte je Zeile und Maßstab für den freien Platz. Drucken/PDF:
     eigenes Blatt `#bw-druck` außerhalb von `<main>` (Kopfzeile wie in der
@@ -307,9 +324,16 @@ Firebase (eigenes Projekt, getrennt von `greenboys-scoreboard`) bzw.
     von vorn, sonst stoppt `BeatSpieler`). Gespielt wird `bwTaktFolge()`:
     Loop-Bereich oder ganzes Stück bzw. jede Zeile einzeln, je
     `durchgaenge`-mal; im Loop wird die Folge bei jedem Neubeginn neu
-    berechnet. Loop-Bereich `bwLoopAuswahl` (nicht gespeichert): Takt im
-    Notenbild antippen (`.takt-feld[data-takt]`), Übungsnummer
-    (`.uebung-nr`) wählt die Zeile - Regeln wie `anzeigeAngetippt`.
+    berechnet. Loop-Bereich `bwLoopAuswahl = {von, bis, s}` in PLÄTZEN
+    (Zählzeiten), `s` = Schläge beim Wählen (andere Taktart → verfällt);
+    nicht gespeichert. Takt im Notenbild antippen (`.takt-feld[data-takt]`)
+    wählt den ganzen Takt, Übungsnummer (`.uebung-nr`) die Zeile - Regeln
+    wie `anzeigeAngetippt`. Über die Noten ziehen (`bwLoopZiehenEinrichten`,
+    ab 12 px, `touch-action: pan-y`) wählt zählzeitgenau, auch über Zeilen;
+    der Klick danach wird verschluckt (`bwLoopGezogen`). Hervorhebung nur
+    über den gewählten Zählzeiten. Wird der Bereich beim Abspielen geändert,
+    springt `BeatSpieler.folgeNeu` sofort um (läuft die aktuelle Zählzeit
+    darin weiter, sonst nach ihr an den Bereichsanfang).
   - Jede Notenzeile (Rhythmus, Beat, Drumset) beginnt mit einem
     Anfangsstrich; bei „Als Übung“ mit Doppelstrich.
   - Zustand in `localStorage` `rw-beat` (nur dieser Browser, automatisch).

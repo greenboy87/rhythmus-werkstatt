@@ -196,7 +196,7 @@ function linkKopfLesen(werte, standard, schalter) {
     const t = /^(\d+)\/4$/.exec(String(werte.t || '').replace(/\s+/g, ''));
     if (t && Number(t[1]) >= 1 && Number(t[1]) <= LINK_SCHLAEGE_MAX) erg.schlaege = Number(t[1]);
     if (werte.titel !== undefined) erg.titel = werte.titel.slice(0, 80);
-    const bpm = linkZahl(werte.bpm, 40, 200);
+    const bpm = linkZahl(werte.bpm, 20, 200);
     if (bpm !== null) erg.bpm = bpm;
     if (werte.o !== undefined) {
         Object.values(schalter).forEach(k => { erg[k] = false; });
