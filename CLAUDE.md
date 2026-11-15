@@ -674,3 +674,8 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
    + Lautstärke). Rhythmus: `Metronom.bauen` (audio.js), Beat/Drumset:
    `werkstattMetronomBauen` (js/spieler.js). Vorlauf in Beat/Drumset über
    `vorlaufPlanen`. `beat.vorlauf/groesse`, `ds.vorlauf/groesse` (nicht im Link).
+
+## Freies Metronom auch in Beat/Drumset (v81, 15.11.2026)
+- Der ▶ rechts im türkisen Metronom-Kasten gibt es jetzt in allen drei Werkstätten. Beat/Drumset: `FreiesMetronom` in js/spieler.js (Tempo und Taktart der Werkstatt, Puls leuchtet mit).
+- `Metronom.starten/stoppen` und jeder Reiterwechsel halten es an, damit hält auch jeder Spieler-Start es an. Selbst stoppt es Vorklatschen, Metronom, Übe-Metronom, BeatSpieler und DrumSpieler.
+- Vollbild (v80): Bei Beat/Drumset wirkt die Größe auch im Vollbild. 100 % heißt eingepasst, darüber stehen weniger Takte je Zeile und der Rest scrollt.

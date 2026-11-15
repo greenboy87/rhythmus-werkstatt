@@ -401,6 +401,7 @@ const Metronom = (function () {
         if (!ctx) return;
         Vorklatschen.stoppen(true);
         if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
+        if (typeof FreiesMetronom !== 'undefined') FreiesMetronom.stoppen();
         laeuft = true; schlag = 0; takt = 0;
         naechste = ctx.currentTime + 0.12;
         knopfZeichnen(); pulsZeichnen(-1);
@@ -420,6 +421,9 @@ const Metronom = (function () {
         }, 25);
     }
     function stoppen() {
+        // Wer das Metronom anhaelt (jeder Spieler-Start), haelt auch das
+        // freie Metronom der Beat-/Drumset-Werkstatt an
+        if (typeof FreiesMetronom !== 'undefined') FreiesMetronom.stoppen();
         laeuft = false;
         if (uhr) { clearInterval(uhr); uhr = null; }
         sichtbarTimer.forEach(clearTimeout); sichtbarTimer = [];

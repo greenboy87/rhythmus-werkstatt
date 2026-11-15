@@ -6,7 +6,8 @@
    Gleiche Klassen und data-rolle-Namen, damit alles gleich aussieht.
    Die Lautstaerke ist die gemeinsame Metronom-Lautstaerke aller
    Werkstaetten (metronomZiel), der Lautsprecher schaltet den Klick der
-   jeweiligen Werkstatt an oder aus.
+   jeweiligen Werkstatt an oder aus. Der ▶-Knopf daneben laesst das
+   Metronom frei laufen (ohne Noten) - wie in der Rhythmus-Werkstatt.
 
    werkstattMetronomBauen(wurzel, {
        bpm(), bpmSetzen(x), an(), anSetzen(bool), vorlauf(), vorlaufSetzen(n), schlaege()
@@ -41,6 +42,7 @@ function werkstattMetronomBauen(wurzel, cfg) {
         <span class="stufen metronom-feld" title="Metronom-Klick auf jeder Zählzeit mitspielen, Lautstärke (gilt für alle Werkstätten)">
             <button type="button" class="btn btn-icon" data-rolle="mute" title="Metronom-Klick an/aus"></button>
             <input type="range" min="0" max="100" value="60" step="5" data-rolle="lautstaerke" aria-label="Lautstärke des Metronoms">
+            <button type="button" data-rolle="start" class="btn btn-icon" title="Metronom frei laufen lassen (ohne Noten), bis du stoppst"><i class="fa-solid fa-play"></i></button>
         </span>`;
     const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
     const tempo = (x) => { cfg.bpmSetzen(Math.max(TEMPO_MIN, Math.min(200, Math.round(Number(x) || 90)))); zeichnen(); };
@@ -62,6 +64,8 @@ function werkstattMetronomBauen(wurzel, cfg) {
     teil('vorlauf-minus').addEventListener('click', () => { cfg.vorlaufSetzen(Math.max(0, cfg.vorlauf() - 1)); zeichnen(); });
     teil('vorlauf-plus').addEventListener('click', () => { cfg.vorlaufSetzen(Math.min(VORLAUF_MAX_TAKTE, cfg.vorlauf() + 1)); zeichnen(); });
     teil('mute').addEventListener('click', () => { cfg.anSetzen(!cfg.an()); zeichnen(); });
+    const ansicht = { cfg, puls: (i) => puls(i), knopf: teil('start') };
+    teil('start').addEventListener('click', () => FreiesMetronom.umschalten(ansicht));
     teil('lautstaerke').addEventListener('input', (e) => {
         Metronom.lautstaerkeSetzen(e.target.value / 100);
         if (!cfg.an() && e.target.value > 0) cfg.anSetzen(true);   // am Regler drehen = man will ihn hoeren
@@ -77,7 +81,7 @@ function werkstattMetronomBauen(wurzel, cfg) {
         teil('mute').innerHTML = an ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
         teil('mute').classList.toggle('an', !an);
         if (document.activeElement !== teil('lautstaerke')) teil('lautstaerke').value = Math.round(Metronom.lautstaerke() * 100);
-        puls(-1);
+        if (!FreiesMetronom.istAn(ansicht)) puls(-1);
     }
     function puls(aktiv) {
         const ziel = teil('puls'), n = cfg.schlaege();
@@ -95,6 +99,54 @@ function werkstattMetronomBauen(wurzel, cfg) {
     zeichnen();
     return { zeichnen, puls };
 }
+
+/* FREIES METRONOM der Beat- und Drumset-Werkstatt: klickt im Tempo und
+   in der Taktart der Werkstatt, bis man stoppt. Tempo-Aenderungen wirken
+   sofort. Alles andere, was klickt oder spielt, wird vorher angehalten;
+   Metronom.starten/stoppen (und damit jeder Spieler-Start) halten es an. */
+const FreiesMetronom = (function () {
+    let aktiv = null, uhr = null, naechste = 0, schlag = 0, timer = [];
+    function knopf(a, an) {
+        a.knopf.innerHTML = an ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-play"></i>';
+        a.knopf.classList.toggle('an', an);
+    }
+    function stoppen() {
+        if (!aktiv) return;
+        const a = aktiv; aktiv = null;
+        if (uhr) { clearInterval(uhr); uhr = null; }
+        timer.forEach(clearTimeout); timer = [];
+        knopf(a, false); a.puls(-1);
+    }
+    function starten(a) {
+        const ctx = tonBereit(() => starten(a));
+        if (!ctx) return;
+        stoppen();
+        if (typeof Vorklatschen !== 'undefined') Vorklatschen.stoppen(true);
+        Metronom.stoppen();
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
+        if (typeof BeatSpieler !== 'undefined') BeatSpieler.stoppen();
+        if (typeof DrumSpieler !== 'undefined') DrumSpieler.stoppen();
+        aktiv = a; schlag = 0; naechste = ctx.currentTime + 0.12;
+        knopf(a, true);
+        uhr = setInterval(() => {
+            if (aktiv !== a) return;
+            if (ctx.state !== 'running') { stoppen(); zeigeToast('Der Ton ist weggebrochen - Metronom gestoppt.', 'danger'); return; }
+            while (naechste < ctx.currentTime + 0.15) {
+                const s = schlag % a.cfg.schlaege(), wann = naechste;
+                metronomKlick(ctx, wann, s === 0);
+                timer.push(setTimeout(() => { if (aktiv === a) a.puls(s); }, Math.max(0, (wann - ctx.currentTime) * 1000)));
+                naechste += 60 / a.cfg.bpm();
+                schlag = s + 1;
+            }
+            if (timer.length > 64) timer = timer.slice(-16);
+        }, 25);
+    }
+    return {
+        starten, stoppen,
+        umschalten: (a) => (aktiv === a ? stoppen() : starten(a)),
+        istAn: (a) => (a ? aktiv === a : !!aktiv)
+    };
+})();
 
 /* −/+-Paar an einen Wert binden (Gedrueckthalten wiederholt). */
 function stufenBinden(minus, plus, schritt) {

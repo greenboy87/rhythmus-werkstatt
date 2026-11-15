@@ -23,6 +23,7 @@ function reiterZeigen(name, nichtMerken) {
     });
     document.getElementById('kopf-untertitel').textContent = REITER[name].untertitel;
     if (!nichtMerken) { try { localStorage.setItem(REITER_SCHLUESSEL, name); } catch (e) { /* egal */ } }
+    if (typeof FreiesMetronom !== 'undefined') FreiesMetronom.stoppen();
     if (name !== 'beat') BeatSpieler.stoppen();
     if (name !== 'drumset') DrumSpieler.stoppen();
     if (name !== 'zaehlen') { zsStoppen(); dkStoppen(); }
