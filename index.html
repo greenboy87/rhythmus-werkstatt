@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=84">
-<link rel="stylesheet" href="css/druck.css?v=84">
+<link rel="stylesheet" href="css/stil.css?v=85">
+<link rel="stylesheet" href="css/druck.css?v=85">
 </head>
 <body>
 
@@ -129,8 +129,7 @@
         <!-- Zeile 1: Blatt (Titel, Verdecken, Vollbild, Speichern) -->
         <div class="leiste steuer-zeile">
             <label class="feld nicht-in-uebung" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift über den Noten - auf dem Bildschirm, im Vollbild und auf dem Ausdruck">
-                Titel
-                <input type="text" id="druck-titel" placeholder="Rhythmus-Werkstatt" style="width:11rem;">
+                <input type="text" id="druck-titel" placeholder="Titel" aria-label="Titel" style="width:13rem;">
             </label>
             <button type="button" class="btn btn-icon nicht-in-uebung" id="druck-titel-speichern-btn" title="Speichert das aktuelle Blatt unter diesem Titel - wie „Speichern“ oben bei Rhythmus eintragen"><i class="fa-solid fa-floppy-disk"></i></button>
             <span class="fuellt" style="flex:1"></span>
@@ -330,8 +329,7 @@
         <!-- Zeile 1: Blatt (Titel, Verdecken, Vollbild, Speichern) - wie in allen Werkstaetten -->
         <div class="leiste steuer-zeile">
             <label class="feld bw-nicht-im-vollbild" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift auf dem Ausdruck und im PDF">
-                Titel
-                <input type="text" id="bw-titel" placeholder="Beat-Werkstatt" maxlength="80" style="width:11rem;">
+                <input type="text" id="bw-titel" placeholder="Titel" aria-label="Titel" maxlength="80" style="width:13rem;">
             </label>
             <button type="button" class="btn btn-icon bw-nicht-im-vollbild" id="bw-titel-speichern" title="Das Blatt speichern (Name = Titel) - wie „Speichern“ oben"><i class="fa-solid fa-floppy-disk"></i></button>
             <span class="fuellt" style="flex:1"></span>
@@ -479,8 +477,7 @@
         <!-- Zeile 1: Blatt (Titel, Verdecken, Vollbild, Speichern) - wie in allen Werkstaetten -->
         <div class="leiste steuer-zeile">
             <label class="feld bw-nicht-im-vollbild" style="flex-direction:row; align-items:center; gap:.4rem; white-space:nowrap;" title="Steht als Überschrift auf dem Ausdruck und im PDF">
-                Titel
-                <input type="text" id="ds-titel" placeholder="Drumset-Werkstatt" maxlength="80" style="width:11rem;">
+                <input type="text" id="ds-titel" placeholder="Titel" aria-label="Titel" maxlength="80" style="width:13rem;">
             </label>
             <button type="button" class="btn btn-icon bw-nicht-im-vollbild" id="ds-titel-speichern" title="Das Blatt speichern (Name = Titel) - wie „Speichern“ oben"><i class="fa-solid fa-floppy-disk"></i></button>
             <span class="fuellt" style="flex:1"></span>
@@ -761,27 +758,27 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=84"></script>
-<script src="js/noten.js?v=84"></script>
-<script src="js/editor.js?v=84"></script>
-<script src="js/audio.js?v=84"></script>
-<script src="js/vollbild.js?v=84"></script>
-<script src="js/uebemetronom.js?v=84"></script>
-<script src="js/neu.js?v=84"></script>
-<script src="js/spieler.js?v=84"></script>
-<script src="js/generator.js?v=84"></script>
-<script src="js/link.js?v=84"></script>
-<script src="js/vendor/lame.min.js?v=84"></script>
-<script src="js/export.js?v=84"></script>
-<script src="js/pdf.js?v=84"></script>
-<script src="js/druckvorschau.js?v=84"></script>
-<script src="js/app.js?v=84"></script>
-<script src="js/beat.js?v=84"></script>
-<script src="js/drumset.js?v=84"></script>
-<script src="js/eigene.js?v=84"></script>
-<script src="js/zaehlkern.js?v=84"></script>
-<script src="js/zaehlspiel.js?v=84"></script>
-<script src="js/spiele.js?v=84"></script>
-<script src="js/reiter.js?v=84"></script>
+<script src="js/version.js?v=85"></script>
+<script src="js/noten.js?v=85"></script>
+<script src="js/editor.js?v=85"></script>
+<script src="js/audio.js?v=85"></script>
+<script src="js/vollbild.js?v=85"></script>
+<script src="js/uebemetronom.js?v=85"></script>
+<script src="js/neu.js?v=85"></script>
+<script src="js/spieler.js?v=85"></script>
+<script src="js/generator.js?v=85"></script>
+<script src="js/link.js?v=85"></script>
+<script src="js/vendor/lame.min.js?v=85"></script>
+<script src="js/export.js?v=85"></script>
+<script src="js/pdf.js?v=85"></script>
+<script src="js/druckvorschau.js?v=85"></script>
+<script src="js/app.js?v=85"></script>
+<script src="js/beat.js?v=85"></script>
+<script src="js/drumset.js?v=85"></script>
+<script src="js/eigene.js?v=85"></script>
+<script src="js/zaehlkern.js?v=85"></script>
+<script src="js/zaehlspiel.js?v=85"></script>
+<script src="js/spiele.js?v=85"></script>
+<script src="js/reiter.js?v=85"></script>
 </body>
 </html>
