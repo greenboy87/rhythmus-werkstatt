@@ -708,5 +708,13 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 ## Symbole, Vorlauf am Abspielen, Knöpfe bleiben stehen (v86, 15.11.2026)
 - Zählzeiten und Als Übung sind nur noch Symbole: `b.zaehl-symbol` („1 +“) und `svg.uebung-symbol` (① ② mit Punkten). Erklärung steht im `title`.
 - Vorlauf: `.abspiel-gruppe` = Abspielen + angedockter `.vorlauf-knopf` (`#vorlauf-knopf`, `#bw-vorlauf`, `#ds-vorlauf`). Er zeigt ein Metronom-Symbol und einen Punkt je Einzähltakt. Antippen schaltet aus → 1 → 2 → aus (`vorlaufKnopfEinrichten`/`vorlaufKnoepfeZeichnen` in spieler.js). Die alte Vorlauf-Stufe (`.vorlauf-stufe`) wird nur in `.anzeige-karte` ausgeblendet, im Diktat und im Klassenspiel bleibt sie.
-- Wenig Farbe: Die Abspiel-Leiste hat keinen Rahmen mehr, Abspielen ist grau. Aktiv heißt neutral grau gefüllt (`--pk-aktiv`), nicht mehr Violett.
 - Knöpfe springen nicht mehr: Ein IIFE am Ende von spieler.js merkt sich beim `pointerdown` in Steuer-Zeile oder Spieler-Leiste die Bildschirmlage des Knopfs. Danach scrollt es nach (auch beim Gedrückthalten) und verlängert bei Bedarf `body.style.minHeight`.
+
+## Zwei Bedienzeilen, Klang-Menü, auto = 1/2/4 (v87, 15.11.2026)
+- Unter der Titelzeile gibt es in jeder Karte nur noch zwei Zeilen:
+  1. Notenbild-Zeile: Chips, Größe, Takte/Zeile, danach (nach einem Trenner) das Werkstatt-Eigene und die ?-Hilfe. Rhythmus: Klang und Note antippen. Beat: Hören und Farbe. Drumset: Farbe.
+  2. Spieler-Leiste über die ganze Breite, grau hinterlegt, mit Abstand zu den Noten: Abspielen+Vorlauf | Mitlesen | Loop | Wiederholen (Durchgänge) | Vorspielen | Metronom (rechts).
+- Farben: Abspielen und Vorlauf sind voll violett, aktive Schalter zart violett (wie v84). Tom wollte das Farbschema behalten, nur der Player-Hintergrund ist grau.
+- Klang (Rhythmus): `details.menue.klang-menue` mit einfarbigen Font-Awesome-Symbolen. Der Wert steht weiter in der versteckten Auswahl `#klatsch-sound-wahl`. `klangMenueZeichnen` (app.js) läuft in `leisteAnzeigen`.
+- Takte/Zeile „auto“: `autoTakteProZeile(anzahl, passt)` in noten.js. 1 Takt → 1, 2 → 2, ab 3 → 4; passt es nicht in die Breite, dann 2 bzw. 1. Rhythmus: Option `auto124` von `stueckAnzeigeHtml` (nur Anzeige und Druck der Werkstatt, Spiele und Klassenspiel füllen weiter nach Breite). Beat/Drumset: `bwEinpassen`/`dsEinpassen` und die Bildschirm-Anzeige.
+- Chips (`<label>`) zeigen jetzt die Hand als Mauszeiger.

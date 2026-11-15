@@ -91,7 +91,8 @@ function anzeigeOptionen() {
         wiederholung: document.getElementById('opt-wiederholung').checked,
         wiederholungen: wiederholungen,
         alsUebung: document.getElementById('opt-als-uebung').checked,
-        takteProZeile: takteProZeile
+        takteProZeile: takteProZeile,
+        auto124: true
     };
 }
 
@@ -107,7 +108,20 @@ function takteProZeileAnzeigen() {
 /* Regler und Umschalter der Leiste auf den aktuellen Stand bringen - die
    Werte selbst stehen in anzeigeSkalierung, wiederholungen, opt-wiederholung
    und abspielen-modus (auch Link und Blatt-Laden setzen nur die). */
+/* Klang-Menue (v87): sichtbar ist ein Menue im Stil der Seite mit
+   einfarbigen Symbolen; der Wert steht weiter in der versteckten Auswahl
+   #klatsch-sound-wahl (Link, Blatt, Export lesen sie). */
+function klangMenueZeichnen() {
+    const wahl = document.getElementById('klatsch-sound-wahl');
+    const knopf = document.getElementById('klang-knopf');
+    const eintrag = wahl && document.querySelector(`.klang-menue [data-klang="${wahl.value}"]`);
+    if (!knopf || !eintrag) return;
+    knopf.innerHTML = eintrag.querySelector('i').outerHTML + ' ' + eintrag.textContent.trim() + ' <i class="fa-solid fa-caret-down"></i>';
+    document.querySelectorAll('.klang-menue [data-klang]').forEach(b => b.classList.toggle('an', b === eintrag));
+}
+
 function leisteAnzeigen() {
+    klangMenueZeichnen();
     const durchgaenge = document.getElementById('opt-wiederholung').checked ? wiederholungen + 1 : 1;
     document.getElementById('wiederholung-regler').value = durchgaenge;
     document.getElementById('wiederholung-wert').textContent = durchgaenge + '×';
@@ -821,6 +835,12 @@ function init() {
 
     // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf).
     const klangWahl = document.getElementById('klatsch-sound-wahl');
+    document.querySelectorAll('.klang-menue [data-klang]').forEach(b => b.addEventListener('click', () => {
+        klangWahl.value = b.dataset.klang;
+        klangWahl.dispatchEvent(new Event('change'));
+        klangMenueZeichnen();
+    }));
+    klangMenueZeichnen();
     klangWahl.addEventListener('change', () => {
         klatschSoundSetzen(klangWahl.value);
         const probe = () => { const ctx = tonBereit(probe); if (ctx) klatschSoundSpielen(ctx, ctx.currentTime + 0.05); };

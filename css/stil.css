@@ -909,8 +909,8 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte {
     --pk-h: 2.25rem; --pk-r: 8px; --pk-rand: var(--rand); --pk-fl: var(--bg-karte);
     --pk-trenn: var(--rand-schwach);
-    --pk-aktiv: color-mix(in srgb, var(--text) 12%, var(--bg-karte));
-    --pk-aktiv-text: var(--text);
+    --pk-aktiv: color-mix(in srgb, var(--akzent) 13%, var(--bg-karte));
+    --pk-aktiv-text: var(--akzent);
 }
 .anzeige-karte .steuer-zeile { gap: .5rem; align-items: center; margin-bottom: .55rem; }
 .anzeige-karte .steuer-zeile .trenner { width: 1px; height: 1.5rem; align-self: center; margin: 0 .1rem; background: var(--pk-rand); }
@@ -930,21 +930,26 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte .steuer-zeile .chip:hover > span, .anzeige-karte .spieler-leiste .chip:hover > span { border-color: var(--text-schwach); }
 .anzeige-karte .steuer-zeile .btn.an, .anzeige-karte .spieler-leiste .btn.an,
 .anzeige-karte .steuer-zeile .chip input:checked + span, .anzeige-karte .spieler-leiste .chip input:checked + span {
-    background: var(--pk-aktiv); border-color: var(--text-schwach); color: var(--pk-aktiv-text);
+    background: var(--pk-aktiv); border-color: var(--akzent); color: var(--pk-aktiv-text);
 }
-/* Abspielen: grau statt violett (v86), mit angedocktem Vorlauf-Knopf */
-.anzeige-karte .spieler-leiste .btn-primär {
-    background: var(--pk-aktiv); border-color: var(--pk-rand); color: var(--text); min-width: 9.5rem; font-weight: 700;
+/* Abspielen: voll violett, mit angedocktem Vorlauf-Knopf (v86/v87) */
+.anzeige-karte .spieler-leiste .btn-primär,
+.anzeige-karte .spieler-leiste .btn-primär:hover {
+    background: var(--akzent); border-color: var(--akzent); color: #fff; min-width: 8rem; font-weight: 700;
 }
-.anzeige-karte .spieler-leiste .btn-primär:hover { background: color-mix(in srgb, var(--text) 18%, var(--bg-karte)); border-color: var(--text-schwach); }
+.anzeige-karte .spieler-leiste .btn-primär:hover { background: var(--akzent-stark); }
+.anzeige-karte .spieler-leiste > .stufen > .stufen-wert { min-width: 2.2rem; }
+.anzeige-karte .spieler-leiste > .stufen .btn.btn { min-width: 1.9rem; padding: 0 .5rem; }
 .anzeige-karte .abspiel-gruppe { display: inline-flex; }
 .anzeige-karte .abspiel-gruppe > .btn-primär { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn {
-    border-left: 1px solid var(--pk-trenn); border-top-left-radius: 0; border-bottom-left-radius: 0;
-    background: var(--pk-aktiv); padding: 0 .6rem; gap: .3rem; min-width: 2.6rem; color: var(--text-gedaempft);
+.anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn,
+.anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn:hover {
+    border-color: var(--akzent); border-left: 1px solid color-mix(in srgb, #fff 35%, var(--akzent));
+    border-top-left-radius: 0; border-bottom-left-radius: 0;
+    background: var(--akzent); color: #fff; padding: 0 .6rem; gap: .3rem; min-width: 2.6rem;
 }
-.anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn.an { color: var(--text); border-color: var(--pk-rand); border-left-color: var(--pk-trenn); }
-.anzeige-karte .abspiel-gruppe > .vorlauf-knopf:not(.an) .metronom-symbol { opacity: .45; }
+.anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn:hover { background: var(--akzent-stark); }
+.anzeige-karte .abspiel-gruppe > .vorlauf-knopf:not(.an) .metronom-symbol { opacity: .55; }
 .vorlauf-punkte { display: inline-flex; gap: 3px; }
 .vorlauf-punkte:empty { display: none; }
 .vorlauf-punkte i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
@@ -982,7 +987,6 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte .stufen > .segment,
 .anzeige-karte .stufen > select { border-left: 1px solid var(--pk-trenn); }
 .anzeige-karte .stufen .btn.btn.an, .anzeige-karte .segment .btn.btn.an { background: var(--pk-aktiv); color: var(--pk-aktiv-text); border-color: var(--pk-trenn); }
-.anzeige-karte .segment .btn.btn:not(.an) { color: var(--text-schwach); }
 .anzeige-karte .stufen > .segment { height: 100%; border-top: none; border-bottom: none; border-right: none; border-radius: 0; }
 .anzeige-karte .stufen > select {
     height: 100%; border-top: none; border-bottom: none; border-right: none; border-radius: 0;
@@ -993,8 +997,19 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 
 /* Abspiel-Leiste: neutraler Rahmen, alles auf einer Linie */
 .anzeige-karte .spieler-leiste {
-    gap: .5rem; padding: .2rem 0; border: none; border-radius: 0; background: transparent;
+    display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center;
+    gap: .5rem; padding: .55rem .6rem; margin: .2rem 0 1.4rem; border: none; border-radius: 12px;
+    background: color-mix(in srgb, var(--text) 6%, var(--bg-karte));
 }
+.anzeige-karte .spieler-leiste > .metronom-gruppen, .anzeige-karte .spieler-leiste > [id$="metronom-kasten"] { margin-left: auto; }
+/* Antippbares zeigt die Hand (Chips sind <label>, die zeigten den Pfeil) */
+.anzeige-karte .chip, .anzeige-karte .chip > span, .anzeige-karte summary, .anzeige-karte .stufen-wert { cursor: pointer; }
+.anzeige-karte .stufen-wert:not(input) { cursor: default; }
+/* Klang-Menue im Stil der Seite */
+.anzeige-karte .klang-menue > summary.btn { gap: .45rem; }
+.anzeige-karte .klang-menue > summary .fa-caret-down { color: var(--text-schwach); margin-left: .1rem; }
+.klang-menue .menue-liste { left: 0; right: auto; min-width: 10rem; }
+.klang-menue .menue-liste button.an, .klang-menue .menue-liste button.an i { color: var(--akzent); }
 
 /* Metronom: EIN neutraler Kasten wie die Stufen - Tuerkis nur noch fuer den Puls */
 .anzeige-karte .metronom-gruppen {
@@ -1012,7 +1027,7 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte .metronom-tempo-wert .stufen-eingabe { font-size: .95rem; height: 1.15rem; width: 3rem; padding: 0; }
 .anzeige-karte .metronom-tempo-wert small { font-size: .56rem; font-weight: 600; margin-top: 1px; }
 .anzeige-karte .metronom-feld { display: inline-flex; align-items: center; gap: .4rem; padding: 0 .35rem 0 0; }
-.anzeige-karte .metronom-feld input[type="range"] { width: 4.5rem; accent-color: var(--text-gedaempft); }
+.anzeige-karte .metronom-feld input[type="range"] { width: 4.5rem; accent-color: var(--akzent); }
 /* Lautsprecher im Metronom: stumm = einfach grau, kein Farbkasten */
 .anzeige-karte .metronom-feld .btn.btn[data-rolle="mute"].an { background: transparent; color: var(--text-schwach); }
 .anzeige-karte .metronom-feld .btn.btn[data-rolle="start"].an { background: var(--pk-aktiv); color: var(--pk-aktiv-text); }

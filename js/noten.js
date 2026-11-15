@@ -530,8 +530,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
     // Zaehlzeiten in allen Zeilen genau untereinander. Der Massstab richtet
     // sich nach dem engsten Notenwert im ganzen Stueck, damit auch der noch
     // so viel Platz hat wie sonst (VORSCHUB), und gilt fuer alle Zeilen gleich.
+    // auto124 (Werkstatt-Anzeige und Druck): "auto" heisst immer 1, 2 oder 4
+    // Takte je Zeile - je nach Taktzahl, und nur so viele, wie in die Breite passen.
+    const auto124 = opt.auto124 && !(opt.takteProZeile > 0);
     let proViertel = 0;
-    if (opt.alsUebung || opt.takteProZeile > 0) {
+    if (opt.alsUebung || opt.takteProZeile > 0 || auto124) {
         proViertel = VORSCHUB[1];
         takte.forEach(t => t.bausteine.forEach(b => b.teile.forEach(teil => {
             if (teil.d > 0) proViertel = Math.max(proViertel, vorschub(teil.d) / teil.d);
@@ -553,6 +556,14 @@ function stueckAnzeigeHtml(stueck, optionen) {
     // aus allen Takten, die je an dieser Position stehen. Schmalere Takte
     // bekommen dann einfach Luft nach dem letzten Zeichen, bis zum Taktstrich.
     let spaltenBreite = null;
+    if (auto124) {
+        const kopf = LINKS_RAND + KOPF_BREITE + (WDH_NACH_KOPF ? WDH_BREITE : 0) + 12;
+        opt.takteProZeile = autoTakteProZeile(takte.length, (p) => {
+            const spalten = new Array(p).fill(0);
+            takte.forEach((t, i) => { spalten[i % p] = Math.max(spalten[i % p], taktBreite(t)); });
+            return kopf + spalten.reduce((a, b) => a + b, 0) <= opt.breite;
+        });
+    }
     if (opt.takteProZeile > 0) {
         spaltenBreite = new Array(opt.takteProZeile).fill(0);
         takte.forEach((takt, i) => {
@@ -899,4 +910,13 @@ function stueckMarkieren(host, zeichen, taktIndex, viertelInTakt) {
         const ab = Number(g.dataset.ab), bis = Number(g.dataset.bis);
         if (global >= ab - 0.001 && global < bis - 0.001) { g.classList.add('jetzt'); break; }
     }
+}
+
+/* "auto" bei Takten je Zeile (alle drei Werkstaetten, v87): immer 1, 2 oder 4 -
+   1 Takt -> 1, 2 Takte -> 2, ab 3 Takten -> 4. Passt das nicht in die Breite
+   (passt(p) = false), die naechstkleinere Stufe. */
+function autoTakteProZeile(anzahl, passt) {
+    const wunsch = anzahl <= 2 ? Math.max(1, anzahl) : 4;
+    for (const p of [4, 2, 1]) if (p <= wunsch && (!passt || passt(p))) return p;
+    return 1;
 }

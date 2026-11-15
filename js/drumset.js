@@ -669,9 +669,10 @@ function dsEinpassen(w, h, abstand, minSkala, maxSkala) {
     let bestes = null;
     // Feste Takte je Zeile: nur noch der Massstab wird gesucht
     const fest = ds.proZeile ? Math.min(ds.proZeile, ds.takte) : 0;
-    for (let p = fest || ds.takte; p >= (fest || 1); p--) {
+    const stufen = fest ? [fest] : [4, 2, 1].filter(p => p <= autoTakteProZeile(ds.takte));
+    for (const p of stufen) {
         const n = Math.ceil(ds.takte / p);
-        const skala = Math.min(maxSkala, w / dsSystemBreite(p), (h - (n - 1) * abstand) / (n * DS_SYSTEM_HOEHE));
+        const skala = Math.min(maxSkala, w / dsSystemBreite(Math.min(p, ds.takte)), (h - (n - 1) * abstand) / (n * DS_SYSTEM_HOEHE));
         if (skala >= minSkala) return { p, skala };
         if (!bestes || skala > bestes.skala) bestes = { p, skala };
     }
@@ -695,8 +696,7 @@ function dsAnzeigeZeichnen() {
         if (g !== 1) {
             skala *= g;
             if (g > 1 && !ds.proZeile) {
-                p = ds.takte;
-                while (p > 1 && dsSystemBreite(p) * skala > w) p--;
+                p = autoTakteProZeile(ds.takte, (q) => dsSystemBreite(Math.min(q, ds.takte)) * skala <= w);
             }
         }
         dsAnzeigeProZeile = p;
@@ -706,7 +706,7 @@ function dsAnzeigeZeichnen() {
     const breite = host.clientWidth || 900;
     const skala = DS_ANZEIGE_SKALA * ds.groesse / 100;
     const taktBreite = (dsS() * DS_SCHLAG + 6) * skala;
-    const proZeile = ds.proZeile || Math.max(1, Math.floor((breite - 80 * skala) / taktBreite));
+    const proZeile = ds.proZeile || autoTakteProZeile(ds.takte, (p) => Math.min(p, ds.takte) * taktBreite + 80 * skala <= breite);
     dsAnzeigeProZeile = proZeile;
     host.innerHTML = dsSystemeHtml(proZeile, skala);
     dsLoopInfoZeichnen();

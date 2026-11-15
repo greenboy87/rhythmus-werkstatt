@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=86">
-<link rel="stylesheet" href="css/druck.css?v=86">
+<link rel="stylesheet" href="css/stil.css?v=87">
+<link rel="stylesheet" href="css/druck.css?v=87">
 </head>
 <body>
 
@@ -57,7 +57,7 @@
                     </label>
                     <span class="schalter-feld">Takt automatisch anlegen</span>
                 </span>
-                <span class="leiste" style="gap:.3rem; margin-left:.4rem;" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
+                <span class="leiste" style="gap:.3rem; margin-left:.4rem;" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = 1, 2 oder 4 Takte, je nachdem wie viele es sind">
                     <span class="schalter-feld">Takte/Zeile</span>
                     <button type="button" class="btn takte-zeile-minus">−</button>
                     <span class="btn takte-zeile-anzeige" style="min-width:3.2rem; text-align:center">auto</span>
@@ -154,14 +154,6 @@
             <label class="chip"><input type="checkbox" id="opt-notenlinien"><span>Linien</span></label>
             <label class="chip" title="Rechts/Links unter jede Note: R L R L im Raster des Schlags"><input type="checkbox" id="opt-handsatz"><span>R / L</span></label>
             <span class="trenner"></span>
-            <input type="checkbox" id="opt-wiederholung" class="hidden" aria-hidden="true">
-            <input type="range" id="wiederholung-regler" class="hidden" min="1" max="10" step="1" value="1" aria-hidden="true">
-            <span class="stufen" title="Wie oft das Stück insgesamt gespielt wird - ab 2× mit Wiederholungszeichen">
-                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
-                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="-1" aria-label="Weniger Durchgänge">−</button>
-                <span class="stufen-wert" id="wiederholung-wert">1×</span>
-                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="1" aria-label="Mehr Durchgänge">+</button>
-            </span>
             <input type="range" id="groesse-regler" class="hidden" min="60" max="300" step="10" value="100" aria-hidden="true">
             <span class="stufen" title="Größe des Notenbilds am Bildschirm und im Vollbild (fürs Blatt: Drucken / PDF …)">
                 <span class="stufen-name"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -169,31 +161,35 @@
                 <span class="stufen-wert" id="anzeige-groesse-anzeige">100%</span>
                 <button type="button" class="btn" data-stufe-fuer="groesse-regler" data-schritt="10" aria-label="Größer">+</button>
             </span>
-            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = so viele wie reinpassen">
-                <span class="stufen-name">Takte/Zeile</span>
+            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Eingabe, Anzeige, Vollbild und Druck. auto = 1, 2 oder 4 Takte, je nachdem wie viele es sind">
+                <span class="stufen-name"><i class="fa-solid fa-table-columns"></i></span>
                 <button type="button" class="btn takte-zeile-minus" aria-label="Weniger Takte je Zeile">−</button>
                 <span class="stufen-wert takte-zeile-anzeige">auto</span>
                 <button type="button" class="btn takte-zeile-plus" aria-label="Mehr Takte je Zeile">+</button>
             </span>
-        </div>
-
-        <!-- Zeile 3: Klang und was Antippen im Notenbild macht -->
-        <div class="leiste steuer-zeile">
-            <label class="stufen" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
-                <span class="stufen-name">Klang</span>
-                <select id="klatsch-sound-wahl">
-                    <option value="snare">🥁 Snare</option>
-                    <option value="klatschen">👏 Klatschen</option>
-                    <option value="holzblock">🪵 Holzblock</option>
-                    <option value="klick">Klick</option>
-                    <option value="trommel">🪘 Conga</option>
-                </select>
-            </label>
+            <span class="trenner"></span>
+            <details class="menue klang-menue" title="Klang des Rhythmus - beim Wechseln kurz zu hören">
+                <summary class="btn" id="klang-knopf" aria-label="Klang"></summary>
+                <div class="menue-liste">
+                    <button type="button" data-klang="snare"><i class="fa-solid fa-drum"></i> Snare</button>
+                    <button type="button" data-klang="klatschen"><i class="fa-solid fa-hands-clapping"></i> Klatschen</button>
+                    <button type="button" data-klang="holzblock"><i class="fa-solid fa-cube"></i> Holzblock</button>
+                    <button type="button" data-klang="klick"><i class="fa-solid fa-circle-dot"></i> Klick</button>
+                    <button type="button" data-klang="trommel"><i class="fa-solid fa-drum-steelpan"></i> Conga</button>
+                </div>
+            </details>
+            <select id="klatsch-sound-wahl" class="hidden" aria-hidden="true">
+                <option value="snare">Snare</option>
+                <option value="klatschen">Klatschen</option>
+                <option value="holzblock">Holzblock</option>
+                <option value="klick">Klick</option>
+                <option value="trommel">Conga</option>
+            </select>
             <span class="stufen antipp-leiste" title="Note antippen = Akzent an/aus oder ab dieser Note abspielen. Neben die Noten tippen = Takt loopen">
-                <span class="stufen-name">Note antippen</span>
+                <span class="stufen-name"><i class="fa-solid fa-hand-pointer"></i></span>
                 <span class="segment" role="group" aria-label="Was Antippen im Notenbild macht">
                     <button type="button" class="btn an" data-antippen="akzent" title="Note antippen = Akzent an/aus, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-chevron-right"></i> Akzent</button>
-                    <button type="button" class="btn" data-antippen="start" title="Note antippen = ab dieser Note abspielen, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-forward-step"></i> Startpunkt</button>
+                    <button type="button" class="btn" data-antippen="start" title="Note antippen = ab dieser Note abspielen, neben die Noten tippen = Takt loopen"><i class="fa-solid fa-forward-step"></i> Start</button>
                 </span>
             </span>
             <details class="hilfe" id="loop-tipp">
@@ -210,6 +206,14 @@
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
             </span>
             <label class="chip chip-icon" title="Loop: endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst"><input type="checkbox" id="opt-loop" aria-label="Loop"><span><i class="fa-solid fa-repeat"></i></span></label>
+            <input type="checkbox" id="opt-wiederholung" class="hidden" aria-hidden="true">
+            <input type="range" id="wiederholung-regler" class="hidden" min="1" max="10" step="1" value="1" aria-hidden="true">
+            <span class="stufen" title="Wie oft das Stück insgesamt gespielt wird - ab 2× mit Wiederholungszeichen">
+                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
+                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="-1" aria-label="Weniger Durchgänge">−</button>
+                <span class="stufen-wert" id="wiederholung-wert">1×</span>
+                <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="1" aria-label="Mehr Durchgänge">+</button>
+            </span>
             <button type="button" class="btn btn-icon vorspielen-knopf" id="vorspielen"></button>
             <select id="abspielen-modus" class="hidden" aria-hidden="true">
                 <option value="vorklatschen">Vorklatschen</option>
@@ -348,36 +352,26 @@
             <label class="chip chip-icon" title="Zählzeiten über den Noten (1 + 2 +)"><input type="checkbox" id="bw-zaehlzeiten" aria-label="Zählzeiten"><span><b class="zaehl-symbol" aria-hidden="true">1 +</b></span></label>
             <label class="chip chip-icon" title="Als Übung: Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="bw-als-uebung" aria-label="Als Übung"><span><svg class="uebung-symbol" viewBox="0 0 22 16" width="22" height="16" aria-hidden="true"><circle cx="4" cy="4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="5.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">1</text><circle cx="4" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="13.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">2</text><g fill="currentColor"><circle cx="10.5" cy="4" r="1"/><circle cx="14.5" cy="4" r="1"/><circle cx="18.5" cy="4" r="1"/><circle cx="10.5" cy="12" r="1"/><circle cx="14.5" cy="12" r="1"/><circle cx="18.5" cy="12" r="1"/></g></svg></span></label>
             <span class="trenner"></span>
-            <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
-                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
-                <button type="button" class="btn" id="bw-durchgaenge-minus" aria-label="Weniger Durchgänge">−</button>
-                <span class="stufen-wert" id="bw-durchgaenge-wert">1×</span>
-                <button type="button" class="btn" id="bw-durchgaenge-plus" aria-label="Mehr Durchgänge">+</button>
-            </span>
             <span class="stufen" title="Größe des Notenbilds (im Vollbild passt es sich selbst an)">
                 <span class="stufen-name"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <button type="button" class="btn" id="bw-groesse-minus" aria-label="Kleiner">−</button>
                 <span class="stufen-wert" id="bw-groesse-wert">100%</span>
                 <button type="button" class="btn" id="bw-groesse-plus" aria-label="Größer">+</button>
             </span>
-            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige und Druck. auto = so viele wie reinpassen">
-                <span class="stufen-name">Takte/Zeile</span>
+            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige und Druck. auto = 1, 2 oder 4 Takte, je nachdem wie viele es sind">
+                <span class="stufen-name"><i class="fa-solid fa-table-columns"></i></span>
                 <button type="button" class="btn" id="bw-pro-zeile-minus" aria-label="Weniger Takte je Zeile">−</button>
                 <span class="stufen-wert" id="bw-pro-zeile-wert">auto</span>
                 <button type="button" class="btn" id="bw-pro-zeile-plus" aria-label="Mehr Takte je Zeile">+</button>
             </span>
-        </div>
-
-        <!-- Zeile 3: was es nur in dieser Werkstatt gibt + Tipps -->
-        <div class="leiste steuer-zeile">
+            <span class="trenner"></span>
             <span class="stufen" title="Einzelne Instrumente beim Abspielen stumm schalten - zum Mitspielen">
-                <span class="stufen-name">Hören</span>
+                <span class="stufen-name"><i class="fa-solid fa-headphones"></i></span>
                 <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="becken"><span class="bw-punkt bw-becken"></span> Becken</button>
                 <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="bass"><span class="bw-punkt bw-bass"></span> Bassdrum</button>
                 <button type="button" class="btn bw-stumm-knopf" data-bw-stumm="snare"><span class="bw-punkt bw-snare"></span> Snare</button>
             </span>
             <span class="stufen" title="Becken, Snare und Bassdrum in eigenen Farben zeigen oder alles schwarz-weiß">
-                <span class="stufen-name">Notenbild</span>
                 <button type="button" class="btn" id="bw-farbe-anzeige"><i class="fa-solid fa-palette"></i> Farbe</button>
             </span>
             <details class="hilfe">
@@ -394,6 +388,12 @@
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
             </span>
             <label class="chip chip-icon" title="Loop: endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst"><input type="checkbox" id="bw-loop" aria-label="Loop"><span><i class="fa-solid fa-repeat"></i></span></label>
+            <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
+                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
+                <button type="button" class="btn" id="bw-durchgaenge-minus" aria-label="Weniger Durchgänge">−</button>
+                <span class="stufen-wert" id="bw-durchgaenge-wert">1×</span>
+                <button type="button" class="btn" id="bw-durchgaenge-plus" aria-label="Mehr Durchgänge">+</button>
+            </span>
             <button type="button" class="btn btn-icon vorspielen-knopf" id="bw-vorspielen"></button>
             <span id="bw-metronom-kasten"></span>
         </div>
@@ -496,30 +496,20 @@
             <label class="chip chip-icon" title="Zählzeiten über den Noten (1 + 2 +)"><input type="checkbox" id="ds-zaehlzeiten" aria-label="Zählzeiten"><span><b class="zaehl-symbol" aria-hidden="true">1 +</b></span></label>
             <label class="chip chip-icon" title="Als Übung: Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="ds-als-uebung" aria-label="Als Übung"><span><svg class="uebung-symbol" viewBox="0 0 22 16" width="22" height="16" aria-hidden="true"><circle cx="4" cy="4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="5.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">1</text><circle cx="4" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="13.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">2</text><g fill="currentColor"><circle cx="10.5" cy="4" r="1"/><circle cx="14.5" cy="4" r="1"/><circle cx="18.5" cy="4" r="1"/><circle cx="10.5" cy="12" r="1"/><circle cx="14.5" cy="12" r="1"/><circle cx="18.5" cy="12" r="1"/></g></svg></span></label>
             <span class="trenner"></span>
-            <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
-                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
-                <button type="button" class="btn" id="ds-durchgaenge-minus" aria-label="Weniger Durchgänge">−</button>
-                <span class="stufen-wert" id="ds-durchgaenge-wert">1×</span>
-                <button type="button" class="btn" id="ds-durchgaenge-plus" aria-label="Mehr Durchgänge">+</button>
-            </span>
             <span class="stufen" title="Größe des Notenbilds (im Vollbild passt es sich selbst an)">
                 <span class="stufen-name"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <button type="button" class="btn" id="ds-groesse-minus" aria-label="Kleiner">−</button>
                 <span class="stufen-wert" id="ds-groesse-wert">100%</span>
                 <button type="button" class="btn" id="ds-groesse-plus" aria-label="Größer">+</button>
             </span>
-            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige und Druck. auto = so viele wie reinpassen">
-                <span class="stufen-name">Takte/Zeile</span>
+            <span class="stufen" title="Wie viele Takte in einer Zeile stehen - gilt für Anzeige und Druck. auto = 1, 2 oder 4 Takte, je nachdem wie viele es sind">
+                <span class="stufen-name"><i class="fa-solid fa-table-columns"></i></span>
                 <button type="button" class="btn" id="ds-pro-zeile-minus" aria-label="Weniger Takte je Zeile">−</button>
                 <span class="stufen-wert" id="ds-pro-zeile-wert">auto</span>
                 <button type="button" class="btn" id="ds-pro-zeile-plus" aria-label="Mehr Takte je Zeile">+</button>
             </span>
-        </div>
-
-        <!-- Zeile 3: was es nur in dieser Werkstatt gibt + Tipps -->
-        <div class="leiste steuer-zeile">
+            <span class="trenner"></span>
             <span class="stufen" title="Becken, Snare, Toms und Bassdrum in eigenen Farben zeigen oder alles schwarz-weiß">
-                <span class="stufen-name">Notenbild</span>
                 <button type="button" class="btn" id="ds-farbe-anzeige"><i class="fa-solid fa-palette"></i> Farbe</button>
             </span>
             <details class="hilfe">
@@ -536,6 +526,12 @@
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
             </span>
             <label class="chip chip-icon" title="Loop: endlos abspielen - nach dem Ende geht es ohne Pause von vorn los, bis du Stopp drückst"><input type="checkbox" id="ds-loop" aria-label="Loop"><span><i class="fa-solid fa-repeat"></i></span></label>
+            <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
+                <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
+                <button type="button" class="btn" id="ds-durchgaenge-minus" aria-label="Weniger Durchgänge">−</button>
+                <span class="stufen-wert" id="ds-durchgaenge-wert">1×</span>
+                <button type="button" class="btn" id="ds-durchgaenge-plus" aria-label="Mehr Durchgänge">+</button>
+            </span>
             <button type="button" class="btn btn-icon vorspielen-knopf" id="ds-vorspielen"></button>
             <span id="ds-metronom-kasten"></span>
         </div>
@@ -758,27 +754,27 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=86"></script>
-<script src="js/noten.js?v=86"></script>
-<script src="js/editor.js?v=86"></script>
-<script src="js/audio.js?v=86"></script>
-<script src="js/vollbild.js?v=86"></script>
-<script src="js/uebemetronom.js?v=86"></script>
-<script src="js/neu.js?v=86"></script>
-<script src="js/spieler.js?v=86"></script>
-<script src="js/generator.js?v=86"></script>
-<script src="js/link.js?v=86"></script>
-<script src="js/vendor/lame.min.js?v=86"></script>
-<script src="js/export.js?v=86"></script>
-<script src="js/pdf.js?v=86"></script>
-<script src="js/druckvorschau.js?v=86"></script>
-<script src="js/app.js?v=86"></script>
-<script src="js/beat.js?v=86"></script>
-<script src="js/drumset.js?v=86"></script>
-<script src="js/eigene.js?v=86"></script>
-<script src="js/zaehlkern.js?v=86"></script>
-<script src="js/zaehlspiel.js?v=86"></script>
-<script src="js/spiele.js?v=86"></script>
-<script src="js/reiter.js?v=86"></script>
+<script src="js/version.js?v=87"></script>
+<script src="js/noten.js?v=87"></script>
+<script src="js/editor.js?v=87"></script>
+<script src="js/audio.js?v=87"></script>
+<script src="js/vollbild.js?v=87"></script>
+<script src="js/uebemetronom.js?v=87"></script>
+<script src="js/neu.js?v=87"></script>
+<script src="js/spieler.js?v=87"></script>
+<script src="js/generator.js?v=87"></script>
+<script src="js/link.js?v=87"></script>
+<script src="js/vendor/lame.min.js?v=87"></script>
+<script src="js/export.js?v=87"></script>
+<script src="js/pdf.js?v=87"></script>
+<script src="js/druckvorschau.js?v=87"></script>
+<script src="js/app.js?v=87"></script>
+<script src="js/beat.js?v=87"></script>
+<script src="js/drumset.js?v=87"></script>
+<script src="js/eigene.js?v=87"></script>
+<script src="js/zaehlkern.js?v=87"></script>
+<script src="js/zaehlspiel.js?v=87"></script>
+<script src="js/spiele.js?v=87"></script>
+<script src="js/reiter.js?v=87"></script>
 </body>
 </html>

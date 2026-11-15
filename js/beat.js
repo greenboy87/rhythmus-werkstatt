@@ -1088,9 +1088,10 @@ function bwEinpassen(w, h, abstand, minSkala, maxSkala) {
     let bestes = null;
     // Feste Takte je Zeile: nur noch der Massstab wird gesucht
     const fest = beat.proZeile ? Math.min(beat.proZeile, beat.takte) : 0;
-    for (let p = fest || beat.takte; p >= (fest || 1); p--) {
+    const stufen = fest ? [fest] : [4, 2, 1].filter(p => p <= autoTakteProZeile(beat.takte));
+    for (const p of stufen) {
         const n = Math.ceil(beat.takte / p);
-        const skala = Math.min(maxSkala, w / bwSystemBreite(p), (h - (n - 1) * abstand) / (n * BW_SYSTEM_HOEHE));
+        const skala = Math.min(maxSkala, w / bwSystemBreite(Math.min(p, beat.takte)), (h - (n - 1) * abstand) / (n * BW_SYSTEM_HOEHE));
         if (skala >= minSkala) return { p, skala };
         if (!bestes || skala > bestes.skala) bestes = { p, skala };
     }
@@ -1116,8 +1117,7 @@ function bwAnzeigeZeichnen() {
         if (g !== 1) {
             skala *= g;
             if (g > 1 && !beat.proZeile) {
-                p = beat.takte;
-                while (p > 1 && bwSystemBreite(p) * skala > w) p--;
+                p = autoTakteProZeile(beat.takte, (q) => bwSystemBreite(Math.min(q, beat.takte)) * skala <= w);
             }
         }
         bwAnzeigeProZeile = p;
@@ -1127,7 +1127,7 @@ function bwAnzeigeZeichnen() {
     const breite = host.clientWidth || 900;
     const skala = BW_ANZEIGE_SKALA * beat.groesse / 100;
     const taktBreite = (bwS() * BW_SCHLAG + 6) * skala;
-    const proZeile = beat.proZeile || Math.max(1, Math.floor((breite - 120 * skala) / taktBreite));
+    const proZeile = beat.proZeile || autoTakteProZeile(beat.takte, (p) => Math.min(p, beat.takte) * taktBreite + 120 * skala <= breite);
     bwAnzeigeProZeile = proZeile;
     host.innerHTML = bwSystemeHtml(proZeile, skala);
     bwLoopInfoZeichnen();
