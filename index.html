@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=83">
-<link rel="stylesheet" href="css/druck.css?v=83">
+<link rel="stylesheet" href="css/stil.css?v=84">
+<link rel="stylesheet" href="css/druck.css?v=84">
 </head>
 <body>
 
@@ -140,8 +140,7 @@
             <details class="menue nicht-in-uebung">
                 <summary class="btn" title="Speichern: PDF, Drucken …" aria-label="Speichern"><i class="fa-solid fa-download"></i> <i class="fa-solid fa-caret-down"></i></summary>
                 <div class="menue-liste">
-                    <button type="button" id="pdf-btn" title="Das Druckblatt als PDF-Datei (A4, eine Seite)"><i class="fa-solid fa-file-pdf"></i> Als PDF</button>
-                    <button type="button" id="drucken-btn" title="Öffnet den Druckdialog"><i class="fa-solid fa-print"></i> Drucken</button>
+                    <button type="button" id="druckvorschau-btn" title="A4-Blatt ansehen, Größe einstellen, dann als PDF speichern oder drucken"><i class="fa-solid fa-print"></i> Drucken / PDF …</button>
                     <button type="button" id="herunterladen-btn" data-format="mp3" title="Als Audiodatei - klingt genau wie Abspielen"><i class="fa-solid fa-music"></i> Audio (MP3)</button>
                     <button type="button" id="herunterladen-wav-btn" data-format="wav" title="Als Audiodatei ohne Kompression - für exaktes Timing"><i class="fa-solid fa-wave-square"></i> Audio (WAV)</button>
                 </div>
@@ -165,7 +164,7 @@
                 <button type="button" class="btn" data-stufe-fuer="wiederholung-regler" data-schritt="1" aria-label="Mehr Durchgänge">+</button>
             </span>
             <input type="range" id="groesse-regler" class="hidden" min="60" max="300" step="10" value="100" aria-hidden="true">
-            <span class="stufen" title="Größe des Notenbilds - wirkt auch im Vollbild und (soweit es passt) auf dem Ausdruck">
+            <span class="stufen" title="Größe des Notenbilds am Bildschirm und im Vollbild (fürs Blatt: Drucken / PDF …)">
                 <span class="stufen-name"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <button type="button" class="btn" data-stufe-fuer="groesse-regler" data-schritt="-10" aria-label="Kleiner">−</button>
                 <span class="stufen-wert" id="anzeige-groesse-anzeige">100%</span>
@@ -341,8 +340,7 @@
             <details class="menue bw-nicht-im-vollbild">
                 <summary class="btn" title="Speichern: PDF, Drucken …" aria-label="Speichern"><i class="fa-solid fa-download"></i> <i class="fa-solid fa-caret-down"></i></summary>
                 <div class="menue-liste">
-                    <button type="button" id="bw-pdf" title="Das Blatt direkt als PDF-Datei speichern (A4, eine Seite)"><i class="fa-solid fa-file-pdf"></i> Als PDF</button>
-                    <button type="button" id="bw-drucken" title="Öffnet den Druckdialog (A4, mit Name/Klasse/Datum)"><i class="fa-solid fa-print"></i> Drucken</button>
+                    <button type="button" id="bw-druckvorschau" title="A4-Blatt ansehen, Größe einstellen, dann als PDF speichern oder drucken"><i class="fa-solid fa-print"></i> Drucken / PDF …</button>
                 </div>
             </details>
         </div>
@@ -491,8 +489,7 @@
             <details class="menue bw-nicht-im-vollbild">
                 <summary class="btn" title="Speichern: PDF, Drucken …" aria-label="Speichern"><i class="fa-solid fa-download"></i> <i class="fa-solid fa-caret-down"></i></summary>
                 <div class="menue-liste">
-                    <button type="button" id="ds-pdf" title="Das Blatt direkt als PDF-Datei speichern (A4, eine Seite)"><i class="fa-solid fa-file-pdf"></i> Als PDF</button>
-                    <button type="button" id="ds-drucken" title="Öffnet den Druckdialog (A4, mit Name/Klasse/Datum)"><i class="fa-solid fa-print"></i> Drucken</button>
+                    <button type="button" id="ds-druckvorschau" title="A4-Blatt ansehen, Größe einstellen, dann als PDF speichern oder drucken"><i class="fa-solid fa-print"></i> Drucken / PDF …</button>
                 </div>
             </details>
         </div>
@@ -764,26 +761,27 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=83"></script>
-<script src="js/noten.js?v=83"></script>
-<script src="js/editor.js?v=83"></script>
-<script src="js/audio.js?v=83"></script>
-<script src="js/vollbild.js?v=83"></script>
-<script src="js/uebemetronom.js?v=83"></script>
-<script src="js/neu.js?v=83"></script>
-<script src="js/spieler.js?v=83"></script>
-<script src="js/generator.js?v=83"></script>
-<script src="js/link.js?v=83"></script>
-<script src="js/vendor/lame.min.js?v=83"></script>
-<script src="js/export.js?v=83"></script>
-<script src="js/pdf.js?v=83"></script>
-<script src="js/app.js?v=83"></script>
-<script src="js/beat.js?v=83"></script>
-<script src="js/drumset.js?v=83"></script>
-<script src="js/eigene.js?v=83"></script>
-<script src="js/zaehlkern.js?v=83"></script>
-<script src="js/zaehlspiel.js?v=83"></script>
-<script src="js/spiele.js?v=83"></script>
-<script src="js/reiter.js?v=83"></script>
+<script src="js/version.js?v=84"></script>
+<script src="js/noten.js?v=84"></script>
+<script src="js/editor.js?v=84"></script>
+<script src="js/audio.js?v=84"></script>
+<script src="js/vollbild.js?v=84"></script>
+<script src="js/uebemetronom.js?v=84"></script>
+<script src="js/neu.js?v=84"></script>
+<script src="js/spieler.js?v=84"></script>
+<script src="js/generator.js?v=84"></script>
+<script src="js/link.js?v=84"></script>
+<script src="js/vendor/lame.min.js?v=84"></script>
+<script src="js/export.js?v=84"></script>
+<script src="js/pdf.js?v=84"></script>
+<script src="js/druckvorschau.js?v=84"></script>
+<script src="js/app.js?v=84"></script>
+<script src="js/beat.js?v=84"></script>
+<script src="js/drumset.js?v=84"></script>
+<script src="js/eigene.js?v=84"></script>
+<script src="js/zaehlkern.js?v=84"></script>
+<script src="js/zaehlspiel.js?v=84"></script>
+<script src="js/spiele.js?v=84"></script>
+<script src="js/reiter.js?v=84"></script>
 </body>
 </html>

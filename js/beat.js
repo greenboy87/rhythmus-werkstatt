@@ -1334,7 +1334,10 @@ function bwTitel() { return (document.getElementById('bw-titel').value || '').tr
 function bwDruckZeichnen() {
     document.getElementById('bw-druck-titel').textContent = bwTitel() || '🥁 Beat-Werkstatt';
     const host = document.getElementById('bw-druck-noten');
-    const { p, skala } = bwEinpassen(DRUCK_BREITE, DRUCK_HOEHE, DRUCK_ZEILENABSTAND, 0.85, 1.3);
+    // Groesse aus der Druckvorschau: 100 % = Massstab 1,15; passt das nicht
+    // auf eine Seite, wird so gross wie moeglich gedruckt (begrenzt)
+    const ziel = 1.15 * druckGroesse('beat');
+    const { p, skala } = bwEinpassen(DRUCK_BREITE, DRUCK_HOEHE, DRUCK_ZEILENABSTAND, ziel, ziel);
     host.innerHTML = bwSystemeHtml(p, skala);
     host.querySelectorAll('.bw-system').forEach(svg => {
         svg.style.width = svg.getAttribute('width') + 'px';
@@ -1343,14 +1346,24 @@ function bwDruckZeichnen() {
         Object.entries(BW_DRUCKFARBEN).forEach(([sel, farbe]) =>
             svg.querySelectorAll(sel).forEach(el => el.setAttribute(sel.startsWith('path') ? 'stroke' : 'fill', farbe)));
     });
+    return { begrenzt: skala < ziel - 1e-6 };
+}
+function bwDruckvorschauOeffnen() {
+    Druckvorschau.oeffnen({
+        werkstatt: 'beat',
+        blatt: () => {
+            const { begrenzt } = bwDruckZeichnen();
+            return { svgs: [...document.querySelectorAll('#bw-druck-noten .bw-system')], begrenzt, titel: bwTitel(), kopfErsatz: '🥁 Beat-Werkstatt' };
+        },
+        pdf: bwPdfHerunterladen,
+        drucken: () => { bwDruckZeichnen(); window.print(); }
+    });
 }
 function bwDrucken() {
     bwDruckZeichnen();
     window.print();
 }
 async function bwPdfHerunterladen() {
-    const knopf = document.getElementById('bw-pdf');
-    knopf.disabled = true;
     try {
         bwDruckZeichnen();
         const svgs = [...document.querySelectorAll('#bw-druck-noten .bw-system')];
@@ -1359,8 +1372,6 @@ async function bwPdfHerunterladen() {
         blobHerunterladen(pdf, name);
     } catch (e) {
         zeigeToast(e.message, 'danger');
-    } finally {
-        knopf.disabled = false;
     }
 }
 
@@ -1925,8 +1936,7 @@ function bwEinrichten() {
     const titel = document.getElementById('bw-titel');
     titel.value = beat.titel;
     titel.addEventListener('input', () => { beat.titel = titel.value.slice(0, 80); beatSpeichern(); });
-    document.getElementById('bw-drucken').addEventListener('click', bwDrucken);
-    document.getElementById('bw-pdf').addEventListener('click', bwPdfHerunterladen);
+    document.getElementById('bw-druckvorschau').addEventListener('click', bwDruckvorschauOeffnen);
     window.addEventListener('beforeprint', () => { if (document.body.classList.contains('druck-beat')) bwDruckZeichnen(); });
     // Vollbild nur fuer das Notenbild samt Abspiel-Leiste (Beamer)
     const vollKarte = document.getElementById('bw-anzeige-karte');

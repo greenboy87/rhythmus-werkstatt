@@ -83,8 +83,15 @@ async function notenPdf() {
 /* Ein A4-Blatt aus fertig eingepassten Notenzeilen (SVGs mit Groesse im
    style) - gemeinsam fuer Rhythmus- und Beat-Werkstatt (js/beat.js). */
 async function blattPdf(svgs, titel, kopfErsatz, pdfErsatz) {
+    const leinwand = await blattLeinwand(svgs, titel, kopfErsatz, 2480 / PDF_SEITE_PX.b);   // 300 dpi
+    const jpegBlob = await new Promise(ok => leinwand.toBlob(ok, 'image/jpeg', 0.92));
+    const jpeg = new Uint8Array(await jpegBlob.arrayBuffer());
+    return jpegAlsPdf(jpeg, leinwand.width, leinwand.height, titel || pdfErsatz);
+}
 
-    const k = 2480 / PDF_SEITE_PX.b;            // 300 dpi
+/* Das A4-Blatt als Leinwand (k = Pixel je CSS-px) - fuer das PDF in
+   300 dpi, fuer die Druckvorschau (js/druckvorschau.js) kleiner. */
+async function blattLeinwand(svgs, titel, kopfErsatz, k) {
     const leinwand = document.createElement('canvas');
     leinwand.width = Math.round(PDF_SEITE_PX.b * k);
     leinwand.height = Math.round(PDF_SEITE_PX.h * k);
@@ -115,10 +122,7 @@ async function blattPdf(svgs, titel, kopfErsatz, pdfErsatz) {
         g.drawImage(bild, mitte - b / 2, y, b, h);
         y += h + DRUCK_ZEILENABSTAND;
     }
-
-    const jpegBlob = await new Promise(ok => leinwand.toBlob(ok, 'image/jpeg', 0.92));
-    const jpeg = new Uint8Array(await jpegBlob.arrayBuffer());
-    return jpegAlsPdf(jpeg, leinwand.width, leinwand.height, titel || pdfErsatz);
+    return leinwand;
 }
 
 function pdfDateiname() {
@@ -126,13 +130,9 @@ function pdfDateiname() {
 }
 
 async function pdfHerunterladen() {
-    const knopf = document.getElementById('pdf-btn');
-    knopf.disabled = true;
     try {
         blobHerunterladen(await notenPdf(), pdfDateiname());
     } catch (e) {
         zeigeToast(e.message, 'danger');
-    } finally {
-        knopf.disabled = false;
     }
 }

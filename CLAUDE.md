@@ -692,3 +692,15 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
   - Rhythmus: Der Knopf schaltet die versteckte Auswahl `abspielen-modus` um.
   - Beat und Drumset: `bwSelbst`/`dsSelbst` (nicht gespeichert). Dann erklingen keine Noten, der Metronom-Klick läuft immer.
 - Nur noch Symbole bei Verdecken (Auge), Vollbild, Speichern-Menü, Durchgänge (↻), Größe (Lupe) und Tempo (Tacho). Erklärung steht im `title`.
+
+## Druckvorschau und ruhige Player-Karten (v84, 15.11.2026)
+- Im Speichern-Menü jeder Werkstatt gibt es nur noch „Drucken / PDF …“. Das öffnet `Druckvorschau` (js/druckvorschau.js), ein A4-Blatt als Leinwand über `blattLeinwand` in pdf.js, also genau das PDF. Mit −/+ stellt man 50–200 % ein, gespeichert unter `rw-druckgroesse-<werkstatt>`. Von dort geht es zu „Als PDF“ und „Drucken“.
+- Die Druckgröße ist getrennt von der Bildschirmgröße und wird über `druckGroesse(werkstatt)` gelesen.
+  - Rhythmus: `druckNeuZeichnen` skaliert mit diesem Faktor.
+  - Beat/Drumset: Maßstab 1,15 × Faktor.
+  - Passt es nicht auf eine Seite, liefern die Druck-Zeichner `{ begrenzt: true }` und die Vorschau zeigt einen Hinweis.
+- Gestaltung (Block „PLAYER-KARTEN“ am Ende von stil.css, gilt für `.anzeige-karte`):
+  - Alle Bedienelemente sind gleich hoch (`--pk-h` 2,25rem) und haben dieselben Ecken (8px) und neutrale Rahmen.
+  - Stufen, Segmente und Metronom sind je ein Kasten mit dünnen Trennlinien.
+  - Aktiv heißt zartes Violett, nicht Vollfarbe. Nur „Abspielen“ ist voll violett. Türkis gibt es nur noch für den Puls.
+  - Neue Bedienelemente der Karten müssen dieses Raster nutzen. Spezifität beachten: `.btn.btn` in Gruppen.

@@ -260,17 +260,21 @@ const DRUCK_BREITE = 670;    // A4 (210 mm) minus 2 × 16 mm Rand, in CSS-px
 const DRUCK_HOEHE = 900;     // 297 mm minus Raender, Kopfzeile und Luft
 const DRUCK_ZEILENABSTAND = 22;
 function druckNeuZeichnen() {
+    // Eigene Druckgroesse (Druckvorschau −/+), nicht die vom Bildschirm
+    const fakt = druckGroesse('rhythmus');
     const optionen = Object.assign(anzeigeOptionen(), {
-        skalierung: anzeigeSkalierung, breite: Math.max(200, DRUCK_BREITE / anzeigeSkalierung)
+        skalierung: fakt, breite: Math.max(200, DRUCK_BREITE / fakt)
     });
     const host = document.getElementById('druck-anzeige');
     host.innerHTML = stueckAnzeigeHtml(editor.stueck(), optionen);
     const svgs = [...host.querySelectorAll('.anzeige-system')];
-    if (!svgs.length) return;
+    if (!svgs.length) return { begrenzt: false };
+    let begrenzt = false;
     const masse = svgs.map(s => {
         // Inline-Groesse = schon mit dem Groesse-Regler skaliert.
         const b = parseFloat(s.style.width) || 1, h = parseFloat(s.style.height) || 1;
         const f = Math.min(1, DRUCK_BREITE / b);
+        if (f < 0.999) begrenzt = true;
         return { b: b * f, h: h * f };
     });
     // Die Abstaende zwischen den Zeilen bleiben fest (CSS), nur die Noten
@@ -278,10 +282,12 @@ function druckNeuZeichnen() {
     const notenHoehe = masse.reduce((sum, m) => sum + m.h, 0);
     const platz = Math.max(DRUCK_HOEHE * 0.3, DRUCK_HOEHE - svgs.length * DRUCK_ZEILENABSTAND);
     const g = Math.min(1, platz / notenHoehe);
+    if (g < 0.999) begrenzt = true;
     svgs.forEach((s, i) => {
         s.style.width = Math.floor(masse[i].b * g) + 'px';
         s.style.height = Math.floor(masse[i].h * g) + 'px';
     });
+    return { begrenzt };
 }
 
 /* ---------- Uebungsgenerator ---------- */
@@ -743,12 +749,22 @@ function init() {
         anzeigeNeuZeichnen();
     });
 
-    document.getElementById('drucken-btn').addEventListener('click', () => window.print());
+    document.getElementById('druckvorschau-btn').addEventListener('click', () => Druckvorschau.oeffnen({
+        werkstatt: 'rhythmus',
+        blatt: () => {
+            const { begrenzt } = druckNeuZeichnen();
+            return {
+                svgs: [...document.querySelectorAll('#druck-anzeige .anzeige-system')], begrenzt,
+                titel: document.getElementById('druck-titel').value.trim(), kopfErsatz: '🥁 Rhythmus-Werkstatt'
+            };
+        },
+        pdf: pdfHerunterladen,
+        drucken: () => window.print()
+    }));
     document.getElementById('anzeige').addEventListener('click', anzeigeAngetippt);
     document.getElementById('loop-auswahl-weg').addEventListener('click', () => loopAuswahlSetzen(null));
     document.getElementById('startpunkt-weg').addEventListener('click', () => startpunktSetzen(null));
     document.querySelectorAll('[data-antippen]').forEach(b => b.addEventListener('click', () => antippModusSetzen(b.dataset.antippen)));
-    document.getElementById('pdf-btn').addEventListener('click', pdfHerunterladen);
     document.querySelectorAll('details.menue').forEach(m => {
         m.addEventListener('click', (e) => { if (e.target.closest('.menue-liste button')) m.open = false; });
         document.addEventListener('click', (e) => { if (!m.contains(e.target)) m.open = false; });

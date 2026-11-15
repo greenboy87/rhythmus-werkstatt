@@ -734,7 +734,10 @@ function dsTitel() { return (document.getElementById('ds-titel').value || '').tr
 function dsDruckZeichnen() {
     document.getElementById('ds-druck-titel').textContent = dsTitel() || '🥁 Drumset-Werkstatt';
     const host = document.getElementById('ds-druck-noten');
-    const { p, skala } = dsEinpassen(DRUCK_BREITE, DRUCK_HOEHE, DRUCK_ZEILENABSTAND, 0.85, 1.3);
+    // Groesse aus der Druckvorschau: 100 % = Massstab 1,15; passt das nicht
+    // auf eine Seite, wird so gross wie moeglich gedruckt (begrenzt)
+    const ziel = 1.15 * druckGroesse('drumset');
+    const { p, skala } = dsEinpassen(DRUCK_BREITE, DRUCK_HOEHE, DRUCK_ZEILENABSTAND, ziel, ziel);
     host.innerHTML = dsSystemeHtml(p, skala);
     host.querySelectorAll('.bw-system').forEach(svg => {
         svg.style.width = svg.getAttribute('width') + 'px';
@@ -743,10 +746,20 @@ function dsDruckZeichnen() {
         Object.entries(DS_DRUCKFARBEN).forEach(([sel, farbe]) =>
             svg.querySelectorAll(sel).forEach(el => el.setAttribute(sel.startsWith('path') ? 'stroke' : 'fill', farbe)));
     });
+    return { begrenzt: skala < ziel - 1e-6 };
+}
+function dsDruckvorschauOeffnen() {
+    Druckvorschau.oeffnen({
+        werkstatt: 'drumset',
+        blatt: () => {
+            const { begrenzt } = dsDruckZeichnen();
+            return { svgs: [...document.querySelectorAll('#ds-druck-noten .bw-system')], begrenzt, titel: dsTitel(), kopfErsatz: '🥁 Drumset-Werkstatt' };
+        },
+        pdf: dsPdfHerunterladen,
+        drucken: () => { dsDruckZeichnen(); window.print(); }
+    });
 }
 async function dsPdfHerunterladen() {
-    const knopf = document.getElementById('ds-pdf');
-    knopf.disabled = true;
     try {
         dsDruckZeichnen();
         const svgs = [...document.querySelectorAll('#ds-druck-noten .bw-system')];
@@ -755,8 +768,6 @@ async function dsPdfHerunterladen() {
         blobHerunterladen(pdf, name);
     } catch (e) {
         zeigeToast(e.message, 'danger');
-    } finally {
-        knopf.disabled = false;
     }
 }
 
@@ -1020,8 +1031,7 @@ function dsEinrichten() {
     const titel = document.getElementById('ds-titel');
     titel.value = ds.titel;
     titel.addEventListener('input', () => { ds.titel = titel.value.slice(0, 80); dsSpeichern(); });
-    document.getElementById('ds-drucken').addEventListener('click', () => { dsDruckZeichnen(); window.print(); });
-    document.getElementById('ds-pdf').addEventListener('click', dsPdfHerunterladen);
+    document.getElementById('ds-druckvorschau').addEventListener('click', dsDruckvorschauOeffnen);
     window.addEventListener('beforeprint', () => { if (document.body.classList.contains('druck-drumset')) dsDruckZeichnen(); });
     const vollKarte = document.getElementById('ds-anzeige-karte');
     const vollKnopf = document.getElementById('ds-vollbild');

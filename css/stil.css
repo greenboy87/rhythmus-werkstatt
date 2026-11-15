@@ -898,3 +898,143 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-verdeckt .bw-anzeige { visibility: hidden; }
 #bw-anzeige-karte.anzeige-verdeckt .anzeige-hinweis, #ds-anzeige-karte.anzeige-verdeckt .anzeige-hinweis { display: block; }
 #bw-anzeige-karte.vollbild .anzeige-hinweis, #ds-anzeige-karte.vollbild .anzeige-hinweis { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); font-size: 1.3rem; }
+
+/* ============================================================
+   PLAYER-KARTEN: ruhig und einheitlich (v84) - gilt fuer alle drei
+   Werkstaetten (.anzeige-karte). Ein Raster fuer alles: gleiche Hoehe,
+   gleiche Ecken, neutrale Rahmen; Farbe nur fuer "Abspielen" und fuer
+   eingeschaltete Schalter (zartes Violett statt Vollfarbe). Gruppen
+   (Stufen, Segmente, Metronom) sind EIN Kasten mit duennen Trennlinien.
+   ============================================================ */
+.anzeige-karte {
+    --pk-h: 2.25rem; --pk-r: 8px; --pk-rand: var(--rand); --pk-fl: var(--bg-karte);
+    --pk-trenn: var(--rand-schwach);
+    --pk-aktiv: color-mix(in srgb, var(--akzent) 13%, var(--bg-karte));
+}
+.anzeige-karte .steuer-zeile { gap: .5rem; align-items: center; margin-bottom: .55rem; }
+.anzeige-karte .steuer-zeile .trenner { width: 1px; height: 1.5rem; align-self: center; margin: 0 .1rem; background: var(--pk-rand); }
+
+/* Einzelknoepfe, Chips, Menue */
+.anzeige-karte .steuer-zeile .btn, .anzeige-karte .spieler-leiste .btn,
+.anzeige-karte .steuer-zeile .chip > span, .anzeige-karte .spieler-leiste .chip > span {
+    box-sizing: border-box; height: var(--pk-h); min-height: var(--pk-h); padding: 0 .8rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    border: 1px solid var(--pk-rand); border-radius: var(--pk-r); background: var(--pk-fl);
+    color: var(--text); font-size: .82rem; font-weight: 600; line-height: 1; box-shadow: none;
+    transition: background .12s, border-color .12s, color .12s;
+}
+.anzeige-karte .steuer-zeile .btn-icon, .anzeige-karte .spieler-leiste .btn-icon { width: var(--pk-h); padding: 0; }
+.anzeige-karte .steuer-zeile .chip-icon > span, .anzeige-karte .spieler-leiste .chip-icon > span { width: var(--pk-h); padding: 0; }
+.anzeige-karte .steuer-zeile .btn:hover, .anzeige-karte .spieler-leiste .btn:hover,
+.anzeige-karte .steuer-zeile .chip:hover > span, .anzeige-karte .spieler-leiste .chip:hover > span { border-color: var(--text-schwach); }
+.anzeige-karte .steuer-zeile .btn.an, .anzeige-karte .spieler-leiste .btn.an,
+.anzeige-karte .steuer-zeile .chip input:checked + span, .anzeige-karte .spieler-leiste .chip input:checked + span {
+    background: var(--pk-aktiv); border-color: var(--akzent); color: var(--akzent);
+}
+.anzeige-karte .spieler-leiste .btn-primär,
+.anzeige-karte .spieler-leiste .btn-primär:hover {
+    background: var(--akzent); border-color: var(--akzent); color: #fff; min-width: 9.5rem; font-weight: 700;
+}
+.anzeige-karte .spieler-leiste .btn-primär:hover { background: var(--akzent-stark); }
+
+/* Titel */
+.anzeige-karte .steuer-zeile .feld { font-size: .78rem; font-weight: 600; color: var(--text-gedaempft); }
+.anzeige-karte .steuer-zeile .feld input {
+    box-sizing: border-box; height: var(--pk-h); padding: 0 .7rem; border: 1px solid var(--pk-rand);
+    border-radius: var(--pk-r); background: var(--pk-fl); color: var(--text); font-size: .85rem;
+}
+
+/* Gruppen: Stufen (Name | − Wert +), Segmente - ein Kasten, innen Trennlinien */
+.anzeige-karte .stufen,
+.anzeige-karte .segment {
+    box-sizing: border-box; height: var(--pk-h); padding: 0; gap: 0; align-items: stretch;
+    border: 1px solid var(--pk-rand); border-radius: var(--pk-r); background: var(--pk-fl); overflow: hidden;
+}
+.anzeige-karte .stufen > .stufen-name {
+    display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: 0 .55rem 0 .75rem;
+    font-size: .78rem; font-weight: 600; color: var(--text-gedaempft);
+}
+.anzeige-karte .stufen > .stufen-wert { display: inline-flex; align-items: center; justify-content: center; min-width: 2.9rem; font-size: .85rem; }
+.anzeige-karte .stufen .btn.btn,
+.anzeige-karte .segment .btn.btn, .anzeige-karte .stufen .btn.btn:hover, .anzeige-karte .segment .btn.btn:hover {
+    height: 100%; min-height: 0; border: none; border-radius: 0; min-width: 2.1rem; padding: 0 .65rem; background: transparent;
+}
+.anzeige-karte .stufen .btn.btn:hover, .anzeige-karte .segment .btn.btn:hover { background: var(--bg-erhoben); }
+.anzeige-karte .stufen .btn.btn + .btn, .anzeige-karte .segment .btn.btn + .btn,
+.anzeige-karte .stufen > .segment,
+.anzeige-karte .stufen > select { border-left: 1px solid var(--pk-trenn); }
+.anzeige-karte .stufen .btn.btn.an, .anzeige-karte .segment .btn.btn.an { background: var(--pk-aktiv); color: var(--akzent); border-color: var(--pk-trenn); }
+.anzeige-karte .stufen > .segment { height: 100%; border-top: none; border-bottom: none; border-right: none; border-radius: 0; }
+.anzeige-karte .stufen > select {
+    height: 100%; border-top: none; border-bottom: none; border-right: none; border-radius: 0;
+    padding: 0 .6rem; background: transparent; color: var(--text); font-size: .82rem;
+}
+.anzeige-karte .segment .btn.btn-icon, .anzeige-karte .stufen .btn.btn-icon { width: var(--pk-h); padding: 0; }
+.anzeige-karte .bw-stumm-knopf.stumm { opacity: .5; }
+
+/* Abspiel-Leiste: neutraler Rahmen, alles auf einer Linie */
+.anzeige-karte .spieler-leiste {
+    gap: .5rem; padding: .6rem .7rem; border: 1px solid var(--rand-schwach); border-radius: 12px; background: var(--bg-erhoben);
+}
+
+/* Metronom: EIN neutraler Kasten wie die Stufen - Tuerkis nur noch fuer den Puls */
+.anzeige-karte .metronom-gruppen {
+    box-sizing: border-box; min-height: var(--pk-h); padding: 0; align-items: stretch;
+    border: 1px solid var(--pk-rand); border-radius: var(--pk-r); background: var(--pk-fl); overflow: hidden;
+}
+.anzeige-karte .metronom-gruppen > * { height: calc(var(--pk-h) - 2px); }
+.anzeige-karte .metronom-gruppen > .stufen { border: none; border-radius: 0; background: transparent; height: calc(var(--pk-h) - 2px); }
+.anzeige-karte .metronom-gruppen > * + * { border-left: 1px solid var(--pk-trenn) !important; }
+.anzeige-karte .metronom-gruppen .stufen-name { color: var(--text-gedaempft); }
+.anzeige-karte .metronom-gruppen .metronom-puls { display: inline-flex; align-items: center; padding: 0 .7rem; gap: 5px; }
+.anzeige-karte .metronom-gruppen .stufen > .btn.btn.tempo-schritt-knopf,
+.anzeige-karte .metronom-gruppen .stufen > .btn.btn.metronom-tap { color: var(--text-gedaempft); font-size: .74rem; font-weight: 700; min-width: 2.4rem; border-color: var(--pk-trenn); }
+.anzeige-karte .metronom-tempo-wert { display: inline-flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1; padding: 0 .1rem; }
+.anzeige-karte .metronom-tempo-wert .stufen-eingabe { font-size: .95rem; height: 1.15rem; width: 3rem; padding: 0; }
+.anzeige-karte .metronom-tempo-wert small { font-size: .56rem; font-weight: 600; margin-top: 1px; }
+.anzeige-karte .metronom-feld { display: inline-flex; align-items: center; gap: .4rem; padding: 0 .35rem 0 0; }
+.anzeige-karte .metronom-feld input[type="range"] { width: 4.5rem; accent-color: var(--akzent); }
+/* Lautsprecher im Metronom: stumm = einfach grau, kein Farbkasten */
+.anzeige-karte .metronom-feld .btn.btn[data-rolle="mute"].an { background: transparent; color: var(--text-schwach); }
+.anzeige-karte .metronom-feld .btn.btn[data-rolle="start"].an { background: var(--pk-aktiv); color: var(--akzent); }
+.anzeige-karte .metro-punkt { width: 9px; height: 9px; }
+@media (max-width: 640px) {
+    .anzeige-karte .metronom-gruppen > * + * { border-left: none !important; }
+    .anzeige-karte .metronom-gruppen { justify-content: center; }
+}
+
+/* ============================================================
+   DRUCKVORSCHAU (js/druckvorschau.js)
+   ============================================================ */
+.druckvorschau {
+    width: min(920px, 96vw); max-height: 94dvh; padding: 0; overflow: hidden;
+    border: 1px solid var(--rand); border-radius: 14px; background: var(--bg-erhoben); color: var(--text); box-shadow: var(--schatten);
+    --pk-h: 2.25rem; --pk-r: 8px; --pk-rand: var(--rand); --pk-fl: var(--bg-karte); --pk-trenn: var(--rand-schwach);
+}
+.druckvorschau[open] { display: flex; flex-direction: column; }
+.druckvorschau::backdrop { background: rgba(2, 6, 23, .6); }
+.dv-leiste {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    padding: .7rem .9rem; border-bottom: 1px solid var(--rand-schwach);
+}
+.dv-leiste h3 { font-size: 1rem; display: inline-flex; align-items: center; gap: .45rem; margin: 0 .4rem 0 0; }
+.dv-leiste .btn {
+    box-sizing: border-box; height: var(--pk-h); padding: 0 .8rem; display: inline-flex; align-items: center; gap: .4rem;
+    border: 1px solid var(--pk-rand); border-radius: var(--pk-r); font-size: .82rem; font-weight: 600;
+}
+.dv-leiste .btn-icon { width: var(--pk-h); padding: 0; justify-content: center; }
+.dv-leiste .stufen {
+    box-sizing: border-box; height: var(--pk-h); padding: 0; gap: 0; align-items: stretch;
+    border: 1px solid var(--pk-rand); border-radius: var(--pk-r); background: var(--pk-fl); overflow: hidden;
+}
+.dv-leiste .stufen > .stufen-name { display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: 0 .55rem 0 .75rem; font-size: .78rem; font-weight: 600; color: var(--text-gedaempft); }
+.dv-leiste .stufen > .btn { height: 100%; border: none; border-radius: 0; background: transparent; min-width: 2.1rem; padding: 0 .65rem; justify-content: center; }
+.dv-leiste .stufen > .btn:hover:not(:disabled) { background: var(--bg-erhoben); }
+.dv-leiste .stufen > .btn:disabled { opacity: .35; }
+.dv-leiste .stufen > .stufen-wert { display: inline-flex; align-items: center; justify-content: center; min-width: 3rem; font-size: .85rem; font-weight: 800; }
+.dv-hinweis { margin: 0; padding: 0 .9rem; font-size: .8rem; color: var(--text-gedaempft); min-height: 0; }
+.dv-hinweis:not(:empty) { padding: .5rem .9rem 0; }
+.dv-flaeche { flex: 1; overflow: auto; padding: 1rem; display: flex; justify-content: center; background: var(--bg); }
+.dv-seite { width: min(100%, calc((94dvh - 7rem) * 210 / 297)); aspect-ratio: 210 / 297; background: #fff; box-shadow: 0 2px 14px rgba(0, 0, 0, .25); border-radius: 2px; }
+.dv-seite canvas { display: block; width: 100%; height: 100%; }
+@media print { .druckvorschau { display: none !important; } }
