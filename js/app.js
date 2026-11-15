@@ -10,6 +10,9 @@
    ?ansicht=spiele  beide Spiele (Zaehlzeiten und Rhythmus-Diktat) mit der
                     Wahl dazwischen, dunkel, fuer Beat Vault; meldet Hoehe
                     und jedes Antippen ({typ:'rw-aktiv'}, fuer die Uebezeit)
+   ?ansicht=werkstatt die ganze Werkstatt (alle Reiter) eingebettet in Beat
+                    Vault: startet dunkel, meldet jedes Antippen und - solange
+                    etwas klingt - alle 20 s ({typ:'rw-aktiv'}, fuer die Uebezeit)
    &runden=N        Aufgaben je Runde in beiden Spielen (sonst 5)
    ?ansicht=pdf     baut nur das PDF und schickt es per postMessage an die
                     einbettende Seite ({typ:'rw-pdf', pdf: ArrayBuffer, name})
@@ -24,7 +27,7 @@ if (ANSICHT === 'spiele') document.documentElement.classList.add('ansicht-spiele
 /* ---------- Theme ---------- */
 // Eingebettet (Beat Vault) startet dunkel, egal was das Geraet eingestellt
 // hat, und merkt sich die eigene Wahl getrennt von der normalen Seite.
-const THEME_EINGEBETTET = ANSICHT === 'uebung' || ANSICHT === 'spiele';
+const THEME_EINGEBETTET = ANSICHT === 'uebung' || ANSICHT === 'spiele' || ANSICHT === 'werkstatt';
 const THEME_SCHLUESSEL = THEME_EINGEBETTET ? 'rw-theme-eingebettet' : 'rw-theme';
 function themeGespeichert() { try { return localStorage.getItem(THEME_SCHLUESSEL); } catch (e) { return null; } }
 (function () {
@@ -659,7 +662,19 @@ function init() {
     document.getElementById('takt-hinzufuegen-btn').addEventListener('click', () => editor.taktHinzufuegen());
     document.getElementById('takt-loeschen-btn').addEventListener('click', () => editor.letztenTaktLoeschen());
     document.getElementById('zurueck-btn').addEventListener('click', () => editor.zurueck());
-    document.getElementById('leeren-btn').addEventListener('click', () => editor.leeren());
+    neuEinrichten({
+        knopf: document.getElementById('leeren-btn'),
+        hatInhalt: () => editor.stueck().takte.some(t => t.bausteine.length),
+        speichernKnopf: document.getElementById('blatt-speichern-btn'),
+        wahl: document.getElementById('blatt-wahl'),
+        leeren: () => {
+            Vorklatschen.stoppen(true);
+            loopAuswahlSetzen(null); startpunktSetzen(null);
+            editor.leeren();
+            document.getElementById('druck-titel').value = '';
+            titelAktualisieren(); druckNeuZeichnen();
+        }
+    });
     document.getElementById('opt-auto-takt').addEventListener('change', (e) => editor.autoNeuerTaktSetzen(e.target.checked));
     blaetterAufbauen();
 
@@ -863,7 +878,16 @@ function einbettungMelden() {
             .catch(e => an({ typ: 'rw-pdf', fehler: e.message }));
         return;
     }
-    if (ANSICHT === 'spiele') {
+    if (ANSICHT === 'werkstatt' && EINGEBETTET) {
+        // Auch wer nur zuhoert oder zum Metronom spielt, uebt: solange etwas laeuft, alle 20 s melden
+        setInterval(() => {
+            const klingt = [typeof Vorklatschen !== 'undefined' && Vorklatschen, typeof Metronom !== 'undefined' && Metronom,
+                typeof BeatSpieler !== 'undefined' && BeatSpieler, typeof DrumSpieler !== 'undefined' && DrumSpieler,
+                typeof UebeMetronom !== 'undefined' && UebeMetronom].some(x => x && x.istAn && x.istAn());
+            if (klingt && document.visibilityState === 'visible') an({ typ: 'rw-aktiv' });
+        }, 20000);
+    }
+    if (ANSICHT === 'spiele' || ANSICHT === 'werkstatt') {
         // Klicks im Rahmen erreichen die einbettende Seite nicht - sie soll trotzdem wissen, dass geuebt wird
         let zuletztAktiv = 0;
         ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => {

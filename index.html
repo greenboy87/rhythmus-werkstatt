@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=77">
-<link rel="stylesheet" href="css/druck.css?v=77">
+<link rel="stylesheet" href="css/stil.css?v=78">
+<link rel="stylesheet" href="css/druck.css?v=78">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
                 <button type="button" class="btn" id="takt-hinzufuegen-btn"><i class="fa-solid fa-plus"></i> Takt</button>
                 <button type="button" class="btn" id="takt-loeschen-btn" title="Löscht den letzten Takt samt Inhalt"><i class="fa-solid fa-minus"></i> Letzten Takt</button>
                 <button type="button" class="btn" id="zurueck-btn"><i class="fa-solid fa-delete-left"></i> Zurück</button>
-                <button type="button" class="btn" id="leeren-btn">Alles löschen</button>
+                <button type="button" class="btn" id="leeren-btn" title="Leeres Blatt - fragt vorher, ob das Alte gespeichert werden soll"><i class="fa-solid fa-file-circle-plus"></i> Neu</button>
                 <span class="leiste" style="gap:.4rem; margin-left:.4rem;" title="An: ein Baustein, der nicht mehr in den Takt passt, beginnt von selbst einen neuen. Aus: man kann einen Takt bewusst überfüllen, z.B. damit die Klasse die Taktstriche selbst einzeichnet.">
                     <label class="schalter">
                         <input type="checkbox" id="opt-auto-takt">
@@ -301,7 +301,7 @@
             <select id="bw-vorlage" title="Fertigen Beat als Ausgangspunkt laden - ersetzt den aktuellen">
                 <option value="">Vorlage laden…</option>
             </select>
-            <button type="button" class="btn" id="bw-leeren">Alles löschen</button>
+            <button type="button" class="btn" id="bw-leeren" title="Leeres Blatt - fragt vorher, ob das Alte gespeichert werden soll"><i class="fa-solid fa-file-circle-plus"></i> Neu</button>
         </div>
         <div class="leiste bw-blatt-leiste" title="Gespeicherte Blätter liegen nur in diesem Browser - zum Teilen und für andere Geräte den Link nehmen">
             <button type="button" class="btn" id="bw-blatt-speichern" title="Den Beat unter einem Namen in diesem Browser speichern"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
@@ -425,7 +425,7 @@
             <select id="ds-vorlage" title="Groove + Fill als Ausgangspunkt laden - ersetzt den aktuellen Stand">
                 <option value="">Vorlage laden…</option>
             </select>
-            <button type="button" class="btn" id="ds-leeren">Alles löschen</button>
+            <button type="button" class="btn" id="ds-leeren" title="Leeres Blatt - fragt vorher, ob das Alte gespeichert werden soll"><i class="fa-solid fa-file-circle-plus"></i> Neu</button>
         </div>
         <div class="leiste bw-blatt-leiste" title="Gespeicherte Blätter liegen nur in diesem Browser - zum Teilen und für andere Geräte den Link nehmen">
             <button type="button" class="btn" id="ds-blatt-speichern" title="Den Fill unter einem Namen in diesem Browser speichern"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
@@ -709,24 +709,25 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=77"></script>
-<script src="js/noten.js?v=77"></script>
-<script src="js/editor.js?v=77"></script>
-<script src="js/audio.js?v=77"></script>
-<script src="js/vollbild.js?v=77"></script>
-<script src="js/uebemetronom.js?v=77"></script>
-<script src="js/generator.js?v=77"></script>
-<script src="js/link.js?v=77"></script>
-<script src="js/vendor/lame.min.js?v=77"></script>
-<script src="js/export.js?v=77"></script>
-<script src="js/pdf.js?v=77"></script>
-<script src="js/app.js?v=77"></script>
-<script src="js/beat.js?v=77"></script>
-<script src="js/drumset.js?v=77"></script>
-<script src="js/eigene.js?v=77"></script>
-<script src="js/zaehlkern.js?v=77"></script>
-<script src="js/zaehlspiel.js?v=77"></script>
-<script src="js/spiele.js?v=77"></script>
-<script src="js/reiter.js?v=77"></script>
+<script src="js/version.js?v=78"></script>
+<script src="js/noten.js?v=78"></script>
+<script src="js/editor.js?v=78"></script>
+<script src="js/audio.js?v=78"></script>
+<script src="js/vollbild.js?v=78"></script>
+<script src="js/uebemetronom.js?v=78"></script>
+<script src="js/neu.js?v=78"></script>
+<script src="js/generator.js?v=78"></script>
+<script src="js/link.js?v=78"></script>
+<script src="js/vendor/lame.min.js?v=78"></script>
+<script src="js/export.js?v=78"></script>
+<script src="js/pdf.js?v=78"></script>
+<script src="js/app.js?v=78"></script>
+<script src="js/beat.js?v=78"></script>
+<script src="js/drumset.js?v=78"></script>
+<script src="js/eigene.js?v=78"></script>
+<script src="js/zaehlkern.js?v=78"></script>
+<script src="js/zaehlspiel.js?v=78"></script>
+<script src="js/spiele.js?v=78"></script>
+<script src="js/reiter.js?v=78"></script>
 </body>
 </html>

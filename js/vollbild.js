@@ -21,6 +21,8 @@ function vollbildEinrichten(karte, knopf, nachWechsel) {
         karte.classList.toggle('vollbild', an);
         document.body.classList.toggle('vollbild-offen', !!document.querySelector('.vollbild-ersatz'));
         knopfZeichnen(an);
+        // Uebe-Metronom zum Ausklappen mit ins Vollbild nehmen
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.vollbild(an ? karte : null, karte);
         if (nachWechsel) setTimeout(() => nachWechsel(an), 50);
     };
     const ersatz = (an) => { karte.classList.toggle('vollbild-ersatz', an); melden(); };

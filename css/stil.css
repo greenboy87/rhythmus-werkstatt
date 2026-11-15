@@ -864,3 +864,22 @@ body.vollbild-offen { overflow: hidden; }
 body.vollbild-offen .kopfzeile { z-index: 1; }
 /* Safari (iPad) kennt teils nur :-webkit-full-screen */
 #anzeige-karte:-webkit-full-screen { position: fixed; inset: 0; width: 100vw; height: 100vh; background: var(--bg-karte); }
+
+/* Uebe-Metronom im Vollbild: Knopf unten rechts, Pop-up klappt darueber auf */
+.btn.um-vollbild-knopf {
+    position: fixed; right: 16px; bottom: 16px; z-index: 61;
+    color: var(--metro); border: 2px solid var(--metro); background: var(--bg-erhoben);
+    font-weight: 800; box-shadow: var(--schatten); gap: .45rem;
+}
+.btn.um-vollbild-knopf.laeuft { background: var(--metro-stark); color: #fff; }
+.vollbild > .uebe-metronom { top: auto; bottom: 4.2rem; max-height: calc(100dvh - 5.5rem); text-align: left; }
+
+/* Dialog "Neu anfangen?" */
+.neu-dialog {
+    border: 1px solid var(--rand); border-radius: 16px; padding: 1.2rem 1.3rem; max-width: min(26rem, 92vw);
+    background: var(--bg-erhoben); color: var(--text); box-shadow: var(--schatten);
+}
+.neu-dialog::backdrop { background: rgba(2, 6, 23, .55); }
+.neu-dialog h3 { font-size: 1.05rem; display: flex; gap: .5rem; align-items: center; }
+.neu-dialog p { color: var(--text-gedaempft); font-size: .9rem; margin: .6rem 0 1rem; }
+.neu-knoepfe { display: flex; flex-wrap: wrap; gap: .5rem; }

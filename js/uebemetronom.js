@@ -203,12 +203,14 @@ const UebeMetronom = (function () {
         knopf.classList.add('offen');
         knopf.setAttribute('aria-expanded', 'true');
         q0('rad').focus({ preventScroll: true });
+        vollKnopfZeichnen();
     }
     function schliessen() {
         stoppen();
         el.hidden = true;
         knopf.classList.remove('offen');
         knopf.setAttribute('aria-expanded', 'false');
+        vollKnopfZeichnen();
     }
     function q0(r) { return el.querySelector(`[data-um="${r}"]`); }
 
@@ -365,8 +367,40 @@ const UebeMetronom = (function () {
         q0('zeichen').innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-play"></i>';
         el.classList.toggle('laeuft', laeuft);
         knopf.classList.toggle('laeuft', laeuft);
+        if (typeof vollKnopfZeichnen === 'function') vollKnopfZeichnen();
+    }
+
+    /* Im Vollbild sieht man nur die Vollbild-Karte: Pop-up und ein eigener
+       Ausklapp-Knopf ziehen dort hinein und beim Verlassen zurueck. */
+    let vollKnopf = null;
+    function vollbild(karte, alteKarte) {
+        if (!el) return;
+        if (karte) {
+            karte.appendChild(el);
+            if (!vollKnopf) {
+                vollKnopf = document.createElement('button');
+                vollKnopf.type = 'button';
+                vollKnopf.className = 'btn um-vollbild-knopf';
+                vollKnopf.innerHTML = '<i class="fa-solid fa-stopwatch"></i> Metronom';
+                vollKnopf.title = 'Metronom aus- und einklappen';
+                vollKnopf.addEventListener('click', () => (el.hidden ? oeffnen() : (el.hidden = true, vollKnopfZeichnen())));
+            }
+            karte.appendChild(vollKnopf);
+            vollKnopfZeichnen();
+        } else if (el.parentNode === alteKarte) {
+            document.body.appendChild(el);
+            if (vollKnopf) vollKnopf.remove();
+        }
+    }
+    function vollKnopfZeichnen() {
+        if (!vollKnopf) return;
+        vollKnopf.classList.toggle('offen', !el.hidden);
+        vollKnopf.classList.toggle('laeuft', laeuft);
+        vollKnopf.innerHTML = el.hidden
+            ? '<i class="fa-solid fa-stopwatch"></i> Metronom <i class="fa-solid fa-chevron-up"></i>'
+            : '<i class="fa-solid fa-stopwatch"></i> Metronom <i class="fa-solid fa-chevron-down"></i>';
     }
 
     document.addEventListener('DOMContentLoaded', bauen);
-    return { stoppen, istAn: () => laeuft, oeffnen, schliessen };
+    return { stoppen, istAn: () => laeuft, oeffnen, schliessen, vollbild };
 })();

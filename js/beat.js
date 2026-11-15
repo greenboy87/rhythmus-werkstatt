@@ -1808,10 +1808,19 @@ function bwEinrichten() {
     document.getElementById('bw-zaehler').addEventListener('change', (e) => bwTaktartSetzen(e.target.value));
     document.getElementById('bw-takte-minus').addEventListener('click', () => { beat.takte = Math.max(1, beat.takte - 1); bwAenderung(); });
     document.getElementById('bw-takte-plus').addEventListener('click', () => { beat.takte = Math.min(BEAT_TAKTE_MAX, beat.takte + 1); bwAenderung(); });
-    document.getElementById('bw-leeren').addEventListener('click', () => {
-        bwEbenen().forEach(eb => { beat[eb] = []; });
-        bwAktiv.platz = 0;
-        bwAenderung();
+    neuEinrichten({
+        knopf: document.getElementById('bw-leeren'),
+        hatInhalt: () => ['oben', 'unten', 'easy'].some(eb => (beat[eb] || []).some(Boolean)),
+        speichernKnopf: document.getElementById('bw-blatt-speichern'),
+        wahl: document.getElementById('bw-blatt-wahl'),
+        leeren: () => {
+            BeatSpieler.stoppen();
+            bwLoopSetzen(null);
+            ['oben', 'unten', 'easy'].forEach(eb => { beat[eb] = []; });
+            bwAktiv.platz = 0;
+            beat.titel = ''; document.getElementById('bw-titel').value = '';
+            bwAenderung();
+        }
     });
 
     // Editor: Platz waehlen, Note antippen = Instrument wechseln, × = leeren

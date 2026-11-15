@@ -946,7 +946,19 @@ function dsEinrichten() {
     document.getElementById('ds-zaehler').addEventListener('change', (e) => dsTaktartSetzen(e.target.value));
     document.getElementById('ds-takte-minus').addEventListener('click', () => { ds.takte = Math.max(1, ds.takte - 1); dsAenderung(); });
     document.getElementById('ds-takte-plus').addEventListener('click', () => { ds.takte = Math.min(DS_TAKTE_MAX, ds.takte + 1); dsAenderung(); });
-    document.getElementById('ds-leeren').addEventListener('click', () => { ds.plaetze = []; dsAktiv = 0; dsAenderung(); });
+    neuEinrichten({
+        knopf: document.getElementById('ds-leeren'),
+        hatInhalt: () => ds.plaetze.some(Boolean),
+        speichernKnopf: document.getElementById('ds-blatt-speichern'),
+        wahl: document.getElementById('ds-blatt-wahl'),
+        leeren: () => {
+            DrumSpieler.stoppen();
+            dsLoopSetzen(null);
+            ds.plaetze = []; dsAktiv = 0;
+            ds.titel = ''; document.getElementById('ds-titel').value = '';
+            dsAenderung();
+        }
+    });
     document.getElementById('ds-farbe').addEventListener('click', () => { ds.farbe = !ds.farbe; dsAenderung(); });
 
     document.getElementById('ds-editor').addEventListener('click', (e) => {

@@ -646,3 +646,15 @@ Schülerraum mit Fernbedienung/Diktat - noch nicht gebaut.
 - Tempo-Schritte −/+: Schalter `.tempo-schritt-knopf` (±5 / ±1), gilt für
   alle Werkstätten, gespeichert in `rw-tempo-schritt`. Tom will beides:
   5er sind praktisch, 1er zum Feinstellen. Rhythmus-Tempo 20–240.
+
+## Neu, Metronom im Vollbild, Beat Vault (v78, 15.11.2026)
+
+- `js/neu.js`: „Neu“ (früher „Alles löschen“) in allen drei Werkstätten.
+  Steht etwas drin, fragt ein Dialog: speichern und neu, ohne Speichern oder
+  abbrechen. Gespeichert wird über den vorhandenen Speichern-Knopf; geleert
+  wird nur, wenn danach ein Name in der Blatt-Auswahl steht.
+- Im Vollbild ziehen das Übe-Metronom und ein Knopf „Metronom“ (unten
+  rechts) in die Vollbild-Karte (`UebeMetronom.vollbild`), danach zurück.
+- `?ansicht=werkstatt`: die ganze Werkstatt für den Reiter „Werkstatt“ in
+  Beat Vault. Startet dunkel und meldet `{typ:'rw-aktiv'}` bei jedem Antippen
+  und alle 20 s, solange etwas klingt. So zählt die Übezeit dort weiter.
