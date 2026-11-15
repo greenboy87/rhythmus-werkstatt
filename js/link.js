@@ -153,7 +153,8 @@ function linkBauen(x) {
    Platz = Zaehlzeit, Plaetze mit "-", Takte mit "_" getrennt, leerer
    Platz = nichts zwischen den Trennern (am Taktende weggelassen).
    Beat: Platz = Baustein-Code, dann je Note (ohne Pausen) "." und die
-   Instrument-Buchstaben (BEAT_LINK_INST, g = Ghost Note). b= ist die
+   Instrument-Buchstaben (BEAT_LINK_INST). Ghost Note = derselbe Buchstabe
+   gross (S = Snare leise); das alte g (ganze Note leise) wird noch gelesen. b= ist die
    eine Ebene bzw. bei zwei Ebenen die Becken, u= (nur bei zwei Ebenen)
    Bassdrum/Snare.
    Drumset: Platz = Rasterstellen mit "." getrennt (3, 4 oder 6 Teile =
@@ -266,7 +267,10 @@ function beatLinkBauen(x) {
     const platzText = (p) => {
         const form = typeof BEAT_FORM !== 'undefined' ? BEAT_FORM[p.code] : null;
         return p.code + p.inst.map((inst, i) => (form && form.teile[i].p) ? null
-            : '.' + inst.map(k => BEAT_LINK_INST[k] || '').join('')).filter(t => t !== null).join('');
+            : '.' + inst.filter(k => !String(k).startsWith('g:')).map(k => {
+                const b = BEAT_LINK_INST[k] || '';
+                return inst.includes('g:' + k) ? b.toUpperCase() : b;
+            }).join('')).filter(t => t !== null).join('');
     };
     const ebene1 = x.modus === 'profi' ? x.oben : x.easy;
     const teile = ['b=' + linkPlaetzeBauen(ebene1, x.takte, x.schlaege, platzText)];
@@ -286,7 +290,11 @@ function beatLinkLesen(hash) {
         const form = typeof BEAT_FORM !== 'undefined' ? BEAT_FORM[code] : null;
         if (!form) return null;
         let n = 0;
-        const p = { code, inst: form.teile.map(t => t.p ? [] : (noten[n++] || '').split('').map(b => inst[b]).filter(Boolean)) };
+        const p = { code, inst: form.teile.map(t => t.p ? [] : (noten[n++] || '').split('').flatMap(b => {
+            const x = inst[b.toLowerCase()];
+            if (!x) return [];
+            return b !== b.toLowerCase() && x !== 'g' ? [x, 'g:' + x] : [x];
+        })) };
         return typeof platzGueltig === 'function' ? platzGueltig(p) : p;
     };
     if (erg.modus === 'profi') {

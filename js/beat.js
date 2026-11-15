@@ -56,13 +56,26 @@ BEAT_FORMEN.forEach(f => { BEAT_FORM[f.code] = f; });
 
 const BEAT_BECKEN = { hh: 'Hi-Hat', ho: 'Hi-Hat offen', ride: 'Ride', crash: 'Crash' };
 const BEAT_TROMMEL = { b: 'Bassdrum', s: 'Snare' };
-// 'g' = Ghost Note: die ganze Note leise und in Klammern (kein Instrument)
-const INST_REIHE = ['crash', 'hh', 'ho', 'ride', 's', 'b', 'g'];
+// Ghost Note je Instrument: Marke 'g:s' (Snare leise, in Klammern) neben 's'.
+// Das alte 'g' (ganze Note leise) wird beim Sortieren zu Marken fuer jedes
+// Instrument der Note - alte Blaetter und Links sehen also gleich aus.
+const INST_REIHE = ['crash', 'hh', 'ho', 'ride', 's', 'b'];
 const BW_BPM_MIN = 20;   // langsamstes Tempo (Regler, Link, Speicher)
 const BW_GHOST = 0.3;   // Lautstaerke einer Ghost Note im Verhaeltnis
 function instSortieren(liste) {
-    return [...new Set(liste)].filter(x => INST_REIHE.includes(x))
+    const l = [...new Set(liste)];
+    const echte = l.filter(x => INST_REIHE.includes(x))
         .sort((a, b) => INST_REIHE.indexOf(a) - INST_REIHE.indexOf(b));
+    return echte.concat(echte.filter(x => l.includes('g') || l.includes('g:' + x)).map(x => 'g:' + x));
+}
+function istGhostMarke(x) { return x === 'g' || String(x).startsWith('g:'); }
+function echteInst(inst) { return inst.filter(x => !istGhostMarke(x)); }
+function ghostMarken(inst) { return inst.filter(istGhostMarke); }
+function istGhost(inst, x) { return inst.includes('g') || inst.includes('g:' + x); }
+/* Ghost fuer ein Instrument der Note an/aus (andere bleiben, wie sie sind). */
+function ghostUmschalten(inst, x) {
+    const l = instSortieren(inst);
+    return l.includes('g:' + x) ? l.filter(y => y !== 'g:' + x) : instSortieren([...l, 'g:' + x]);
 }
 
 /* Einsaetze eines Bausteins: [{ k (Sechzehntel-Stelle 0-3), teil }] */
@@ -274,8 +287,7 @@ function stiftInst(ebene, code) {
    oben: Hi-Hat -> offen -> Ride -> Crash; unten: Bass -> Snare -> beides;
    easy: Becken bleibt, dazu nichts -> Bass -> Snare -> beides. */
 function instWeiter(ebene, inst) {
-    const g = inst.includes('g') ? ['g'] : [];
-    return instSortieren([...instWeiterOhneGhost(ebene, inst.filter(x => x !== 'g')), ...g]);
+    return instSortieren([...instWeiterOhneGhost(ebene, echteInst(inst)), ...ghostMarken(inst)]);
 }
 function instWeiterOhneGhost(ebene, inst) {
     const hatB = inst.includes('b'), hatS = inst.includes('s');
@@ -348,8 +360,8 @@ function bwStimme(slot, x0, richtung, pauseY) {
         const k = Math.round(v * 4);
         v += t.d;
         const inst = t.p ? [] : (slot.inst[i] || []);
-        const ghost = inst.includes('g');
-        const echte = inst.filter(x => x !== 'g');
+        const echte = echteInst(inst);
+        const ghost = echte.filter(x => istGhost(inst, x));
         if (!echte.length) { teile.push(bwPause(px, t.d, pauseY)); noten.push(null); return; }
         const ys = echte.map(x => BW_Y[x]);
         noten.push({ px, k, d: t.d, teil: i, inst: echte, ghost, oben: Math.min(...ys), unten: Math.max(...ys), auto: (slot.auto || []).includes(i) });
@@ -375,13 +387,13 @@ function bwStimme(slot, x0, richtung, pauseY) {
                 const y = BW_Y[x];
                 if (x === 'crash') teile.push(`<line x1="${n.px - 9}" y1="${y}" x2="${n.px + 9}" y2="${y}" stroke="currentColor" stroke-width="1.3"/>`);
                 teile.push(bwKopf(n.px, y, x, n.auto && x === 's'));
-                if (n.ghost) {
+                if (n.ghost.includes(x)) {
                     // Ghost Note: Kopf in runden Klammern
                     teile.push(`<path class="bw-klammer" d="M${n.px - 8} ${y - 5.5} q -3.6 5.5 0 11 M${n.px + 8} ${y - 5.5} q 3.6 5.5 0 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`);
                 }
                 if (n.d > 0.5 && n.d < 1) {
                     const aufLinie = Math.abs(y / 8 - Math.round(y / 8)) < 0.01;
-                    teile.push(`<circle cx="${n.px + (n.ghost ? 13.5 : 11)}" cy="${aufLinie ? y - 4 : y}" r="2.4" fill="currentColor"/>`);
+                    teile.push(`<circle cx="${n.px + (n.ghost.length ? 13.5 : 11)}" cy="${aufLinie ? y - 4 : y}" r="2.4" fill="currentColor"/>`);
                 }
             });
             // Hals nach oben beginnt beim untersten Kopf: bei einem Becken-Kreuz
@@ -394,7 +406,8 @@ function bwStimme(slot, x0, richtung, pauseY) {
                 const oy = auf ? spitze - 8 : n.oben - 12;
                 teile.push(`<circle cx="${n.px}" cy="${oy}" r="3.3" fill="none" stroke="currentColor" stroke-width="1.6"/>`);
             }
-            treffer.push({ k: n.k, x0: n.px - 9, x1: n.px + 9, y0: n.oben - 9, y1: n.unten + 9 });
+            treffer.push({ k: n.k, x0: n.px - 9, x1: n.px + 9, y0: n.oben - 9, y1: n.unten + 9,
+                koepfe: n.inst.map(x => ({ x, y: BW_Y[x] })) });
         });
         const y1 = auf ? spitze : spitze - BW_BALKEN;       // erster Balken
         const y2 = auf ? spitze + 7 : spitze - BW_BALKEN - 7; // zweiter (Sechzehntel)
@@ -725,9 +738,9 @@ function bwStaerke(inst, k) {
 
 /* Eine Note (alle Instrumente auf einer Sechzehntel-Stelle k) spielen. */
 function bwNoteSpielen(ctx, zeit, ziel, inst, k) {
-    const ghost = inst.includes('g');
-    inst.forEach(x => {
-        if (x !== 'g') bwInstrumentSpielen(ctx, zeit, ziel, x, bwStaerke(x, k) * (ghost ? BW_GHOST : 1), ghost);
+    echteInst(inst).forEach(x => {
+        const ghost = istGhost(inst, x);
+        bwInstrumentSpielen(ctx, zeit, ziel, x, bwStaerke(x, k) * (ghost ? BW_GHOST : 1), ghost);
     });
 }
 
@@ -898,7 +911,9 @@ function bwZelleSvg(platz) {
         if (!slot) return;
         const r = bwStimme(slot, 0, eb === 'unten' ? 'ab' : 'auf', BW_PAUSE_Y[eb]);
         noten.push(...r.teile);
-        if (eb !== 'easy') r.treffer.forEach(f => felder.push(`<rect class="noten-feld" data-ebene="${eb}" data-k="${f.k}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>`));
+        // Je Kopf eine schmale Flaeche obendrauf: im Ghost-Modus wird nur
+        // das angetippte Instrument leise, nicht die ganze Zaehlzeit
+        if (eb !== 'easy') r.treffer.forEach(f => felder.push(`<rect class="noten-feld" data-ebene="${eb}" data-k="${f.k}" x="${f.x0}" y="${f.y0}" width="${f.x1 - f.x0}" height="${f.y1 - f.y0}" fill="transparent"/>` + (f.koepfe || []).map(c => `<rect class="noten-feld kopf-feld" data-ebene="${eb}" data-k="${f.k}" data-inst="${c.x}" x="${f.x0}" y="${c.y - 5}" width="${f.x1 - f.x0}" height="10" fill="transparent"/>`).join('')));
     });
     if (beat.modus === 'easy') {
         // Raster: je Sechzehntel-Stelle eine Tippflaeche pro Zeile
@@ -964,8 +979,7 @@ function bwBausteinSetzen(code) {
         platzKarte(bwDaten(eb)[bwAktiv.platz]).forEach((inst, k) => {
             const trommeln = inst.filter(x => BEAT_TROMMEL[x]);
             if (!trommeln.length) return;
-            const g = inst.includes('g') ? ['g'] : [];
-            m.set(k, instSortieren([...(m.get(k) || []), ...trommeln, ...g]));
+            m.set(k, instSortieren([...(m.get(k) || []), ...trommeln, ...ghostMarken(inst)]));
         });
         bwSetzen(eb, bwAktiv.platz, platzAusKarte(m));
     } else {
@@ -1416,7 +1430,7 @@ function bwModusSetzen(modus) {
         for (let p = 0; p < n; p++) {
             const mo = new Map(), mu = new Map();
             platzKarte(beat.easy[p]).forEach((inst, k) => {
-                const g = inst.includes('g') ? ['g'] : [];
+                const g = ghostMarken(inst);
                 const b = inst.filter(x => BEAT_BECKEN[x]), t = inst.filter(x => BEAT_TROMMEL[x]);
                 if (b.length) mo.set(k, [...b, ...g]);
                 if (t.length) mu.set(k, [...t, ...g]);
@@ -1472,7 +1486,7 @@ function bwVorlageLaden(nr) {
     bwAenderung();
 }
 
-function bwNoteWechseln(ebene, platz, k) {
+function bwNoteWechseln(ebene, platz, k, angetippt) {
     const roh = bwDaten(ebene)[platz];
     const m = platzKarte(roh);
     // Noch keine eigene Note an der Stelle (nur der automatische Backbeat):
@@ -1483,10 +1497,13 @@ function bwNoteWechseln(ebene, platz, k) {
         if (!neu) { zeigeToast('Hi-Hat öffnen geht nur bei einer Hi-Hat.', 'info'); return; }
         m.set(k, instSortieren(neu));
     } else if (bwGhostModus) {
-        // Ghost-Modus: Note leise (in Klammern) an/aus; eine nur automatische
-        // Backbeat-Snare wird dabei zur eigenen Note
+        // Ghost-Modus: nur das angetippte Instrument leise (in Klammern) an/aus;
+        // eine nur automatische Backbeat-Snare wird dabei zur eigenen Note.
+        // Daneben getippt (Hals): Snare, sonst das unterste Instrument.
         const basis = m.get(k) || ['s'];
-        m.set(k, instSortieren(basis.includes('g') ? basis.filter(x => x !== 'g') : [...basis, 'g']));
+        const echte = echteInst(basis);
+        const x = echte.includes(angetippt) ? angetippt : echte.includes('s') ? 's' : echte[echte.length - 1];
+        m.set(k, ghostUmschalten(basis, x));
     } else {
         m.set(k, instWeiter(ebene, jetzt));
     }
@@ -1501,7 +1518,7 @@ function bwNoteWechseln(ebene, platz, k) {
 function bwRasterTippen(platz, k, reihe) {
     const m = platzKarte(bwDaten('easy')[platz]);
     let note = (m.get(k) || []).slice();
-    const echt = note.filter(x => x !== 'g');
+    const echt = echteInst(note);
     const auto = abgeleitet('easy', platz);
     if (!bwGhostModus && reihe === 's' && k === 0 && !note.includes('s') && auto && auto.auto) {
         zeigeToast('Diese Snare kommt vom Backbeat – zum Entfernen den Backbeat ausschalten.', 'info');
@@ -1513,8 +1530,10 @@ function bwRasterTippen(platz, k, reihe) {
         else if (!echt.some(x => BEAT_BECKEN[x])) note = [...note, 'ho'];
         else { zeigeToast('Hi-Hat öffnen geht nur bei einer Hi-Hat.', 'info'); return; }
     } else if (bwGhostModus) {
-        if (!echt.length) { zeigeToast('Ghost Notes: Hier ist noch keine Note – erst Ghost Notes ausschalten und eine setzen.', 'info'); return; }
-        note = note.includes('g') ? echt : [...echt, 'g'];
+        // Nur das Instrument dieser Zeile leise machen
+        const ziele = echt.filter(x => reihe === 'becken' ? BEAT_BECKEN[x] : x === reihe);
+        if (!ziele.length) { zeigeToast('Ghost Notes: In dieser Zeile ist hier noch keine Note – erst Ghost Notes ausschalten und eine setzen.', 'info'); return; }
+        ziele.forEach(x => { note = ghostUmschalten(note, x); });
     } else if (reihe === 'becken') {
         note = echt.some(x => BEAT_BECKEN[x]) ? note.filter(x => !BEAT_BECKEN[x]) : [...note, beat.stift.becken];
     } else if (note.includes(reihe)) {
@@ -1522,7 +1541,7 @@ function bwRasterTippen(platz, k, reihe) {
     } else {
         note = [...note, reihe];
     }
-    if (note.some(x => x !== 'g')) m.set(k, instSortieren(note)); else m.delete(k);
+    if (echteInst(note).length) m.set(k, instSortieren(note)); else m.delete(k);
     bwSetzen('easy', platz, platzAusKarte(m));
     if (m.get(k)) bwVorhoeren({ code: 'V', inst: [m.get(k)] });
 }
@@ -1867,7 +1886,7 @@ function bwEinrichten() {
         else {
             const note = e.target.closest('[data-k]');
             if (note && note.dataset.reihe) bwRasterTippen(platz, Number(note.dataset.k), note.dataset.reihe);
-            else if (note) bwNoteWechseln(eb, platz, Number(note.dataset.k));
+            else if (note) bwNoteWechseln(eb, platz, Number(note.dataset.k), note.dataset.inst);
         }
         bwAenderung();
     });

@@ -679,3 +679,9 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 - Der ▶ rechts im türkisen Metronom-Kasten gibt es jetzt in allen drei Werkstätten. Beat/Drumset: `FreiesMetronom` in js/spieler.js (Tempo und Taktart der Werkstatt, Puls leuchtet mit).
 - `Metronom.starten/stoppen` und jeder Reiterwechsel halten es an, damit hält auch jeder Spieler-Start es an. Selbst stoppt es Vorklatschen, Metronom, Übe-Metronom, BeatSpieler und DrumSpieler.
 - Vollbild (v80): Bei Beat/Drumset wirkt die Größe auch im Vollbild. 100 % heißt eingepasst, darüber stehen weniger Takte je Zeile und der Rest scrollt.
+
+## Ghost Notes je Instrument (v82, 15.11.2026)
+- Beat-Werkstatt: Ghost ist eine Marke `g:<inst>` neben dem Instrument (z. B. `['hh','s','g:s']`), nicht mehr `'g'` für die ganze Zählzeit. Helfer in beat.js: `istGhostMarke`, `echteInst`, `ghostMarken`, `istGhost(inst, x)`, `ghostUmschalten(inst, x)`.
+- `instSortieren` wandelt das alte `'g'` in Marken für jedes Instrument um, damit alte Blätter und Links gleich aussehen. Marken ohne ihr Instrument fallen weg.
+- Editor: Pro Notenkopf gibt es eine schmale Tippfläche `.kopf-feld[data-inst]`. Im Ghost-Modus wird nur das angetippte Instrument leise. Im Easy-Raster gilt der Ghost für die Zeile.
+- Link: Ghost = Instrument-Buchstabe groß (`V.hS` = Hi-Hat + leise Snare). Das alte `g` wird weiter gelesen.

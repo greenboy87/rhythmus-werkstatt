@@ -167,12 +167,12 @@ const BW_EIGEN_SCHLUESSEL = 'rw-beat-eigene';
 function bwEigeneListe() {
     return eigenLesen(BW_EIGEN_SCHLUESSEL)
         .filter(e => e && Array.isArray(e.karte) && e.karte.length === 4)
-        .map(e => ({ karte: e.karte.map(x => (Array.isArray(x) ? x.filter(i => INST_REIHE.includes(i)) : [])) }))
-        .filter(e => e.karte.some(x => x.some(i => i !== 'g')));
+        .map(e => ({ karte: e.karte.map(x => (Array.isArray(x) ? instSortieren(x) : [])) }))
+        .filter(e => e.karte.some(x => echteInst(x).length));
 }
 function bwEigenKarte(eintrag) {
     const m = new Map();
-    eintrag.karte.forEach((inst, k) => { if (inst.some(i => i !== 'g')) m.set(k, instSortieren(inst.slice())); });
+    eintrag.karte.forEach((inst, k) => { if (echteInst(inst).length) m.set(k, instSortieren(inst.slice())); });
     return m;
 }
 function bwEigeneZeichnen() {
@@ -189,7 +189,7 @@ function bwEigeneZeichnen() {
 function bwEigenSpeichern() {
     const karte = [[], [], [], []];
     bwEbenen().forEach(eb => platzKarte(bwDaten(eb)[bwAktiv.platz]).forEach((inst, k) => { karte[k] = instSortieren([...new Set(karte[k].concat(inst))]); }));
-    if (!karte.some(x => x.some(i => i !== 'g'))) { zeigeToast('Die gewählte Zählzeit ist leer – erst Noten setzen, dann speichern.', 'danger'); return; }
+    if (!karte.some(x => echteInst(x).length)) { zeigeToast('Die gewählte Zählzeit ist leer – erst Noten setzen, dann speichern.', 'danger'); return; }
     const liste = bwEigeneListe();
     if (liste.some(e => JSON.stringify(e.karte) === JSON.stringify(karte))) { zeigeToast('Diesen Baustein gibt es schon.', 'info'); return; }
     liste.push({ karte });
@@ -210,8 +210,8 @@ function bwEigenSetzen(i) {
         m.forEach((inst, k) => {
             const becken = inst.filter(x => BEAT_BECKEN[x]);
             const trommel = inst.filter(x => BEAT_TROMMEL[x]);
-            const g = inst.includes('g') ? ['g'] : [];
-            if (becken.length) oben.set(k, instSortieren(trommel.length ? becken : becken.concat(g)));
+            const g = ghostMarken(inst);
+            if (becken.length) oben.set(k, instSortieren(becken.concat(g)));
             if (trommel.length) unten.set(k, instSortieren(trommel.concat(g)));
         });
         bwSetzen('oben', bwAktiv.platz, platzAusKarte(oben));

@@ -435,6 +435,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .bw-band.aktiv { fill: color-mix(in srgb, var(--akzent) 16%, transparent); stroke: var(--akzent); stroke-width: 2.5; }
 .bw-platz.jetzt { background: color-mix(in srgb, var(--warnung) 30%, transparent); }
 .bw-platz .noten-feld:hover { fill: color-mix(in srgb, var(--akzent) 20%, transparent); }
+/* Kopf-Flaechen (Ghost Notes je Instrument): nur im Ghost-Modus hervorheben */
+.bw-platz .kopf-feld:hover { fill: transparent; }
+#bw-editor.ghost-modus .bw-platz .kopf-feld:hover { fill: color-mix(in srgb, var(--akzent) 35%, transparent); }
 .bw-schlag-nr { position: absolute; top: 2px; left: 4px; font-size: .6rem; font-weight: 800; color: var(--text-schwach); pointer-events: none; }
 .bw-weg {
     position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; padding: 0;
