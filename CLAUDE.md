@@ -713,7 +713,7 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 ## Zwei Bedienzeilen, Klang-Menü, auto = 1/2/4 (v87, 15.11.2026)
 - Unter der Titelzeile gibt es in jeder Karte nur noch zwei Zeilen:
   1. Notenbild-Zeile: Chips, Größe, Takte/Zeile, danach (nach einem Trenner) das Werkstatt-Eigene und die ?-Hilfe. Rhythmus: Klang und Note antippen. Beat: Hören und Farbe. Drumset: Farbe.
-  2. Spieler-Leiste über die ganze Breite, grau hinterlegt, mit Abstand zu den Noten: Abspielen+Vorlauf | Mitlesen | Loop | Wiederholen (Durchgänge) | Vorspielen | Metronom (rechts).
+  2. Spieler-Leiste über die ganze Breite, grau hinterlegt, mit Abstand zu den Noten: Abspielen+Vorlauf | Mitlesen | Loop | Wiederholen (Durchgänge, ohne Symbol: „− 1× +“) | Vorspielen | Metronom (rechts).
 - Farben: Abspielen und Vorlauf sind voll violett, aktive Schalter zart violett (wie v84). Tom wollte das Farbschema behalten, nur der Player-Hintergrund ist grau.
 - Klang (Rhythmus): `details.menue.klang-menue` mit einfarbigen Font-Awesome-Symbolen. Der Wert steht weiter in der versteckten Auswahl `#klatsch-sound-wahl`. `klangMenueZeichnen` (app.js) läuft in `leisteAnzeigen`.
 - Takte/Zeile „auto“: `autoTakteProZeile(anzahl, passt)` in noten.js. 1 Takt → 1, 2 → 2, ab 3 → 4; passt es nicht in die Breite, dann 2 bzw. 1. Rhythmus: Option `auto124` von `stueckAnzeigeHtml` (nur Anzeige und Druck der Werkstatt, Spiele und Klassenspiel füllen weiter nach Breite). Beat/Drumset: `bwEinpassen`/`dsEinpassen` und die Bildschirm-Anzeige.
