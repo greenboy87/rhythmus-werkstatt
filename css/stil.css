@@ -505,7 +505,7 @@ body.mitlesen-feld .bw-cursor { display: none; }
     background: currentColor; transform: rotate(-35deg); border-radius: 2px;
 }
 /* Abspielen/Stopp gleich breit - sonst rutschen Tempo und Metronom daneben */
-#bw-abspielen, #ds-abspielen, #abspielen-btn { min-width: 10.5rem; justify-content: center; }
+#bw-abspielen, #ds-abspielen, #abspielen-btn { min-width: 7.6rem; justify-content: center; }
 @media print { #reiter-beat { display: none !important; } }
 
 /* Vollbild (Beamer): Notenbild so gross wie moeglich, bwAnzeigeZeichnen
@@ -935,7 +935,7 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 /* Abspielen: voll violett, mit angedocktem Vorlauf-Knopf (v86/v87) */
 .anzeige-karte .spieler-leiste .btn-primär,
 .anzeige-karte .spieler-leiste .btn-primär:hover {
-    background: var(--akzent); border-color: var(--akzent); color: #fff; min-width: 8rem; font-weight: 700;
+    background: var(--akzent); border-color: var(--akzent); color: #fff; min-width: 7.4rem; font-weight: 700;
 }
 .anzeige-karte .spieler-leiste .btn-primär:hover { background: var(--akzent-stark); }
 .anzeige-karte .spieler-leiste > .stufen > .stufen-wert { min-width: 2.2rem; }
@@ -946,7 +946,7 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn:hover {
     border-color: var(--akzent); border-left: 1px solid color-mix(in srgb, #fff 35%, var(--akzent));
     border-top-left-radius: 0; border-bottom-left-radius: 0;
-    background: var(--akzent); color: #fff; padding: 0 .6rem; gap: .3rem; min-width: 2.6rem;
+    background: var(--akzent); color: #fff; padding: 0 .5rem; gap: .3rem; width: 3.6rem; justify-content: flex-start;
 }
 .anzeige-karte .abspiel-gruppe > .vorlauf-knopf.btn:hover { background: var(--akzent-stark); }
 .anzeige-karte .abspiel-gruppe > .vorlauf-knopf:not(.an) .metronom-symbol { opacity: .55; }
@@ -998,7 +998,7 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 /* Abspiel-Leiste: neutraler Rahmen, alles auf einer Linie */
 .anzeige-karte .spieler-leiste {
     display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center;
-    gap: .5rem; padding: .55rem .6rem; margin: .2rem 0 1.4rem; border: none; border-radius: 12px;
+    gap: .45rem; padding: .55rem .6rem; margin: .2rem 0 1.4rem; border: none; border-radius: 12px;
     background: color-mix(in srgb, var(--text) 6%, var(--bg-karte));
 }
 .anzeige-karte .spieler-leiste > .metronom-gruppen, .anzeige-karte .spieler-leiste > [id$="metronom-kasten"] { margin-left: auto; }
@@ -1027,7 +1027,7 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .anzeige-karte .metronom-tempo-wert .stufen-eingabe { font-size: .95rem; height: 1.15rem; width: 3rem; padding: 0; }
 .anzeige-karte .metronom-tempo-wert small { font-size: .56rem; font-weight: 600; margin-top: 1px; }
 .anzeige-karte .metronom-feld { display: inline-flex; align-items: center; gap: .4rem; padding: 0 .35rem 0 0; }
-.anzeige-karte .metronom-feld input[type="range"] { width: 4.5rem; accent-color: var(--akzent); }
+.anzeige-karte .metronom-feld input[type="range"] { width: 3.8rem; accent-color: var(--akzent); }
 /* Lautsprecher im Metronom: stumm = einfach grau, kein Farbkasten */
 .anzeige-karte .metronom-feld .btn.btn[data-rolle="mute"].an { background: transparent; color: var(--text-schwach); }
 .anzeige-karte .metronom-feld .btn.btn[data-rolle="start"].an { background: var(--pk-aktiv); color: var(--pk-aktiv-text); }
