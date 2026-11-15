@@ -507,7 +507,7 @@ body.mitlesen-feld .bw-cursor { display: none; }
 }
 #bw-anzeige-karte.vollbild .bw-nicht-im-vollbild { display: none; }
 #bw-anzeige-karte.vollbild #bw-anzeige {
-    flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
+    flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: safe center;
 }
 #bw-anzeige-karte.vollbild .bw-system { max-width: none; flex-shrink: 0; }
 
@@ -546,7 +546,7 @@ body.mitlesen-feld .bw-cursor { display: none; }
 }
 #ds-anzeige-karte.vollbild .bw-nicht-im-vollbild { display: none; }
 #ds-anzeige-karte.vollbild #ds-anzeige {
-    flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
+    flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: safe center;
 }
 #ds-anzeige-karte.vollbild .bw-system { max-width: none; flex-shrink: 0; }
 

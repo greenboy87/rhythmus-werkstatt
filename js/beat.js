@@ -1094,7 +1094,17 @@ function bwAnzeigeZeichnen() {
         const kopf = karte.querySelector('.bw-vollbild-kopf');
         const w = window.innerWidth * 0.94;
         const h = window.innerHeight - (kopf ? kopf.offsetHeight : 0) - 60;
-        const { p, skala } = bwEinpassen(w, h, 12, 99, 6);
+        let { p, skala } = bwEinpassen(w, h, 12, 99, 6);
+        // Groesse wirkt auch hier: 100 % = genau eingepasst, darueber groesser
+        // (weniger Takte je Zeile, Rest scrollt), darunter kleiner.
+        const g = beat.groesse / 100;
+        if (g !== 1) {
+            skala *= g;
+            if (g > 1 && !beat.proZeile) {
+                p = beat.takte;
+                while (p > 1 && bwSystemBreite(p) * skala > w) p--;
+            }
+        }
         bwAnzeigeProZeile = p;
         host.innerHTML = bwSystemeHtml(p, skala);
         return;
