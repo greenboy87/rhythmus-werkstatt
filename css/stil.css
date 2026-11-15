@@ -783,8 +783,10 @@ body.mitlesen-feld .bw-cursor { display: none; }
 @media (min-width: 641px) { .metronom-gruppen > * + * { border-left-color: color-mix(in srgb, var(--metro) 35%, transparent) !important; } }
 .metronom-gruppen .stufen-name { color: var(--metro); }
 .metronom-gruppen .stufen > .btn:hover { border-color: var(--metro); }
-.metro-punkt.eins { border-color: var(--metro); }
-.metro-punkt.an { background: var(--metro); border-color: var(--metro); }
+/* Puls (v93): die 1 gelb, alle anderen Zaehlzeiten lila */
+.metro-punkt.eins { border-color: #eab308; }
+.metro-punkt.an { background: var(--akzent); border-color: var(--akzent); }
+.metro-punkt.eins.an { background: #facc15; border-color: #eab308; }
 .metronom-gruppen [data-rolle="start"].an { background: var(--metro-stark); border-color: var(--metro-stark); color: #fff; }
 .metronom-feld input[type="range"] { accent-color: var(--metro); }
 .metronom-tempo-wert { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; }

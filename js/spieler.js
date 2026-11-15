@@ -222,7 +222,7 @@ document.addEventListener('input', (e) => {
     function halten() {
         if (!ziel || !ziel.isConnected || document.fullscreenElement || document.webkitFullscreenElement) { ziel = null; return; }
         const d = ziel.getBoundingClientRect().top - oben;
-        if (Math.abs(d) > 0.5) {
+        if (Math.abs(d) >= 1.5) {   // nur echte Spruenge, keine Rundungsreste
             const noetig = window.scrollY + d + window.innerHeight;
             if (noetig > document.documentElement.scrollHeight) {
                 document.body.style.minHeight = Math.ceil(noetig) + 'px';
@@ -234,7 +234,10 @@ document.addEventListener('input', (e) => {
     }
     function merken(e) {
         const k = e.target.closest('.anzeige-karte .steuer-zeile button, .anzeige-karte .steuer-zeile .chip, .anzeige-karte .spieler-leiste button, .anzeige-karte .spieler-leiste .chip');
-        if (!k || k.closest('.vollbild, .vollbild-ersatz')) return;
+        // Metronom (Tempo, Tap, Lautstaerke) aendert das Notenbild nie - dort
+        // nichts nachscrollen; sonst wanderte die Seite bei Browser-Zoom mit
+        // jedem Druck um Bruchteile eines Pixels (v93)
+        if (!k || k.closest('.vollbild, .vollbild-ersatz, .metronom-gruppen')) return;
         ziel = k; oben = k.getBoundingClientRect().top;
         bisZeit = performance.now() + 600;
         cancelAnimationFrame(lauf);

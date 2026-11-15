@@ -732,3 +732,5 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
   - Doppelstrich bei „Als Übung“: vorn dick-dünn, hinten dünn-dick.
 - Die Zahl „3×“ steht rechtsbündig über dem Schlusszeichen und verlängert die Zeile nicht mehr.
 - v92: Die Spieler-Leiste hat keine Lücke mehr. Abspielen wächst mit `flex 1`, der Metronom-Kasten mit `flex 2`, und darin wird der Lautstärke-Regler länger. Der Metronom-Kasten hat kein `margin-left: auto` mehr.
+- v93: Puls: Die 1 leuchtet gelb (`#facc15`, Rand `#eab308`), alle anderen Zählzeiten lila (`--akzent`). Türkis gibt es beim Puls nicht mehr.
+- v93: Das Nachscroll-IIFE in spieler.js lässt den Metronom-Kasten aus und korrigiert erst ab 1,5 px. Tom meldete, dass die Seite bei 30× Tempo ± um ca. 0,5 cm wanderte. Bei Zoom 100 % ließ sich das nicht nachstellen, vermutlich kamen Rundungsreste bei Browser-Zoom zusammen.
