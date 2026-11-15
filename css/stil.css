@@ -1085,3 +1085,12 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .dv-seite { width: min(100%, calc((94dvh - 7rem) * 210 / 297)); aspect-ratio: 210 / 297; background: #fff; box-shadow: 0 2px 14px rgba(0, 0, 0, .25); border-radius: 2px; }
 .dv-seite canvas { display: block; width: 100%; height: 100%; }
 @media print { .druckvorschau { display: none !important; } }
+
+/* v95: Zeilen linksbuendig untereinander (eine kuerzere letzte Zeile steht
+   links unter der vorigen statt in der Mitte); der Block als Ganzes bleibt
+   mittig. Im Vollbild gilt das eigene Layout. */
+.anzeige-karte:not(.vollbild):not(:fullscreen) #anzeige,
+.anzeige-karte:not(.vollbild):not(:fullscreen) .bw-anzeige { display: grid; justify-content: safe center; justify-items: start; }
+.anzeige-karte:not(.vollbild):not(:fullscreen) #anzeige > .anzeige-hinweis { justify-self: center; }
+.anzeige-karte:not(.vollbild):not(:fullscreen) .anzeige-system,
+.anzeige-karte:not(.vollbild):not(:fullscreen) .bw-system { margin-left: 0; margin-right: 0; }

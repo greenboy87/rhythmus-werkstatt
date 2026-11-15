@@ -735,3 +735,12 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 - v93: Puls: Die 1 leuchtet gelb (`#facc15`, Rand `#eab308`), alle anderen Zählzeiten lila (`--akzent`). Türkis gibt es beim Puls nicht mehr.
 - v93: Das Nachscroll-IIFE in spieler.js lässt den Metronom-Kasten aus und korrigiert erst ab 1,5 px. Tom meldete, dass die Seite bei 30× Tempo ± um ca. 0,5 cm wanderte. Bei Zoom 100 % ließ sich das nicht nachstellen, vermutlich kamen Rundungsreste bei Browser-Zoom zusammen.
 - v94: Farbe in Beat und Drumset ist nur noch ein Paletten-Symbol (`.btn-icon`, Erklärung im `title`). Ist Farbe an, ist es zart violett (`.bw-bunt`/`.ds-bunt` am Reiter). Die Hören-Knöpfe zeigen ihren Punkt immer, ohne Farbe grau. Sonst wurden sie beim Umschalten breiter und die Zeile rutschte.
+
+## Linksbündig, Doppelstriche, Größe automatisch, Übungsnummer im Kreis (v95, 15.11.2026)
+- Zeilen stehen linksbündig untereinander, der Block als Ganzes ist mittig. Dafür sind `#anzeige` und `.bw-anzeige` ein Grid (`justify-content: safe center; justify-items: start`), außer im Vollbild. Eine kürzere letzte Zeile steht also links unter der vorigen. In der Rhythmus-Werkstatt reserviert jede Zeile links denselben Rand (`vonX = min(inkVon, linksAnschlag - 8) - 6`).
+- Das Stück beginnt immer mit dick-dünn und endet immer mit dünn-dick, auch ohne „Als Übung“. Zwischen den Zeilen stehen einfache Striche.
+- Übungsnummer: `uebungNrSvg(cx, cy, nr, von, bis)` in noten.js zeichnet eine Zahl im Kreis VOR der Zeile, mittig zum System. Die Gruppe trägt `.uebung-nr` mit `data-von/-bis`, Antippen wählt also weiter die ganze Zeile. Beat/Drumset reservieren dafür links 26 (viewBox beginnt bei −26).
+- Größe automatisch: Knopf `.groesse-fit` (↔) rechts neben −/+ in allen drei Werkstätten. Die breiteste Zeile füllt dann genau die Breite, ohne Scrollen.
+  - Rhythmus: `groesseFit` in `rw-groesse-fit`. `anzeigeNeuZeichnen` misst in natürlicher Größe mit `breite` 100000, also der Aufteilung wie bei „auto“, setzt dann `anzeigeSkalierung` und zeichnet mit derselben Aufteilung.
+  - Beat/Drumset: `beat.fit`/`ds.fit` im gespeicherten Stand, die berechnete Größe in `bwFitProzent`/`dsFitProzent`.
+  - −/+ beendet die Automatik und macht ab der passenden Größe weiter. Im Vollbild gilt das eigene Einpassen.

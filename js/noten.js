@@ -479,6 +479,14 @@ function xBeiViertel(marken, v, taktEndeX) {
    Tonhoehe: zwei dicke senkrechte Balken, mittig auf das System gesetzt.
    Kein Violinschluessel - der wuerde eine bestimmte Tonhoehe behaupten,
    die ein Rhythmus-Takt gar nicht hat. */
+/* Uebungsnummer: Zahl im Kreis vor der Zeile (v95, alle drei Werkstaetten).
+   Die Gruppe traegt .uebung-nr mit data-von/-bis - Antippen waehlt die Zeile. */
+function uebungNrSvg(cx, cy, nr, von, bis, tinte) {
+    return `<g class="uebung-nr" data-von="${von}" data-bis="${bis}">` +
+        `<circle cx="${cx}" cy="${cy}" r="8.5" fill="transparent" stroke="${tinte}" stroke-width="1.5"/>` +
+        `<text class="kopf" x="${cx}" y="${cy + 0.5}" font-size="10.5" font-weight="800" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif" fill="${tinte}">${nr}</text></g>`;
+}
+
 function schluesselSvg(x, mitteY, tinte) {
     // Liniensystem mit 8 Abstand: die Balken reichen genau von der 2. bis zur
     // 4. Linie (von oben), kraeftig wie im Notensatz ueblich (v88).
@@ -643,7 +651,8 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(`<circle cx="${duenn + 6}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
                 teileSvg.push(`<circle cx="${duenn + 6}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
                 inkVon = Math.min(inkVon, dick - 3);
-            } else if (opt.alsUebung) {
+            } else if (opt.alsUebung || istErstesSystem) {
+                // v95: auch der Anfang des Stuecks bekommt den Doppelstrich.
                 // Jede Zeile ist ein eigenes kleines Stueck - genauso zweistrichig
                 // wie ein echtes Wiederholungszeichen, nur ohne die Punkte, die
                 // "hier geht's zurueck" bedeuten wuerden (tut es ja nicht).
@@ -660,13 +669,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
             teileSvg.push(`<text class="kopf" x="${tx}" y="${LINIE_Y + 10}" font-size="19" font-weight="900"` +
                           ` text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${unten || ''}</text>`);
             if (opt.alsUebung) {
-                // Uebungsnummer oben links ueber der Zeile.
-                const nx = LINKS_RAND - 2, ny = LINIE_Y - (opt.notenlinien ? 34 : 26);
+                // Uebungsnummer eingekreist VOR der Zeile, mittig zum System (v95).
                 // Antippen der Nummer waehlt die ganze Uebung als Loop-Bereich
                 const vonTakt = system[0].index, bisTakt = system[system.length - 1].index;
-                teileSvg.push(`<text class="uebung-nr" data-von="${vonTakt}" data-bis="${bisTakt}" x="${nx}" y="${ny}" font-size="13" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${systemNr + 1}.</text>`);
-                inkOben = Math.min(inkOben, ny - 11);
-                inkVon = Math.min(inkVon, nx - 2);
+                teileSvg.push(uebungNrSvg(linksAnschlag - 21, LINIE_Y, systemNr + 1, vonTakt, bisTakt, tinte));
+                inkVon = Math.min(inkVon, linksAnschlag - 31);
             }
         }
 
@@ -790,7 +797,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
 
         // Anfangsstrich: jede Zeile beginnt mit einem Strich ueber das System -
         // ausser dort, wo schon ein Doppelstrich bzw. Wiederholungszeichen steht.
-        const hatAnfangszeichen = zeigtVollenKopf && (opt.alsUebung || (istErstesSystem && WDH_ANFANG && !WDH_NACH_KOPF));
+        const hatAnfangszeichen = zeigtVollenKopf && (opt.alsUebung || istErstesSystem);
         if (!hatAnfangszeichen) {
             teileSvg.push(`<line x1="${linksAnschlag}" y1="${LINIE_Y - 17}" x2="${linksAnschlag}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="2"/>`);
         }
@@ -813,7 +820,8 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 teileSvg.push(`<text x="${dick + 2}" y="${LINIE_Y - 20}" font-size="12" font-weight="800" text-anchor="end" font-family="DM Sans, sans-serif" fill="${tinte}">${male}×</text>`);
                 inkOben = Math.min(inkOben, LINIE_Y - 32);
             }
-        } else if (opt.alsUebung) {
+        } else if (opt.alsUebung || istLetztesSystem) {
+            // v95: auch das Ende des Stuecks ist immer ein Doppelstrich.
             // Schlussstrich-Paar (duenn, dann dick) statt des einfachen Strichs -
             // jede Zeile endet wie ein eigenes kleines Stueck, nicht nur eine
             // Zwischenstation im groesseren Ganzen.
@@ -822,13 +830,13 @@ function stueckAnzeigeHtml(stueck, optionen) {
             teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
             inkBis = Math.max(inkBis, dick + 3);
         } else {
-            teileSvg.push(`<line x1="${rechts}" y1="${LINIE_Y - 17}" x2="${rechts}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="${istLetztesSystem ? 3 : 2}"/>`);
+            teileSvg.push(`<line x1="${rechts}" y1="${LINIE_Y - 17}" x2="${rechts}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="2"/>`);
         }
 
         // Linien genau von Anfangs- bis Schlusszeichen: am dicken Strich
         // buendig mit dessen Aussenkante, nichts steht ueber (v91)
         const linienVon = hatAnfangszeichen ? linksAnschlag - 7 : linksAnschlag - 1;
-        const linienBis = ((istLetztesSystem || opt.alsUebung) && (opt.wiederholung || opt.alsUebung)) ? rechts + 7 : rechts + 1;
+        const linienBis = (istLetztesSystem || opt.alsUebung) ? rechts + 7 : rechts + 1;
         if (opt.notenlinien) {
             const linienHtml = [-16, -8, 0, 8, 16].map(dy =>
                 `<line x1="${linienVon}" y1="${LINIE_Y + dy}" x2="${linienBis}" y2="${LINIE_Y + dy}" class="linien-fuenf" stroke="currentColor" stroke-width="1.3"/>`
@@ -840,7 +848,9 @@ function stueckAnzeigeHtml(stueck, optionen) {
 
         if (!isFinite(inkVon)) { inkVon = linksAnschlag; inkBis = rechts; }
         if (!isFinite(inkOben)) { inkOben = HALS_OBEN; inkUnten = LINIE_Y + 7; }
-        const vonX = Math.min(inkVon, linksAnschlag) - 6;
+        // Gleicher linker Rand in allen Zeilen (Platz fuer den Doppelstrich
+        // immer reserviert), damit die Zeilen linksbuendig untereinander stehen
+        const vonX = Math.min(inkVon, linksAnschlag - 8) - 6;
         // Nicht blind "rechts+20" - die "x-mal wiederholen"-Beschriftung am
         // Wiederholungszeichen reicht teils weiter nach rechts als das.
         const breiteSvg = Math.max(rechts + 20, inkBis + 10) - vonX;

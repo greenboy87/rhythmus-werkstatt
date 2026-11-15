@@ -219,7 +219,7 @@ function beatLaden() {
         beat.takte = Math.max(1, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         beat.bpm = Math.max(BW_BPM_MIN, Math.min(200, Math.round(Number(x.bpm) || 90)));
         beat.schlaege = Math.max(1, Math.min(BW_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
-        ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr', 'alsUebung', 'loop'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
+        ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr', 'alsUebung', 'loop', 'fit'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
         beat.proZeile = Math.max(0, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.proZeile) || 0)));
         beat.durchgaenge = Math.max(1, Math.min(10, Math.round(Number(x.durchgaenge) || 1)));
         beat.vorlauf = Math.max(0, Math.min(VORLAUF_MAX_TAKTE, Math.round(Number(x.vorlauf) || 0)));
@@ -468,8 +468,10 @@ function bwSystemSvg(taktListe, erstes, letztes, skala, nr) {
     // Zeilenanfang: Doppelstrich bei "Als Uebung", sonst einfacher Anfangsstrich
     // Anfang: bei "Als Uebung" erst dick, dann duenn (Spiegelbild des
     // Schlussstrichs), sonst ein einfacher Strich; danach mit Luft der Schluessel
-    const linienVon = uebung ? x - 5 : x + 2;   // Linien beginnen am (dicken) Anfangsstrich
-    if (uebung) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
+    // v95: Doppelstrich am Anfang jeder Uebung und am Anfang des Stuecks
+    const doppelt = uebung || erstes;
+    const linienVon = doppelt ? x - 5 : x + 2;   // Linien beginnen am (dicken) Anfangsstrich
+    if (doppelt) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
     else teile.push(strich(x + 2, 1.6));
     teile.push(schluesselSvg(x + 16, 16, 'currentColor'));
     x += 30;
@@ -480,7 +482,7 @@ function bwSystemSvg(taktListe, erstes, letztes, skala, nr) {
     }
     if (uebung) {
         const von = taktListe[0], bis = taktListe[taktListe.length - 1];
-        teile.push(`<text class="kopf uebung-nr" data-von="${von}" data-bis="${bis}" x="4" y="-16" font-size="13" font-weight="800" font-family="DM Sans, sans-serif">${(nr || 0) + 1}.</text>`);
+        teile.push(uebungNrSvg(-15, 16, (nr || 0) + 1, von, bis, 'currentColor'));
     }
     if (erstes && wdh && !uebung) {
         // Wiederholung ab hier: Zeichen nach Schluessel und Taktangabe
@@ -534,7 +536,8 @@ function bwSystemSvg(taktListe, erstes, letztes, skala, nr) {
     }
     const linien = BW_LINIEN.map(y => `<line x1="${linienVon}" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
     const breite = x + 8, oben = -60, hoehe = 128;
-    return `<svg class="bw-system" data-takte="${taktListe.length}" viewBox="0 ${oben} ${breite} ${hoehe}" width="${Math.round(breite * sk)}" height="${Math.round(hoehe * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
+    const links = uebung ? 26 : 0;   // Platz fuer die eingekreiste Uebungsnummer vor der Zeile
+    return `<svg class="bw-system" data-takte="${taktListe.length}" viewBox="${-links} ${oben} ${breite + links} ${hoehe}" width="${Math.round((breite + links) * sk)}" height="${Math.round(hoehe * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
 }
 
 /* ============================================================
@@ -1074,7 +1077,8 @@ function bwPaletteZeichnen() {
    ganzen Stuecks - passend zu bwSystemSvg (Schluessel, Taktangabe,
    Taktstriche, Schluss-Wiederholung). */
 const BW_SYSTEM_HOEHE = 128;
-function bwSystemBreite(p) { return 116 + p * bwS() * BW_SCHLAG + (p - 1) * 6; }
+let bwFitProzent = 0;   // berechnete Groesse bei beat.fit (Anzeige im Wert)
+function bwSystemBreite(p) { return 116 + (beat.alsUebung ? 26 : 0) + p * bwS() * BW_SCHLAG + (p - 1) * 6; }
 function bwZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < beat.takte; t += proZeile) {
@@ -1129,6 +1133,19 @@ function bwAnzeigeZeichnen() {
         return;
     }
     const breite = host.clientWidth || 900;
+    if (beat.fit && host.clientWidth) {
+        // v95: Groesse automatisch - die breiteste Zeile fuellt genau die Breite
+        const p = beat.proZeile || autoTakteProZeile(beat.takte);
+        host.innerHTML = bwSystemeHtml(p, 1);
+        const max = Math.max(0, ...[...host.querySelectorAll('svg.bw-system')].map(sv => sv.viewBox.baseVal.width));
+        const sk = max > 0 ? Math.max(0.4, Math.min(4, (breite - 4) / max)) : BW_ANZEIGE_SKALA;
+        bwFitProzent = Math.round(sk / BW_ANZEIGE_SKALA * 100);
+        bwAnzeigeProZeile = p;
+        host.innerHTML = bwSystemeHtml(p, sk);
+        document.getElementById('bw-groesse-wert').textContent = bwFitProzent + '%';
+        bwLoopInfoZeichnen();
+        return;
+    }
     const skala = BW_ANZEIGE_SKALA * beat.groesse / 100;
     const taktBreite = (bwS() * BW_SCHLAG + 6) * skala;
     const proZeile = beat.proZeile || autoTakteProZeile(beat.takte, (p) => Math.min(p, beat.takte) * taktBreite + 120 * skala <= breite);
@@ -1400,7 +1417,8 @@ function bwSchalterZeichnen() {
     document.getElementById('bw-als-uebung').checked = beat.alsUebung;
     document.getElementById('bw-durchgaenge-wert').textContent = beat.durchgaenge + '×';
     document.getElementById('bw-pro-zeile-wert').textContent = beat.proZeile || 'auto';
-    document.getElementById('bw-groesse-wert').textContent = beat.groesse + '%';
+    document.getElementById('bw-groesse-wert').textContent = (beat.fit && bwFitProzent ? bwFitProzent : beat.groesse) + '%';
+    document.getElementById('bw-groesse-fit').classList.toggle('an', !!beat.fit);
     if (bwMetro) bwMetro.zeichnen();
     document.getElementById('reiter-beat').classList.toggle('bw-bunt', beat.farbe);
     document.getElementById('bw-farbe').innerHTML = beat.farbe
@@ -1961,7 +1979,11 @@ function bwEinrichten() {
     document.getElementById('bw-als-uebung').addEventListener('change', (e) => { beat.alsUebung = e.target.checked; bwAenderung(); });
     stufenBinden('bw-durchgaenge-minus', 'bw-durchgaenge-plus', (r) => { beat.durchgaenge = Math.max(1, Math.min(10, beat.durchgaenge + r)); bwAenderung(); });
     stufenBinden('bw-pro-zeile-minus', 'bw-pro-zeile-plus', (r) => { beat.proZeile = Math.max(0, Math.min(BEAT_TAKTE_MAX, beat.proZeile + r)); bwAenderung(); });
-    stufenBinden('bw-groesse-minus', 'bw-groesse-plus', (r) => { beat.groesse = Math.max(60, Math.min(300, beat.groesse + 10 * r)); beatSpeichern(); bwSchalterZeichnen(); bwAnzeigeZeichnen(); });
+    document.getElementById('bw-groesse-fit').addEventListener('click', () => { beat.fit = !beat.fit; beatSpeichern(); bwAnzeigeZeichnen(); bwSchalterZeichnen(); });
+    stufenBinden('bw-groesse-minus', 'bw-groesse-plus', (r) => {
+        // −/+ beendet die Automatik und macht ab der passenden Groesse weiter
+        if (beat.fit) { beat.fit = false; if (bwFitProzent) beat.groesse = Math.round(bwFitProzent / 10) * 10; }
+        beat.groesse = Math.max(60, Math.min(300, beat.groesse + 10 * r)); beatSpeichern(); bwSchalterZeichnen(); bwAnzeigeZeichnen(); });
     document.getElementById('bw-verdecken').addEventListener('click', (e) => {
         const an = vollKarte.classList.toggle('anzeige-verdeckt');
         e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';

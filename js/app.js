@@ -76,6 +76,12 @@ let editor = null;
 let rhythmusVerlauf = null;   // Strg+Z im Rhythmus-Reiter (verlaufAnlegen)
 let anzeigeVerdeckt = false;
 let anzeigeSkalierung = 1;
+// v95: Groesse automatisch an die Breite anpassen (Knopf neben −/+), gemerkt
+let groesseFit = (() => { try { return localStorage.getItem('rw-groesse-fit') === '1'; } catch (e) { return false; } })();
+function groesseFitSetzen(an) {
+    groesseFit = an;
+    try { localStorage.setItem('rw-groesse-fit', an ? '1' : '0'); } catch (e) { /* egal */ }
+}
 let wiederholungen = 1;      // zusaetzliche Durchgaenge, nicht die Gesamtzahl (Anzeige = +1)
 let takteProZeile = 0;       // 0 = automatisch; gilt fuer Bildschirm/Vollbild UND Druck gleichermassen
 let loopAuswahl = null;      // {von, bis} Taktnummern (einschliesslich) - nur dieser Teil wird abgespielt
@@ -127,18 +133,33 @@ function leisteAnzeigen() {
     document.getElementById('wiederholung-wert').textContent = durchgaenge + '×';
     document.getElementById('groesse-regler').value = Math.round(anzeigeSkalierung * 100);
     document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
+    document.getElementById('groesse-fit').classList.toggle('an', groesseFit);
     const modus = document.getElementById('abspielen-modus').value;
     vorspielenKnopfZeichnen(document.getElementById('vorspielen'), modus !== 'selbstklatschen');
 }
 
 function anzeigeNeuZeichnen() {
-    leisteAnzeigen();
     const host = document.getElementById('anzeige');
+    const karte = document.getElementById('anzeige-karte');
+    let fitBreite = 0;   // bei Automatik: dieselbe Zeilenaufteilung wie beim Messen
+    if (groesseFit && !karte.classList.contains('vollbild') && !document.fullscreenElement && host.clientWidth) {
+        // Erst in natuerlicher Groesse zeichnen (Zeilen wie bei "auto"), dann so
+        // skalieren, dass die breiteste Zeile genau die Breite fuellt
+        const probe = document.createElement('div');
+        probe.innerHTML = stueckAnzeigeHtml(editor.stueck(), Object.assign(anzeigeOptionen(), { breite: 100000, skalierung: 1 }));
+        const max = Math.max(0, ...[...probe.querySelectorAll('svg')].map(sv => sv.viewBox.baseVal.width));
+        if (max > 0) {
+            anzeigeSkalierung = Math.max(0.6, Math.min(3, Math.floor((host.clientWidth - 4) / max * 100) / 100));
+            // Passt es selbst bei 60 % nicht, bricht die Breite wie sonst um
+            if (max * anzeigeSkalierung <= host.clientWidth) fitBreite = 100000;
+        }
+    }
+    leisteAnzeigen();
     // Durch die Skalierung geteilt, nicht die rohe Fensterbreite: Sonst packt
     // die automatische Zeilenaufteilung schon beim Layout so viele Takte hinein,
     // wie der Platz hergibt - fuer eine Vergroesserung bliebe dann kein Raum
     // mehr, sie wuerde von max-width:100% sofort wieder zurueckgestutzt.
-    const breite = Math.max(320, (host.clientWidth || 900) / anzeigeSkalierung);
+    const breite = fitBreite || Math.max(320, (host.clientWidth || 900) / anzeigeSkalierung);
     // Passt die Auswahl nicht mehr zum Stueck (Takte geloescht), faellt sie weg.
     if (loopAuswahl && loopAuswahl.bis >= editor.stueck().takte.length) loopAuswahl = null;
     if (startpunkt && startpunktTakt() === null) startpunkt = null;
@@ -748,7 +769,9 @@ function init() {
         r.dispatchEvent(new Event('input'));
     }));
 
+    document.getElementById('groesse-fit').addEventListener('click', () => { groesseFitSetzen(!groesseFit); anzeigeNeuZeichnen(); });
     document.getElementById('groesse-regler').addEventListener('input', (e) => {
+        groesseFitSetzen(false);   // −/+ = wieder von Hand, ab der passenden Groesse
         anzeigeSkalierung = Number(e.target.value) / 100;
         anzeigeNeuZeichnen();
     });

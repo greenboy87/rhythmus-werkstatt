@@ -108,7 +108,7 @@ function dsLaden() {
         ds.takte = Math.max(1, Math.min(DS_TAKTE_MAX, Math.round(Number(x.takte) || 2)));
         ds.schlaege = Math.max(1, Math.min(DS_SCHLAEGE_MAX, Math.round(Number(x.schlaege) || 4)));
         ds.bpm = Math.max(20, Math.min(200, Math.round(Number(x.bpm) || 90)));
-        ['zaehlzeiten', 'farbe', 'metronom', 'mehr', 'loop', 'alsUebung'].forEach(k => { if (typeof x[k] === 'boolean') ds[k] = x[k]; });
+        ['zaehlzeiten', 'farbe', 'metronom', 'mehr', 'loop', 'alsUebung', 'fit'].forEach(k => { if (typeof x[k] === 'boolean') ds[k] = x[k]; });
         ds.durchgaenge = Math.max(1, Math.min(10, Math.round(Number(x.durchgaenge) || 1)));
         ds.vorlauf = Math.max(0, Math.min(VORLAUF_MAX_TAKTE, Math.round(Number(x.vorlauf) || 0)));
         ds.groesse = Math.max(60, Math.min(300, Math.round(Number(x.groesse) || 100)));
@@ -332,8 +332,10 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
     let x = 8;
     // Anfang: bei "Als Uebung" erst dick, dann duenn (Spiegelbild des
     // Schlussstrichs), sonst ein einfacher Strich; danach mit Luft der Schluessel
-    const linienVon = uebung ? x - 5 : x + 2;   // Linien beginnen am (dicken) Anfangsstrich
-    if (uebung) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
+    // v95: Doppelstrich am Anfang jeder Uebung und am Anfang des Stuecks
+    const doppelt = uebung || erstes;
+    const linienVon = doppelt ? x - 5 : x + 2;   // Linien beginnen am (dicken) Anfangsstrich
+    if (doppelt) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
     else teile.push(strich(x + 2, 1.6));
     teile.push(schluesselSvg(x + 16, 16, 'currentColor'));
     x += 30;
@@ -344,7 +346,7 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
     }
     if (uebung) {
         const von = taktListe[0], bis = taktListe[taktListe.length - 1];
-        teile.push(`<text class="kopf uebung-nr" data-von="${von}" data-bis="${bis}" x="4" y="-16" font-size="13" font-weight="800" font-family="DM Sans, sans-serif">${(nr || 0) + 1}.</text>`);
+        teile.push(uebungNrSvg(-15, 16, (nr || 0) + 1, von, bis, 'currentColor'));
     }
     if (erstes && wdh && !uebung) {
         teile.push(strich(x + 2, 4), strich(x + 7, 1.5), punkte(x + 13));
@@ -392,7 +394,8 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
     }
     const linien = BW_LINIEN.map(y => `<line x1="${linienVon}" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
     const breite = x + 8;
-    return `<svg class="bw-system ds-system" viewBox="0 ${DS_SYSTEM_OBEN} ${breite} ${DS_SYSTEM_HOEHE}" width="${Math.round(breite * sk)}" height="${Math.round(DS_SYSTEM_HOEHE * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
+    const links = uebung ? 26 : 0;   // Platz fuer die eingekreiste Uebungsnummer vor der Zeile
+    return `<svg class="bw-system ds-system" viewBox="${-links} ${DS_SYSTEM_OBEN} ${breite + links} ${DS_SYSTEM_HOEHE}" width="${Math.round((breite + links) * sk)}" height="${Math.round(DS_SYSTEM_HOEHE * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
 }
 
 /* ============================================================
@@ -659,7 +662,8 @@ function dsWerkzeugZeichnen() {
 }
 
 /* ---------- Notenbild, Vollbild, Druck ---------- */
-function dsSystemBreite(p) { return 80 + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
+let dsFitProzent = 0;   // berechnete Groesse bei ds.fit (Anzeige im Wert)
+function dsSystemBreite(p) { return 80 + (ds.alsUebung ? 26 : 0) + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
 function dsZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < ds.takte; t += proZeile) {
@@ -708,6 +712,19 @@ function dsAnzeigeZeichnen() {
         return;
     }
     const breite = host.clientWidth || 900;
+    if (ds.fit && host.clientWidth) {
+        // v95: Groesse automatisch - die breiteste Zeile fuellt genau die Breite
+        const p = ds.proZeile || autoTakteProZeile(ds.takte);
+        host.innerHTML = dsSystemeHtml(p, 1);
+        const max = Math.max(0, ...[...host.querySelectorAll('svg.bw-system')].map(sv => sv.viewBox.baseVal.width));
+        const sk = max > 0 ? Math.max(0.4, Math.min(4, (breite - 4) / max)) : DS_ANZEIGE_SKALA;
+        dsFitProzent = Math.round(sk / DS_ANZEIGE_SKALA * 100);
+        dsAnzeigeProZeile = p;
+        host.innerHTML = dsSystemeHtml(p, sk);
+        document.getElementById('ds-groesse-wert').textContent = dsFitProzent + '%';
+        dsLoopInfoZeichnen();
+        return;
+    }
     const skala = DS_ANZEIGE_SKALA * ds.groesse / 100;
     const taktBreite = (dsS() * DS_SCHLAG + 6) * skala;
     const proZeile = ds.proZeile || autoTakteProZeile(ds.takte, (p) => Math.min(p, ds.takte) * taktBreite + 80 * skala <= breite);
@@ -790,7 +807,8 @@ function dsSchalterZeichnen() {
     document.getElementById('ds-als-uebung').checked = ds.alsUebung;
     document.getElementById('ds-durchgaenge-wert').textContent = ds.durchgaenge + '×';
     document.getElementById('ds-pro-zeile-wert').textContent = ds.proZeile || 'auto';
-    document.getElementById('ds-groesse-wert').textContent = ds.groesse + '%';
+    document.getElementById('ds-groesse-wert').textContent = (ds.fit && dsFitProzent ? dsFitProzent : ds.groesse) + '%';
+    document.getElementById('ds-groesse-fit').classList.toggle('an', !!ds.fit);
     if (dsMetro) dsMetro.zeichnen();
     document.getElementById('reiter-drumset').classList.toggle('ds-bunt', ds.farbe);
     document.getElementById('ds-farbe').innerHTML = ds.farbe
@@ -1055,7 +1073,11 @@ function dsEinrichten() {
     document.getElementById('ds-als-uebung').addEventListener('change', (e) => { ds.alsUebung = e.target.checked; dsAenderung(); DrumSpieler.folgeNeu(); });
     stufenBinden('ds-durchgaenge-minus', 'ds-durchgaenge-plus', (r) => { ds.durchgaenge = Math.max(1, Math.min(10, ds.durchgaenge + r)); dsAenderung(); });
     stufenBinden('ds-pro-zeile-minus', 'ds-pro-zeile-plus', (r) => { ds.proZeile = Math.max(0, Math.min(DS_TAKTE_MAX, ds.proZeile + r)); dsAenderung(); });
-    stufenBinden('ds-groesse-minus', 'ds-groesse-plus', (r) => { ds.groesse = Math.max(60, Math.min(300, ds.groesse + 10 * r)); dsSpeichern(); dsSchalterZeichnen(); dsAnzeigeZeichnen(); });
+    document.getElementById('ds-groesse-fit').addEventListener('click', () => { ds.fit = !ds.fit; dsSpeichern(); dsAnzeigeZeichnen(); dsSchalterZeichnen(); });
+    stufenBinden('ds-groesse-minus', 'ds-groesse-plus', (r) => {
+        // −/+ beendet die Automatik und macht ab der passenden Groesse weiter
+        if (ds.fit) { ds.fit = false; if (dsFitProzent) ds.groesse = Math.round(dsFitProzent / 10) * 10; }
+        ds.groesse = Math.max(60, Math.min(300, ds.groesse + 10 * r)); dsSpeichern(); dsSchalterZeichnen(); dsAnzeigeZeichnen(); });
     document.getElementById('ds-verdecken').addEventListener('click', (e) => {
         const an = vollKarte.classList.toggle('anzeige-verdeckt');
         e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
