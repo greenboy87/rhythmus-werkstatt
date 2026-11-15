@@ -1001,7 +1001,13 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
     gap: .45rem; padding: .55rem .6rem; margin: .2rem 0 1.4rem; border: none; border-radius: 12px;
     background: color-mix(in srgb, var(--text) 6%, var(--bg-karte));
 }
-.anzeige-karte .spieler-leiste > .metronom-gruppen, .anzeige-karte .spieler-leiste > [id$="metronom-kasten"] { margin-left: auto; }
+/* Kein Loch in der Leiste (v92): Abspielen und Metronom wachsen in den
+   freien Platz - im Metronom wird der Lautstaerke-Regler laenger */
+.anzeige-karte .spieler-leiste > .abspiel-gruppe { flex: 1 1 auto; }
+.anzeige-karte .spieler-leiste > .abspiel-gruppe > .btn-primär { flex: 1 1 auto; }
+.anzeige-karte .spieler-leiste > .metronom-gruppen { flex: 2 1 auto; }
+.anzeige-karte .spieler-leiste > .metronom-gruppen > .metronom-feld { flex: 1 1 auto; }
+.anzeige-karte .spieler-leiste > .metronom-gruppen > .metronom-feld input[type="range"] { flex: 1 1 3.8rem; min-width: 3.8rem; }
 /* Antippbares zeigt die Hand (Chips sind <label>, die zeigten den Pfeil) */
 .anzeige-karte .chip, .anzeige-karte .chip > span, .anzeige-karte summary, .anzeige-karte .stufen-wert { cursor: pointer; }
 .anzeige-karte .stufen-wert:not(input) { cursor: default; }

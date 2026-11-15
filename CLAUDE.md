@@ -731,3 +731,4 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
   - Schlusswiederholung: Punkte, dünn, dick. Vorher war es dick, dünn, also falsch herum.
   - Doppelstrich bei „Als Übung“: vorn dick-dünn, hinten dünn-dick.
 - Die Zahl „3×“ steht rechtsbündig über dem Schlusszeichen und verlängert die Zeile nicht mehr.
+- v92: Die Spieler-Leiste hat keine Lücke mehr. Abspielen wächst mit `flex 1`, der Metronom-Kasten mit `flex 2`, und darin wird der Lautstärke-Regler länger. Der Metronom-Kasten hat kein `margin-left: auto` mehr.
