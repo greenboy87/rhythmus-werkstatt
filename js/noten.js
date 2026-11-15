@@ -480,7 +480,9 @@ function xBeiViertel(marken, v, taktEndeX) {
    Kein Violinschluessel - der wuerde eine bestimmte Tonhoehe behaupten,
    die ein Rhythmus-Takt gar nicht hat. */
 function schluesselSvg(x, mitteY, tinte) {
-    const halbHoehe = 11, breite = 3, abstand = 5;
+    // Liniensystem mit 8 Abstand: die Balken reichen genau von der 2. bis zur
+    // 4. Linie (von oben), kraeftig wie im Notensatz ueblich (v88).
+    const halbHoehe = 8, breite = 4, abstand = 5;
     return `<g>
         <rect x="${x - abstand / 2 - breite}" y="${mitteY - halbHoehe}" width="${breite}" height="${halbHoehe * 2}" fill="${tinte}"/>
         <rect x="${x + abstand / 2}" y="${mitteY - halbHoehe}" width="${breite}" height="${halbHoehe * 2}" fill="${tinte}"/>
@@ -628,7 +630,7 @@ function stueckAnzeigeHtml(stueck, optionen) {
         inkVon = Math.min(inkVon, linksAnschlag);
         if (zeigtVollenKopf) {
             if (opt.notenlinien) {
-                teileSvg.push(schluesselSvg(LINKS_RAND + 7, LINIE_Y, tinte));
+                teileSvg.push(schluesselSvg(LINKS_RAND + 9, LINIE_Y, tinte));
                 inkOben = Math.min(inkOben, LINIE_Y - 13); inkUnten = Math.max(inkUnten, LINIE_Y + 13);
             }
             if (istErstesSystem && WDH_ANFANG && !WDH_NACH_KOPF) {
@@ -645,10 +647,11 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 // Jede Zeile ist ein eigenes kleines Stueck - genauso zweistrichig
                 // wie ein echtes Wiederholungszeichen, nur ohne die Punkte, die
                 // "hier geht's zurueck" bedeuten wuerden (tut es ja nicht).
-                const duenn = linksAnschlag - 5, dick = linksAnschlag;
-                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                // Spiegelbild des Schlussstrichs: erst dick, dann duenn (v88)
+                const dick = linksAnschlag - 5, duenn = linksAnschlag;
                 teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
-                inkVon = Math.min(inkVon, duenn - 3);
+                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                inkVon = Math.min(inkVon, dick - 3);
             }
             const [oben, unten] = String(stueck.zeichen || '4/4').split('/');
             const tx = LINKS_RAND + KOPF_BREITE - 20;

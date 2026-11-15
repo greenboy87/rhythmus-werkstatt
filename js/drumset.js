@@ -330,10 +330,12 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
     const punkte = (x) => `<circle cx="${x}" cy="12" r="2.2" fill="currentColor"/><circle cx="${x}" cy="20" r="2.2" fill="currentColor"/>`;
     const feldY = DS_SYSTEM_OBEN + 4, feldH = DS_SYSTEM_HOEHE - 8;
     let x = 8;
-    if (uebung) teile.push(strich(x - 4, 1.5), strich(x, 4));
-    else teile.push(strich(x, 1.6));
-    teile.push(schluesselSvg(x + 10, 16, 'currentColor'));
-    x += 24;
+    // Anfang: bei "Als Uebung" erst dick, dann duenn (Spiegelbild des
+    // Schlussstrichs), sonst ein einfacher Strich; danach mit Luft der Schluessel
+    if (uebung) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
+    else teile.push(strich(x + 2, 1.6));
+    teile.push(schluesselSvg(x + 16, 16, 'currentColor'));
+    x += 30;
     if (erstes || uebung) {
         teile.push(`<text class="kopf" x="${x + 8}" y="8" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">${dsS()}</text>`);
         teile.push(`<text class="kopf" x="${x + 8}" y="25" font-size="17" font-weight="900" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif">4</text>`);
@@ -655,7 +657,7 @@ function dsWerkzeugZeichnen() {
 }
 
 /* ---------- Notenbild, Vollbild, Druck ---------- */
-function dsSystemBreite(p) { return 74 + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
+function dsSystemBreite(p) { return 80 + p * dsS() * DS_SCHLAG + (p - 1) * 6; }
 function dsZeilen(proZeile) {
     const zeilen = [];
     for (let t = 0; t < ds.takte; t += proZeile) {

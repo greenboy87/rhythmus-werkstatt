@@ -718,3 +718,7 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 - Klang (Rhythmus): `details.menue.klang-menue` mit einfarbigen Font-Awesome-Symbolen. Der Wert steht weiter in der versteckten Auswahl `#klatsch-sound-wahl`. `klangMenueZeichnen` (app.js) läuft in `leisteAnzeigen`.
 - Takte/Zeile „auto“: `autoTakteProZeile(anzahl, passt)` in noten.js. 1 Takt → 1, 2 → 2, ab 3 → 4; passt es nicht in die Breite, dann 2 bzw. 1. Rhythmus: Option `auto124` von `stueckAnzeigeHtml` (nur Anzeige und Druck der Werkstatt, Spiele und Klassenspiel füllen weiter nach Breite). Beat/Drumset: `bwEinpassen`/`dsEinpassen` und die Bildschirm-Anzeige.
 - Chips (`<label>`) zeigen jetzt die Hand als Mauszeiger.
+
+## Zeilenanfang und Schlüssel (v88, 15.11.2026)
+- „Als Übung“: Der Zeilenanfang ist das Spiegelbild des Schlussstrichs, also erst dick, dann dünn. Das gilt in allen drei Werkstätten (noten.js, `bwSystemSvg`, `dsSystemSvg`). Ohne „Als Übung“ bleibt der einfache Anfangsstrich.
+- Neutraler Schlüssel (`schluesselSvg`): Die Balken sind 4 breit und reichen genau von der 2. bis zur 4. Linie (halbe Höhe 8 bei Linienabstand 8). Zwischen Anfangsstrich und Schlüssel ist mehr Luft. Beat und Drumset rücken dafür 6 weiter ein (`bwSystemBreite` 116, `dsSystemBreite` 80).
