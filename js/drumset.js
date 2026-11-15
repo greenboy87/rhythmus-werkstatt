@@ -332,6 +332,7 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
     let x = 8;
     // Anfang: bei "Als Uebung" erst dick, dann duenn (Spiegelbild des
     // Schlussstrichs), sonst ein einfacher Strich; danach mit Luft der Schluessel
+    const linienVon = uebung ? x - 5 : x + 2;   // Linien beginnen am (dicken) Anfangsstrich
     if (uebung) teile.push(strich(x - 3, 4), strich(x + 2, 1.5));
     else teile.push(strich(x + 2, 1.6));
     teile.push(schluesselSvg(x + 16, 16, 'currentColor'));
@@ -378,9 +379,10 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
         felder.push(`<rect class="takt-feld" data-takt="${t}" x="${tx - 3}" y="${feldY}" width="${x - tx + 6}" height="${feldH}" fill="transparent"/>`);
     });
     if ((letztes || uebung) && wdh) {
-        teile.push(punkte(x + 1), strich(x + 7, 4), strich(x + 12, 1.5));
-        if (ds.durchgaenge > 2) teile.push(`<text class="kopf" x="${x + 15}" y="-6" font-size="12" font-weight="800" font-family="DM Sans, sans-serif">${ds.durchgaenge}×</text>`);
-        x += ds.durchgaenge > 2 ? 34 : 14;
+        // Punkte, duenn, dick - die Linien enden genau am dicken Strich (v91)
+        teile.push(punkte(x + 1), strich(x + 7, 1.5), strich(x + 12, 4));
+        if (ds.durchgaenge > 2) teile.push(`<text class="kopf" x="${x + 14}" y="-6" font-size="12" font-weight="800" text-anchor="end" font-family="DM Sans, sans-serif">${ds.durchgaenge}×</text>`);
+        x += 14;
     } else if (letztes || uebung) {
         teile.push(strich(x + 2, 1.5), strich(x + 8, 4));
         x += 10;
@@ -388,7 +390,7 @@ function dsSystemSvg(taktListe, erstes, letztes, skala, nr) {
         teile.push(strich(x + 2, 1.6));
         x += 2;
     }
-    const linien = BW_LINIEN.map(y => `<line x1="8" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
+    const linien = BW_LINIEN.map(y => `<line x1="${linienVon}" y1="${y}" x2="${x}" y2="${y}" class="bw-linie-anzeige" stroke="currentColor" stroke-width="1.2"/>`).join('');
     const breite = x + 8;
     return `<svg class="bw-system ds-system" viewBox="0 ${DS_SYSTEM_OBEN} ${breite} ${DS_SYSTEM_HOEHE}" width="${Math.round(breite * sk)}" height="${Math.round(DS_SYSTEM_HOEHE * sk)}">${vorn.join('')}${linien}${teile.join('')}${felder.join('')}</svg>`;
 }

@@ -609,9 +609,9 @@ function stueckAnzeigeHtml(stueck, optionen) {
         const wdhHierZeichnen = WDH_NACH_KOPF && istErstesSystem;
         if (wdhHierZeichnen || (WDH_NACH_KOPF && spaltenBreite)) {
             if (wdhHierZeichnen) {
-                const duenn = x - 4, dick = x + 1;
-                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                const dick = x - 4, duenn = x + 1;   // dick, duenn, Punkte (v91)
                 teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
                 teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y - 4}" r="2.2" fill="${tinte}"/>`);
                 teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y + 4}" r="2.2" fill="${tinte}"/>`);
             }
@@ -637,12 +637,12 @@ function stueckAnzeigeHtml(stueck, optionen) {
                 // Ein Wiederholungszeichen ist zweistrichig: duenn, dann dick,
                 // erst danach die Punkte - vorher stand hier nur ein einzelner
                 // dicker Strich, das sah nicht nach dem bekannten Zeichen aus.
-                const duenn = linksAnschlag - 5, dick = linksAnschlag;
-                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                const dick = linksAnschlag - 5, duenn = linksAnschlag;   // dick, duenn, Punkte (v91)
                 teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
-                teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
-                teileSvg.push(`<circle cx="${dick + 7}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
-                inkVon = Math.min(inkVon, duenn - 3);
+                teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
+                teileSvg.push(`<circle cx="${duenn + 6}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
+                teileSvg.push(`<circle cx="${duenn + 6}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
+                inkVon = Math.min(inkVon, dick - 3);
             } else if (opt.alsUebung) {
                 // Jede Zeile ist ein eigenes kleines Stueck - genauso zweistrichig
                 // wie ein echtes Wiederholungszeichen, nur ohne die Punkte, die
@@ -799,19 +799,19 @@ function stueckAnzeigeHtml(stueck, optionen) {
         if ((istLetztesSystem || opt.alsUebung) && opt.wiederholung) {
             // Spiegelbildlich zum Anfang: Punkte, dann dick, dann duenn - ersetzt
             // den normalen Taktschluss-Strich, statt zusaetzlich daneben zu stehen.
-            const dick = rechts, duenn = rechts + 5;
-            teileSvg.push(`<circle cx="${dick - 7}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
-            teileSvg.push(`<circle cx="${dick - 7}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
-            teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+            // Punkte, duenn, dick (v91: vorher dick vor duenn - falsch herum)
+            const duenn = rechts, dick = rechts + 5;
+            teileSvg.push(`<circle cx="${duenn - 6}" cy="${LINIE_Y - 6}" r="2.2" fill="${tinte}"/>`);
+            teileSvg.push(`<circle cx="${duenn - 6}" cy="${LINIE_Y + 6}" r="2.2" fill="${tinte}"/>`);
             teileSvg.push(`<line x1="${duenn}" y1="${LINIE_Y - 17}" x2="${duenn}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="1.5"/>`);
-            inkBis = Math.max(inkBis, duenn + 3);
+            teileSvg.push(`<line x1="${dick}" y1="${LINIE_Y - 17}" x2="${dick}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="4"/>`);
+            inkBis = Math.max(inkBis, dick + 3);
             // Das Zeichen allein heisst "noch einmal" (zweimal insgesamt) - erst
             // bei mehr Durchgaengen steht die Zahl ausgeschrieben dabei.
             const male = Math.max(1, Number(opt.wiederholungen) || 1) + 1;
             if (male > 2) {
-                teileSvg.push(`<text x="${duenn + 4}" y="${LINIE_Y - 20}" font-size="12" font-weight="800" text-anchor="start" font-family="DM Sans, sans-serif" fill="${tinte}">${male}×</text>`);
+                teileSvg.push(`<text x="${dick + 2}" y="${LINIE_Y - 20}" font-size="12" font-weight="800" text-anchor="end" font-family="DM Sans, sans-serif" fill="${tinte}">${male}×</text>`);
                 inkOben = Math.min(inkOben, LINIE_Y - 32);
-                inkBis = Math.max(inkBis, duenn + 4 + String(male).length * 9 + 10);
             }
         } else if (opt.alsUebung) {
             // Schlussstrich-Paar (duenn, dann dick) statt des einfachen Strichs -
@@ -825,13 +825,17 @@ function stueckAnzeigeHtml(stueck, optionen) {
             teileSvg.push(`<line x1="${rechts}" y1="${LINIE_Y - 17}" x2="${rechts}" y2="${LINIE_Y + 15}" stroke="${tinte}" stroke-width="${istLetztesSystem ? 3 : 2}"/>`);
         }
 
+        // Linien genau von Anfangs- bis Schlusszeichen: am dicken Strich
+        // buendig mit dessen Aussenkante, nichts steht ueber (v91)
+        const linienVon = hatAnfangszeichen ? linksAnschlag - 7 : linksAnschlag - 1;
+        const linienBis = ((istLetztesSystem || opt.alsUebung) && (opt.wiederholung || opt.alsUebung)) ? rechts + 7 : rechts + 1;
         if (opt.notenlinien) {
             const linienHtml = [-16, -8, 0, 8, 16].map(dy =>
-                `<line x1="${linksAnschlag}" y1="${LINIE_Y + dy}" x2="${rechts + 8}" y2="${LINIE_Y + dy}" class="linien-fuenf" stroke="currentColor" stroke-width="1.3"/>`
+                `<line x1="${linienVon}" y1="${LINIE_Y + dy}" x2="${linienBis}" y2="${LINIE_Y + dy}" class="linien-fuenf" stroke="currentColor" stroke-width="1.3"/>`
             ).join('');
             teileSvg.unshift(linienHtml);
         } else {
-            teileSvg.unshift(`<line x1="${linksAnschlag}" y1="${LINIE_Y}" x2="${rechts + 8}" y2="${LINIE_Y}" stroke="${tinte}" stroke-width="1.5" opacity=".45"/>`);
+            teileSvg.unshift(`<line x1="${linienVon}" y1="${LINIE_Y}" x2="${linienBis}" y2="${LINIE_Y}" stroke="${tinte}" stroke-width="1.5" opacity=".45"/>`);
         }
 
         if (!isFinite(inkVon)) { inkVon = linksAnschlag; inkBis = rechts; }

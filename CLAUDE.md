@@ -723,3 +723,11 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 - „Als Übung“: Der Zeilenanfang ist das Spiegelbild des Schlussstrichs, also erst dick, dann dünn. Das gilt in allen drei Werkstätten (noten.js, `bwSystemSvg`, `dsSystemSvg`). Ohne „Als Übung“ bleibt der einfache Anfangsstrich.
 - Neutraler Schlüssel (`schluesselSvg`): Die Balken sind 4 breit und reichen genau von der 2. bis zur 4. Linie (halbe Höhe 8 bei Linienabstand 8). Zwischen Anfangsstrich und Schlüssel ist mehr Luft. Beat und Drumset rücken dafür 6 weiter ein (`bwSystemBreite` 116, `dsSystemBreite` 80).
 - v89: Der Vorlauf-Knopf hat eine feste Breite (3,6rem), damit 0, 1 oder 2 Punkte die Spieler-Leiste nicht umbrechen. Abspielen ist mindestens 7,6rem breit (vorher 10,5), der Lautstärke-Regler 3,8rem. Die Leiste braucht jetzt etwa 976 px statt 1023.
+
+## Bündige Linien und Wiederholungszeichen (v91, 15.11.2026)
+- Die Notenlinien laufen genau vom Anfangszeichen bis zum Schlusszeichen. Am dicken Strich enden sie bündig mit dessen Außenkante, danach steht nichts über. Rhythmus: `linienVon`/`linienBis` in `stueckAnzeigeHtml`. Beat/Drumset: `linienVon`, und `x` endet am dicken Strich.
+- Reihenfolge wie im Notensatz:
+  - Anfangswiederholung: dick, dünn, Punkte.
+  - Schlusswiederholung: Punkte, dünn, dick. Vorher war es dick, dünn, also falsch herum.
+  - Doppelstrich bei „Als Übung“: vorn dick-dünn, hinten dünn-dick.
+- Die Zahl „3×“ steht rechtsbündig über dem Schlusszeichen und verlängert die Zeile nicht mehr.
