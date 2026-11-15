@@ -25,6 +25,9 @@
     --snare: #fb923c;
     --becken: #facc15;
     --tom: #4ade80;
+    --metro: #2dd4bf;
+    --metro-stark: #14b8a6;
+    --metro-hell: rgba(45, 212, 191, .12);
 }
 html[data-theme="light"] {
     --bg: #f8fafc;
@@ -47,6 +50,9 @@ html[data-theme="light"] {
     --snare: #ea580c;
     --becken: #a16207;
     --tom: #16a34a;
+    --metro: #0d9488;
+    --metro-stark: #0f766e;
+    --metro-hell: rgba(13, 148, 136, .09);
 }
 
 * { box-sizing: border-box; }
@@ -756,3 +762,105 @@ body.mitlesen-feld .bw-cursor { display: none; }
 .eigen-stempel .palette-baustein { border-style: dashed; }
 .eigen-stempel-weg { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--rand-schwach); background: var(--bg); color: var(--text); font-size: .8rem; line-height: 1; cursor: pointer; padding: 0; }
 .eigen-stempel-weg:hover { border-color: var(--warnung); color: var(--warnung); }
+
+
+/* ============================================================
+   METRONOM in Tuerkis (--metro): hebt sich vom Violett der Werkstatt ab,
+   damit man es sofort findet - im Kasten ueber den Noten und als
+   Uebe-Metronom oben rechts (js/uebemetronom.js).
+   ============================================================ */
+.metronom-gruppen { border-color: var(--metro); background: var(--metro-hell); }
+@media (min-width: 641px) { .metronom-gruppen > * + * { border-left-color: color-mix(in srgb, var(--metro) 35%, transparent) !important; } }
+.metronom-gruppen .stufen-name { color: var(--metro); }
+.metronom-gruppen .stufen > .btn:hover { border-color: var(--metro); }
+.metro-punkt.eins { border-color: var(--metro); }
+.metro-punkt.an { background: var(--metro); border-color: var(--metro); }
+.metronom-gruppen [data-rolle="start"].an { background: var(--metro-stark); border-color: var(--metro-stark); color: #fff; }
+.metronom-feld input[type="range"] { accent-color: var(--metro); }
+.metronom-tempo-wert { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; }
+.metronom-tempo-wert .stufen-eingabe { font-size: 1.05rem; width: 3.4rem; }
+.metronom-tempo-wert small { font-size: .62rem; font-weight: 700; color: var(--text-gedaempft); }
+.stufen > .btn.metronom-tap, .stufen > .btn.tempo-schritt-knopf, .btn.tempo-schritt-knopf { font-size: .72rem; font-weight: 800; padding: .25rem .45rem; }
+.btn.tempo-schritt-knopf { color: var(--metro); border-color: color-mix(in srgb, var(--metro) 50%, transparent); min-width: 2.4rem; }
+
+/* Knopf in der Kopfzeile */
+.uebe-metronom-knopf { color: var(--metro); border-color: var(--metro); gap: .4rem; }
+.uebe-metronom-knopf.offen { background: var(--metro-hell); }
+.uebe-metronom-knopf.laeuft { background: var(--metro-stark); color: #fff; }
+.uebe-metronom-knopf.laeuft i { animation: um-wackeln .6s ease-in-out infinite alternate; }
+@keyframes um-wackeln { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+
+/* Pop-up */
+.uebe-metronom {
+    position: fixed; z-index: 60; right: 16px; top: 4.4rem;
+    width: min(330px, calc(100vw - 32px)); max-height: calc(100dvh - 5.4rem); overflow-y: auto;
+    display: flex; flex-direction: column; align-items: stretch; gap: .6rem;
+    padding: .8rem 1rem 1rem; border: 2px solid var(--metro); border-radius: 18px;
+    background: var(--bg-erhoben); box-shadow: var(--schatten), 0 0 0 4px var(--metro-hell);
+}
+.uebe-metronom[hidden] { display: none; }
+.um-kopf { display: flex; align-items: center; gap: .4rem; }
+.um-kopf b { color: var(--metro); font-size: .95rem; display: inline-flex; gap: .4rem; align-items: center; }
+.um-kopf .fuellt { flex: 1; }
+.um-kopf .btn-icon { padding: .3rem .5rem; text-decoration: none; }
+.um-punkte { display: flex; justify-content: center; gap: .5rem; min-height: 16px; }
+.um-punkt { width: 14px; height: 14px; border-radius: 50%; background: var(--rand-schwach); border: 1px solid var(--rand); transition: background .05s; }
+.um-punkt.eins { width: 16px; height: 16px; border-color: var(--metro); }
+.um-punkt.an { background: var(--metro); border-color: var(--metro); box-shadow: 0 0 10px var(--metro); }
+.uebe-metronom.still .um-punkt { background: none; border-style: dashed; }
+
+.um-rad { position: relative; width: min(230px, 70vw); aspect-ratio: 1; margin: 0 auto; border-radius: 50%;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+.um-rad:focus-visible { box-shadow: 0 0 0 3px var(--metro-hell); }
+.um-rad.dreht { cursor: grabbing; }
+.um-rad svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.um-spur { fill: none; stroke: var(--rand-schwach); stroke-width: 34; }
+.um-strich { stroke: var(--text-schwach); stroke-width: 2; stroke-linecap: round; }
+.um-strich.lang { stroke: var(--text-gedaempft); stroke-width: 3; }
+.um-griff { fill: var(--metro); stroke: var(--bg-erhoben); stroke-width: 3; }
+.um-rad.dreht .um-griff { fill: var(--warnung); }
+.um-bereich-hinten { fill: none; stroke: var(--rand-schwach); stroke-width: 6; stroke-linecap: round; }
+.um-bereich { fill: none; stroke: var(--metro); stroke-width: 6; stroke-linecap: round; }
+.um-mitte {
+    position: absolute; left: 21%; top: 21%; width: 58%; height: 58%; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    background: var(--bg-karte); border: 2px solid var(--rand); color: var(--text); padding: 0;
+}
+.um-mitte:hover, .uebe-metronom.laeuft .um-mitte { border-color: var(--metro); }
+.um-bpm { font-size: 2.6rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.um-einheit { font-size: .65rem; font-weight: 800; color: var(--text-gedaempft); letter-spacing: .08em; }
+.um-name { font-size: .8rem; font-weight: 800; color: var(--metro); }
+.um-start-zeichen { font-size: .7rem; color: var(--text-gedaempft); margin-top: .15rem; }
+.um-mitte.puls { animation: um-puls .18s ease-out; }
+@keyframes um-puls { from { box-shadow: 0 0 0 6px var(--metro-hell); border-color: var(--metro); } to { box-shadow: 0 0 0 0 transparent; } }
+.um-hinweis { margin: -.2rem 0 0; text-align: center; font-size: .7rem; color: var(--text-schwach); }
+
+.um-schritte { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; }
+.um-schritte .btn { justify-content: center; padding: .45rem 0; font-weight: 800; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.um-schritte .um-tap { color: var(--metro); border-color: var(--metro); }
+.um-takte { display: flex; }
+.um-takte .btn { flex: 1; justify-content: center; padding: .35rem 0; font-size: .8rem; }
+.um-takte .btn.an, .um-uebung .btn.an { background: var(--metro-stark); border-color: var(--metro-stark); color: #fff; }
+.um-status { text-align: center; font-size: .8rem; padding: .35rem; border-radius: 10px; background: var(--metro-hell); }
+.um-uebungen summary { cursor: pointer; font-size: .8rem; font-weight: 700; color: var(--text-gedaempft); }
+.um-uebung { display: flex; flex-direction: column; gap: .3rem; margin-top: .5rem; font-size: .78rem; color: var(--text-gedaempft); }
+.um-uebung .btn { align-self: flex-start; font-size: .8rem; padding: .3rem .6rem; }
+.um-uebung select { padding: .1rem .2rem; font-size: .78rem; }
+.um-laut { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--text-gedaempft); }
+.um-laut input { flex: 1; accent-color: var(--metro); }
+.um-laut span { min-width: 2.6rem; text-align: right; font-variant-numeric: tabular-nums; }
+.btn.um-gross-start { justify-content: center; padding: .65rem; font-size: 1.05rem; font-weight: 800;
+    background: var(--metro-stark); border-color: var(--metro-stark); color: #fff; }
+.btn.um-gross-start.laeuft { background: var(--gefahr); border-color: var(--gefahr); }
+@media (max-width: 560px) {
+    .uebe-metronom { top: auto; bottom: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100dvh - 24px); }
+}
+@media print { .uebe-metronom, .uebe-metronom-knopf { display: none !important; } }
+
+/* Ersatz-Vollbild (js/vollbild.js): wenn der Browser kein Element-Vollbild
+   kann (iPhone, manche iPad-Browser), liegt die Karte fest ueber allem. */
+.vollbild-ersatz { z-index: 50 !important; height: 100dvh !important; }
+body.vollbild-offen { overflow: hidden; }
+body.vollbild-offen .kopfzeile { z-index: 1; }
+/* Safari (iPad) kennt teils nur :-webkit-full-screen */
+#anzeige-karte:-webkit-full-screen { position: fixed; inset: 0; width: 100vw; height: 100vh; background: var(--bg-karte); }

@@ -631,3 +631,18 @@ Fix scheinbar wirkungslos gemacht. Bei jeder inhaltlichen Änderung also
 Seed/Reproduzierbarkeit und Schwierigkeitsstufen für den Generator,
 mehrseitige Arbeitsblätter mit nummerierten Aufgaben und Lösungsblatt,
 Schülerraum mit Fernbedienung/Diktat - noch nicht gebaut.
+
+## Vollbild und Übe-Metronom (v77, 15.11.2026)
+
+- `js/vollbild.js`: `vollbildEinrichten(karte, knopf, nachWechsel)` für alle
+  drei Werkstätten. Nutzt `requestFullscreen` oder `webkitRequestFullscreen`
+  (iPad-Safari) und hört auf beide Change-Events. Gibt es kein
+  Element-Vollbild oder wird es abgelehnt, legt sich die Karte als
+  Ersatz-Vollbild (`.vollbild-ersatz`) über die Seite; Esc beendet es.
+- `js/uebemetronom.js`: freies Übe-Metronom als Pop-up (Knopf „Metronom“
+  in der Kopfzeile), nach Beat Vault mit Drehrad aus `metronom/`.
+  Werkstatt-Start stoppt es und umgekehrt. Gespeichert in `rw-uebemetronom`.
+- Farbe des Metronoms: Türkis (`--metro`), damit es sich vom Violett abhebt.
+- Tempo-Schritte −/+: Schalter `.tempo-schritt-knopf` (±5 / ±1), gilt für
+  alle Werkstätten, gespeichert in `rw-tempo-schritt`. Tom will beides:
+  5er sind praktisch, 1er zum Feinstellen. Rhythmus-Tempo 20–240.

@@ -805,6 +805,7 @@ const BeatSpieler = (function () {
         if (!c) return;
         Vorklatschen.stoppen(true);
         Metronom.stoppen();
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
         ctx = c;
         bwRideLaden(ctx);   // Aufnahme dekodieren, bevor das erste Ride faellt
         summe = bwSummeBauen(ctx);
@@ -1888,20 +1889,10 @@ function bwEinrichten() {
     // Vollbild nur fuer das Notenbild samt Abspiel-Leiste (Beamer)
     const vollKarte = document.getElementById('bw-anzeige-karte');
     const vollKnopf = document.getElementById('bw-vollbild');
-    vollKnopf.addEventListener('click', () => {
-        if (document.fullscreenElement) document.exitFullscreen();
-        else if (vollKarte.requestFullscreen) vollKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
-        else zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger');
-    });
-    document.addEventListener('fullscreenchange', () => {
-        const an = document.fullscreenElement === vollKarte;
-        vollKarte.classList.toggle('vollbild', an);
-        vollKnopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i> Verlassen' : '<i class="fa-solid fa-expand"></i> Vollbild';
-        setTimeout(bwAnzeigeZeichnen, 50);
-    });
+    vollbildEinrichten(vollKarte, vollKnopf, () => bwAnzeigeZeichnen());
     const tempo = (w) => { beat.bpm = Math.max(BW_BPM_MIN, Math.min(200, Math.round(Number(w) || 90))); beatSpeichern(); bwSchalterZeichnen(); };
-    document.getElementById('bw-tempo-minus').addEventListener('click', () => tempo(beat.bpm - 5));
-    document.getElementById('bw-tempo-plus').addEventListener('click', () => tempo(beat.bpm + 5));
+    gedrueckthalten(document.getElementById('bw-tempo-minus'), () => tempo(tempoNachSchritt(beat.bpm, -1)));
+    gedrueckthalten(document.getElementById('bw-tempo-plus'), () => tempo(tempoNachSchritt(beat.bpm, 1)));
     document.getElementById('bw-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
     document.getElementById('bw-metronom').addEventListener('change', (e) => { beat.metronom = e.target.checked; beatSpeichern(); });
     document.getElementById('bw-zaehlzeiten').addEventListener('change', (e) => { beat.zaehlzeiten = e.target.checked; bwAenderung(); });

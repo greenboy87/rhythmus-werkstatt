@@ -741,26 +741,14 @@ function init() {
 
     const vollbildKarte = document.getElementById('anzeige-karte');
     const vollbildBtn = document.getElementById('vollbild-btn');
-    vollbildBtn.addEventListener('click', () => {
-        if (document.fullscreenElement) document.exitFullscreen();
-        else vollbildKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
-    });
     // Hoehe des Bedien-Kopfs als CSS-Variable: Im Vollbild haelt #anzeige
     // oben (und symmetrisch unten) genau so viel Abstand - sonst schiebt
     // eine grosse Skalierung die Noten unter die Bedienelemente.
     const vollbildKopf = vollbildKarte.querySelector('.vollbild-kopf');
     const kopfHoeheMerken = () => vollbildKarte.style.setProperty('--kopf-hoehe', vollbildKopf.offsetHeight + 'px');
     if (window.ResizeObserver) new ResizeObserver(kopfHoeheMerken).observe(vollbildKopf);
-    document.addEventListener('fullscreenchange', () => {
-        const an = document.fullscreenElement === vollbildKarte;
-        vollbildKarte.classList.toggle('vollbild', an);
-        vollbildBtn.innerHTML = an
-            ? '<i class="fa-solid fa-compress"></i> Verlassen'
-            : '<i class="fa-solid fa-expand"></i> Vollbild';
-        kopfHoeheMerken();
-        // Die verfuegbare Breite aendert sich stark - Systeme neu aufteilen.
-        setTimeout(anzeigeNeuZeichnen, 50);
-    });
+    // Die verfuegbare Breite aendert sich stark - Systeme neu aufteilen.
+    vollbildEinrichten(vollbildKarte, vollbildBtn, () => { kopfHoeheMerken(); anzeigeNeuZeichnen(); });
 
     generatorAufbauen();
 
@@ -848,7 +836,7 @@ function rhythmusTaste(e) {
         if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
         document.getElementById('abspielen-btn').click();
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        Metronom.tempoSetzen(Metronom.bpm() + (e.key === 'ArrowUp' ? 5 : -5));
+        Metronom.tempoSetzen(Metronom.bpm() + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 5 : 1));
     } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && takte) {
         const r = e.key === 'ArrowRight' ? 1 : -1;
         const jetzt = loopAuswahl ? (r > 0 ? loopAuswahl.bis : loopAuswahl.von) : (r > 0 ? -1 : takte);

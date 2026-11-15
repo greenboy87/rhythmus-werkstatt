@@ -254,6 +254,36 @@ function metronomKlick(ctx, zeit, betont, ziel) {
     return o;
 }
 
+/* Tempo-Grenzen und Tempobezeichnung - gemeinsam fuer das Metronom der
+   Rhythmus-Werkstatt und das Uebe-Metronom oben (js/uebemetronom.js). */
+const TEMPO_MIN = 20, TEMPO_MAX = 240;
+const TEMPO_NAMEN = [[40, 'Grave'], [60, 'Largo'], [66, 'Larghetto'], [76, 'Adagio'], [108, 'Andante'],
+    [120, 'Moderato'], [156, 'Allegro'], [176, 'Vivace'], [200, 'Presto'], [9999, 'Prestissimo']];
+function tempoBezeichnung(bpm) { return TEMPO_NAMEN.find(([g]) => bpm < g)[1]; }
+
+/* Schrittweite der Tempo-Knoepfe −/+: 5 (springt auf glatte 5er-Werte)
+   oder 1. Ein Schalter .tempo-schritt-knopf neben jedem Tempo, gilt fuer
+   alle Werkstaetten zusammen, das Geraet merkt es sich. */
+let tempoSchrittweite = 5;
+try { if (localStorage.getItem('rw-tempo-schritt') === '1') tempoSchrittweite = 1; } catch (e) { /* egal */ }
+function tempoNachSchritt(bpm, richtung) {
+    if (tempoSchrittweite === 1) return bpm + richtung;
+    return richtung > 0 ? Math.floor(bpm / 5) * 5 + 5 : Math.ceil(bpm / 5) * 5 - 5;
+}
+function tempoSchrittKnoepfeZeichnen() {
+    document.querySelectorAll('.tempo-schritt-knopf').forEach(k => {
+        k.textContent = '±' + tempoSchrittweite;
+        k.title = tempoSchrittweite === 5 ? '−/+ gehen in 5er-Schritten - tippen für 1er-Schritte' : '−/+ gehen in 1er-Schritten - tippen für 5er-Schritte';
+    });
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.tempo-schritt-knopf')) return;
+    tempoSchrittweite = tempoSchrittweite === 5 ? 1 : 5;
+    try { localStorage.setItem('rw-tempo-schritt', String(tempoSchrittweite)); } catch (err) { /* egal */ }
+    tempoSchrittKnoepfeZeichnen();
+});
+document.addEventListener('DOMContentLoaded', tempoSchrittKnoepfeZeichnen);
+
 /* −/+-Knopf: Tippen = ein Schritt, Gedrückthalten wiederholt (erst nach
    0,4 s, dann alle 0,1 s) - auch auf dem iPad (Pointer-Events). */
 function gedrueckthalten(knopf, schritt) {
@@ -264,7 +294,11 @@ function gedrueckthalten(knopf, schritt) {
         e.preventDefault();
         aufhoeren();
         schritt();
-        warten = setTimeout(() => { takt = setInterval(schritt, 100); }, 400);
+        // Erst langsam (10 pro Sekunde), nach 1,5 s schneller (25 pro Sekunde)
+        warten = setTimeout(() => {
+            takt = setInterval(schritt, 100);
+            warten = setTimeout(() => { clearInterval(takt); takt = setInterval(schritt, 40); }, 1500);
+        }, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(art => knopf.addEventListener(art, aufhoeren));
     // Tastatur (Enter/Leertaste auf dem fokussierten Knopf)
@@ -317,9 +351,19 @@ const Metronom = (function () {
         jedeAnsicht((w, teil) => {
             const anzeige = teil('tempo');
             if (anzeige && document.activeElement !== anzeige) anzeige.value = bpm;
+            const name = teil('tempo-name');
+            if (name) name.textContent = tempoBezeichnung(bpm);
         });
     }
-    function tempoSetzen(wert) { bpm = Math.max(40, Math.min(200, Math.round(Number(wert) || 90))); tempoZeichnen(); }
+    function tempoSetzen(wert) { bpm = Math.max(TEMPO_MIN, Math.min(TEMPO_MAX, Math.round(Number(wert) || 90))); tempoZeichnen(); }
+    let tipps = [];
+    function tippen() {
+        // Zwei oder mehr Tipps im Abstand unter 2 s = Tempo aus dem Mittel
+        const jetzt = performance.now();
+        if (tipps.length && jetzt - tipps[tipps.length - 1] > 2000) tipps = [];
+        tipps.push(jetzt); tipps = tipps.slice(-6);
+        if (tipps.length >= 2) tempoSetzen(60000 / ((tipps[tipps.length - 1] - tipps[0]) / (tipps.length - 1)));
+    }
 
     let stummVorher = 0.6;
     function lautstaerkeZeichnen() {
@@ -356,6 +400,7 @@ const Metronom = (function () {
         const ctx = tonBereit(starten);
         if (!ctx) return;
         Vorklatschen.stoppen(true);
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
         laeuft = true; schlag = 0; takt = 0;
         naechste = ctx.currentTime + 0.12;
         knopfZeichnen(); pulsZeichnen(-1);
@@ -389,11 +434,16 @@ const Metronom = (function () {
         // Puls, Tempo, Vorlauf, Lautstärke, freies Metronom.
         wurzel.innerHTML = `
             <span class="metronom-puls" data-rolle="puls" title="Puls - leuchtet beim Abspielen mit"></span>
-            <span class="stufen" title="Tempo in Schlägen pro Minute - −/+ in 5er-Schritten, Zahl antippen zum Eintippen, Pfeiltasten ↑↓">
-                <span class="stufen-name">Tempo</span>
+            <span class="stufen metronom-tempo" title="Tempo in Schlägen pro Minute - −/+ in 5er- oder 1er-Schritten (Schalter ±5/±1, gedrückt halten = schneller), Zahl antippen zum Eintippen, Tap = im Tempo tippen, Pfeiltasten ↑↓">
+                <span class="stufen-name"><i class="fa-solid fa-gauge-high"></i> Tempo</span>
                 <button type="button" class="btn" data-rolle="tempo-minus" aria-label="Langsamer">−</button>
-                <input type="number" class="stufen-wert stufen-eingabe" min="40" max="200" step="1" value="90" data-rolle="tempo" aria-label="Tempo in bpm">
+                <span class="metronom-tempo-wert">
+                    <input type="number" class="stufen-wert stufen-eingabe" min="${TEMPO_MIN}" max="${TEMPO_MAX}" step="1" value="90" data-rolle="tempo" aria-label="Tempo in bpm">
+                    <small data-rolle="tempo-name"></small>
+                </span>
                 <button type="button" class="btn" data-rolle="tempo-plus" aria-label="Schneller">+</button>
+                <button type="button" class="btn tempo-schritt-knopf">±5</button>
+                <button type="button" class="btn metronom-tap" data-rolle="tap" title="Mehrmals im gewünschten Tempo antippen">Tap</button>
             </span>
             <span class="stufen" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
                 <span class="stufen-name">Vorlauf</span>
@@ -407,10 +457,11 @@ const Metronom = (function () {
                 <button type="button" data-rolle="start" class="btn btn-icon" title="Metronom frei laufen lassen (ohne Rhythmus), bis du stoppst"><i class="fa-solid fa-play"></i></button>
             </span>`;
         const teil = (r) => wurzel.querySelector(`[data-rolle="${r}"]`);
-        // Auf das naechste Vielfache von 5 springen, dann in 5er-Schritten
-        const tempoSchritt = (richtung) => tempoSetzen(richtung > 0 ? Math.floor(bpm / 5) * 5 + 5 : Math.ceil(bpm / 5) * 5 - 5);
-        gedrueckthalten(teil('tempo-minus'), () => tempoSchritt(-1));
-        gedrueckthalten(teil('tempo-plus'), () => tempoSchritt(1));
+        // 5er- oder 1er-Schritte (Schalter ±5/±1), Gedrueckthalten wiederholt
+        gedrueckthalten(teil('tempo-minus'), () => tempoSetzen(tempoNachSchritt(bpm, -1)));
+        gedrueckthalten(teil('tempo-plus'), () => tempoSetzen(tempoNachSchritt(bpm, 1)));
+        teil('tap').addEventListener('pointerdown', (e) => { e.preventDefault(); tippen(); });
+        teil('tap').addEventListener('click', (e) => { if (e.detail === 0) tippen(); });
         const tempoFeld = teil('tempo');
         tempoFeld.addEventListener('change', () => tempoSetzen(tempoFeld.value));
         tempoFeld.addEventListener('blur', tempoZeichnen);
@@ -423,6 +474,7 @@ const Metronom = (function () {
         ansichten = ansichten.filter(a => a.isConnected && a !== wurzel);
         ansichten.push(wurzel);
         tempoZeichnen(); pulsZeichnen(-1); knopfZeichnen(); vorlaufZeichnen(); lautstaerkeZeichnen();
+        tempoSchrittKnoepfeZeichnen();
     }
 
     return {
@@ -605,6 +657,7 @@ const Vorklatschen = (function () {
         const c = tonBereit(() => starten(stueck, host, nurMetronom, wiederholungen, zeilen, endlos, taktVersatz, abViertel));
         if (!c) return;
         Metronom.stoppen();
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
         ctx = c;
         summe = ctx.createGain();
         summe.gain.value = 1;

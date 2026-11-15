@@ -80,7 +80,7 @@ function linkLesen(hash) {
         const n = Number(text);
         return n >= min && n <= max ? n : null;
     };
-    const bpm = zahl(werte.bpm, 40, 200);
+    const bpm = zahl(werte.bpm, 20, 240);
     if (bpm !== null) erg.bpm = bpm;
     const vorlauf = zahl(werte.v, 0, 4);
     if (vorlauf !== null) erg.vorlauf = vorlauf;

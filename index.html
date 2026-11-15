@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=76">
-<link rel="stylesheet" href="css/druck.css?v=76">
+<link rel="stylesheet" href="css/stil.css?v=77">
+<link rel="stylesheet" href="css/druck.css?v=77">
 </head>
 <body>
 
@@ -23,6 +23,7 @@
     </nav>
     <span class="untertitel" id="kopf-untertitel">Takte bauen · vorklatschen · einüben</span>
     <span class="fuellt"></span>
+    <button type="button" class="btn uebe-metronom-knopf" id="uebe-metronom-knopf" aria-expanded="false" aria-controls="uebe-metronom" title="Metronom zum Üben öffnen - mit Drehrad, Tap, Taktart und Übungen"><i class="fa-solid fa-stopwatch"></i> Metronom</button>
     <button type="button" class="btn" id="theme-knopf" title="Helles/dunkles Layout umschalten">
         <i class="fa-solid fa-circle-half-stroke"></i>
     </button>
@@ -199,7 +200,7 @@
             </span>
             <details class="hilfe" id="loop-tipp">
                 <summary class="btn btn-icon" title="Tipps und Tastatur"><i class="fa-solid fa-circle-question"></i></summary>
-                <p class="anzeige-tipp">Note antippen = Akzent an/aus (mit „Startpunkt“: ab dieser Note abspielen). Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück bzw. von vorn</span></p>
+                <p class="anzeige-tipp">Note antippen = Akzent an/aus (mit „Startpunkt“: ab dieser Note abspielen). Neben die Noten in einen Takt tippen = nur diesen Takt loopen, weitere Takte erweitern den Bereich. Bei „Als Übung“ wählt die Nummer die ganze Übung.<br><span class="bw-tastatur"><b>Tastatur:</b> <kbd>Leertaste</kbd> Abspielen/Stopp · <kbd>↑</kbd><kbd>↓</kbd> Tempo ±1, mit Umschalt ±5 (auch während es läuft) · <kbd>←</kbd><kbd>→</kbd> Takt zum Loopen wählen · <kbd>Esc</kbd> ganzes Stück bzw. von vorn</span></p>
             </details>
         </div>
 
@@ -334,6 +335,7 @@
             <button type="button" class="btn" id="bw-tempo-minus">−</button>
             <span class="btn" id="bw-tempo-anzeige" style="min-width:5.2rem; text-align:center">90 bpm</span>
             <button type="button" class="btn" id="bw-tempo-plus">+</button>
+            <button type="button" class="btn tempo-schritt-knopf">±5</button>
             <input type="range" min="20" max="200" step="1" value="90" id="bw-tempo-regler" style="width:7rem" aria-label="Tempo">
             <span class="leiste" style="gap:.4rem;" title="Metronom-Klick auf jeder Zählzeit mitspielen">
                 <label class="schalter"><input type="checkbox" id="bw-metronom"><span class="schalter-schieber"></span></label>
@@ -454,6 +456,7 @@
             <button type="button" class="btn" id="ds-tempo-minus">−</button>
             <span class="btn" id="ds-tempo-anzeige" style="min-width:5.2rem; text-align:center">90 bpm</span>
             <button type="button" class="btn" id="ds-tempo-plus">+</button>
+            <button type="button" class="btn tempo-schritt-knopf">±5</button>
             <input type="range" min="20" max="200" step="1" value="90" id="ds-tempo-regler" style="width:7rem" aria-label="Tempo">
             <span class="leiste" style="gap:.4rem;" title="Metronom-Klick auf jeder Zählzeit mitspielen">
                 <label class="schalter"><input type="checkbox" id="ds-metronom"><span class="schalter-schieber"></span></label>
@@ -706,22 +709,24 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=76"></script>
-<script src="js/noten.js?v=76"></script>
-<script src="js/editor.js?v=76"></script>
-<script src="js/audio.js?v=76"></script>
-<script src="js/generator.js?v=76"></script>
-<script src="js/link.js?v=76"></script>
-<script src="js/vendor/lame.min.js?v=76"></script>
-<script src="js/export.js?v=76"></script>
-<script src="js/pdf.js?v=76"></script>
-<script src="js/app.js?v=76"></script>
-<script src="js/beat.js?v=76"></script>
-<script src="js/drumset.js?v=76"></script>
-<script src="js/eigene.js?v=76"></script>
-<script src="js/zaehlkern.js?v=76"></script>
-<script src="js/zaehlspiel.js?v=76"></script>
-<script src="js/spiele.js?v=76"></script>
-<script src="js/reiter.js?v=76"></script>
+<script src="js/version.js?v=77"></script>
+<script src="js/noten.js?v=77"></script>
+<script src="js/editor.js?v=77"></script>
+<script src="js/audio.js?v=77"></script>
+<script src="js/vollbild.js?v=77"></script>
+<script src="js/uebemetronom.js?v=77"></script>
+<script src="js/generator.js?v=77"></script>
+<script src="js/link.js?v=77"></script>
+<script src="js/vendor/lame.min.js?v=77"></script>
+<script src="js/export.js?v=77"></script>
+<script src="js/pdf.js?v=77"></script>
+<script src="js/app.js?v=77"></script>
+<script src="js/beat.js?v=77"></script>
+<script src="js/drumset.js?v=77"></script>
+<script src="js/eigene.js?v=77"></script>
+<script src="js/zaehlkern.js?v=77"></script>
+<script src="js/zaehlspiel.js?v=77"></script>
+<script src="js/spiele.js?v=77"></script>
+<script src="js/reiter.js?v=77"></script>
 </body>
 </html>

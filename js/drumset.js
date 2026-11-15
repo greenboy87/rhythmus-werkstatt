@@ -496,6 +496,7 @@ const DrumSpieler = (function () {
         if (!c) return;
         Vorklatschen.stoppen(true);
         Metronom.stoppen();
+        if (typeof UebeMetronom !== 'undefined') UebeMetronom.stoppen();
         BeatSpieler.stoppen();
         ctx = c;
         bwRideLaden(ctx);
@@ -997,20 +998,10 @@ function dsEinrichten() {
     window.addEventListener('beforeprint', () => { if (document.body.classList.contains('druck-drumset')) dsDruckZeichnen(); });
     const vollKarte = document.getElementById('ds-anzeige-karte');
     const vollKnopf = document.getElementById('ds-vollbild');
-    vollKnopf.addEventListener('click', () => {
-        if (document.fullscreenElement) document.exitFullscreen();
-        else if (vollKarte.requestFullscreen) vollKarte.requestFullscreen().catch(() => zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger'));
-        else zeigeToast('Vollbild wird von diesem Browser nicht unterstützt.', 'danger');
-    });
-    document.addEventListener('fullscreenchange', () => {
-        const an = document.fullscreenElement === vollKarte;
-        vollKarte.classList.toggle('vollbild', an);
-        vollKnopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i> Verlassen' : '<i class="fa-solid fa-expand"></i> Vollbild';
-        setTimeout(dsAnzeigeZeichnen, 50);
-    });
+    vollbildEinrichten(vollKarte, vollKnopf, () => dsAnzeigeZeichnen());
     const tempo = (w) => { ds.bpm = Math.max(20, Math.min(200, Math.round(Number(w) || 90))); dsSpeichern(); dsSchalterZeichnen(); };
-    document.getElementById('ds-tempo-minus').addEventListener('click', () => tempo(ds.bpm - 5));
-    document.getElementById('ds-tempo-plus').addEventListener('click', () => tempo(ds.bpm + 5));
+    gedrueckthalten(document.getElementById('ds-tempo-minus'), () => tempo(tempoNachSchritt(ds.bpm, -1)));
+    gedrueckthalten(document.getElementById('ds-tempo-plus'), () => tempo(tempoNachSchritt(ds.bpm, 1)));
     document.getElementById('ds-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
     document.getElementById('ds-metronom').addEventListener('change', (e) => { ds.metronom = e.target.checked; dsSpeichern(); });
     document.getElementById('ds-zaehlzeiten').addEventListener('change', (e) => { ds.zaehlzeiten = e.target.checked; dsAenderung(); });
