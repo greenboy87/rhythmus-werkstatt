@@ -496,7 +496,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 /* Mitlesen: entweder Cursor (Standard) oder farbiges Feld, nie beides */
 body:not(.mitlesen-feld) .bw-system .bw-spiel.jetzt { fill: transparent; }
 body.mitlesen-feld .bw-cursor { display: none; }
-.mitlesen-knopf { min-width: 10.5rem; justify-content: center; }
+/* Abspiel-Leiste nur mit Symbolen: Mitlesen (Cursor | Feld), Loop, Vorspielen */
+.chip.chip-icon span { padding-left: .7rem; padding-right: .7rem; }
+.ton-symbol { position: relative; display: inline-flex; align-items: center; }
+.ton-symbol .fa-music { font-size: .62em; margin-left: .05em; transform: translateY(-.35em); }
+.vorspielen-knopf.aus .ton-symbol::after {
+    content: ''; position: absolute; left: -3px; right: -3px; top: 50%; height: 2px;
+    background: currentColor; transform: rotate(-35deg); border-radius: 2px;
+}
 /* Abspielen/Stopp gleich breit - sonst rutschen Tempo und Metronom daneben */
 #bw-abspielen, #ds-abspielen, #abspielen-btn { min-width: 10.5rem; justify-content: center; }
 @media print { #reiter-beat { display: none !important; } }

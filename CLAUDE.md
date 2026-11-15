@@ -685,3 +685,10 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
 - `instSortieren` wandelt das alte `'g'` in Marken für jedes Instrument um, damit alte Blätter und Links gleich aussehen. Marken ohne ihr Instrument fallen weg.
 - Editor: Pro Notenkopf gibt es eine schmale Tippfläche `.kopf-feld[data-inst]`. Im Ghost-Modus wird nur das angetippte Instrument leise. Im Easy-Raster gilt der Ghost für die Zeile.
 - Link: Ghost = Instrument-Buchstabe groß (`V.hS` = Hi-Hat + leise Snare). Das alte `g` wird weiter gelesen.
+
+## Abspiel-Leiste mit Symbolen (v83, 15.11.2026)
+- Die Abspiel-Leiste ist in allen drei Werkstätten gleich aufgebaut: Abspielen | Mitlesen-Segment (`[data-mitlesen=cursor|feld]`, nur Symbole) | Loop (`.chip.chip-icon`, nur Symbol) | Vorspielen-Knopf (`#vorspielen`, `#bw-vorspielen`, `#ds-vorspielen`) | Metronom-Kasten.
+- Vorspielen-Knopf: `vorspielenKnopfZeichnen(knopf, an)` in spieler.js zeigt Lautsprecher mit Note, aus = durchgestrichen.
+  - Rhythmus: Der Knopf schaltet die versteckte Auswahl `abspielen-modus` um.
+  - Beat und Drumset: `bwSelbst`/`dsSelbst` (nicht gespeichert). Dann erklingen keine Noten, der Metronom-Klick läuft immer.
+- Nur noch Symbole bei Verdecken (Auge), Vollbild, Speichern-Menü, Durchgänge (↻), Größe (Lupe) und Tempo (Tacho). Erklärung steht im `title`.

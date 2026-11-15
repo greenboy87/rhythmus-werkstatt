@@ -173,6 +173,7 @@ let bwLoopAuswahl = null;
 let bwAnzeigeProZeile = 4;   // zuletzt gezeichnete Takte je Zeile (fuer "Als Uebung" im auto-Modus)
 let bwAktiv = { ebene: 'oben', platz: 0 };
 let bwGhostModus = false;
+let bwSelbst = false;   // Vorspielen aus: nur Metronom + Mitlesen (nicht gespeichert)
 let bwOffenModus = false;   // an: Hi-Hat antippen = offen/zu (nicht gespeichert)
 /* Hi-Hat zu <-> offen; andere Becken bleiben, ohne Becken kommt eine offene dazu */
 function hiHatOeffnen(note) {
@@ -779,7 +780,7 @@ const BeatSpieler = (function () {
         const platz = Math.floor(achtel / 2), h = achtel % 2;
         const dauer = 60 / beat.bpm / 4;
         if (h === 0) {
-            if (beat.metronom) metronomKlick(ctx, t, platz % bwS() === 0);
+            if (beat.metronom || bwSelbst) metronomKlick(ctx, t, platz % bwS() === 0);
             anzeigeTimer.push(setTimeout(() => { if (laeuft) { markieren(platz); if (bwMetro) bwMetro.puls(platz % bwS()); } }, Math.max(0, (t - ctx.currentTime) * 1000)));
             if (anzeigeTimer.length > 64) anzeigeTimer = anzeigeTimer.slice(-16);
         }
@@ -787,7 +788,7 @@ const BeatSpieler = (function () {
             const karte = platzKarte(abgeleitet(eb, platz));
             for (let j = 0; j < 2; j++) {
                 const k = h * 2 + j, inst = karte.get(k);
-                if (inst) bwNoteSpielen(ctx, t + j * dauer, summe, inst, k);
+                if (inst && !bwSelbst) bwNoteSpielen(ctx, t + j * dauer, summe, inst, k);
             }
         });
         spur.push({ zeit: t, platz, h, dauer: 2 * dauer });
@@ -1293,14 +1294,12 @@ let mitlesenArt = 'cursor';
 try { if (localStorage.getItem('rw-mitlesen') === 'feld') mitlesenArt = 'feld'; } catch (e) { /* egal */ }
 function mitlesenZeichnen() {
     document.body.classList.toggle('mitlesen-feld', mitlesenArt === 'feld');
-    document.querySelectorAll('.mitlesen-knopf').forEach(b => {
-        b.innerHTML = mitlesenArt === 'feld' ? '<i class="fa-regular fa-square"></i> Mitlesen: Feld' : '<i class="fa-solid fa-i-cursor"></i> Mitlesen: Cursor';
-    });
+    document.querySelectorAll('[data-mitlesen]').forEach(b => b.classList.toggle('an', b.dataset.mitlesen === mitlesenArt));
 }
 document.addEventListener('DOMContentLoaded', () => {
     mitlesenZeichnen();
-    document.querySelectorAll('.mitlesen-knopf').forEach(b => b.addEventListener('click', () => {
-        mitlesenArt = mitlesenArt === 'feld' ? 'cursor' : 'feld';
+    document.querySelectorAll('[data-mitlesen]').forEach(b => b.addEventListener('click', () => {
+        mitlesenArt = b.dataset.mitlesen;
         try { localStorage.setItem('rw-mitlesen', mitlesenArt); } catch (e) { /* egal */ }
         mitlesenZeichnen();
     }));
@@ -1933,6 +1932,9 @@ function bwEinrichten() {
     const vollKarte = document.getElementById('bw-anzeige-karte');
     const vollKnopf = document.getElementById('bw-vollbild');
     vollbildEinrichten(vollKarte, vollKnopf, () => bwAnzeigeZeichnen());
+    const bwVorspielen = document.getElementById('bw-vorspielen');
+    vorspielenKnopfZeichnen(bwVorspielen, true);
+    bwVorspielen.addEventListener('click', () => { bwSelbst = !bwSelbst; vorspielenKnopfZeichnen(bwVorspielen, !bwSelbst); });
     bwMetro = werkstattMetronomBauen(document.getElementById('bw-metronom-kasten'), {
         bpm: () => beat.bpm, bpmSetzen: (x) => { beat.bpm = Math.max(BW_BPM_MIN, x); beatSpeichern(); },
         an: () => beat.metronom, anSetzen: (b) => { beat.metronom = b; beatSpeichern(); },
@@ -1947,7 +1949,9 @@ function bwEinrichten() {
     stufenBinden('bw-groesse-minus', 'bw-groesse-plus', (r) => { beat.groesse = Math.max(60, Math.min(300, beat.groesse + 10 * r)); beatSpeichern(); bwSchalterZeichnen(); bwAnzeigeZeichnen(); });
     document.getElementById('bw-verdecken').addEventListener('click', (e) => {
         const an = vollKarte.classList.toggle('anzeige-verdeckt');
-        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i> Zeigen' : '<i class="fa-solid fa-eye-slash"></i> Verdecken';
+        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+        e.currentTarget.classList.toggle('an', an);
+        e.currentTarget.title = an ? 'Notenbild zeigen' : 'Notenbild verdecken - erst hören, dann zeigen';
     });
     document.getElementById('bw-titel-speichern').addEventListener('click', () => document.getElementById('bw-blatt-speichern').click());
     document.getElementById('bw-farbe-anzeige').addEventListener('click', () => document.getElementById('bw-farbe').click());

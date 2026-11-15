@@ -439,7 +439,7 @@ const Metronom = (function () {
         wurzel.innerHTML = `
             <span class="metronom-puls" data-rolle="puls" title="Puls - leuchtet beim Abspielen mit"></span>
             <span class="stufen metronom-tempo" title="Tempo in Schlägen pro Minute - −/+ in 5er- oder 1er-Schritten (Schalter ±5/±1, gedrückt halten = schneller), Zahl antippen zum Eintippen, Tap = im Tempo tippen, Pfeiltasten ↑↓">
-                <span class="stufen-name"><i class="fa-solid fa-gauge-high"></i> Tempo</span>
+                <span class="stufen-name"><i class="fa-solid fa-gauge-high"></i></span>
                 <button type="button" class="btn" data-rolle="tempo-minus" aria-label="Langsamer">−</button>
                 <span class="metronom-tempo-wert">
                     <input type="number" class="stufen-wert stufen-eingabe" min="${TEMPO_MIN}" max="${TEMPO_MAX}" step="1" value="90" data-rolle="tempo" aria-label="Tempo in bpm">

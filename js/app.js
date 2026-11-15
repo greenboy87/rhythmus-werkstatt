@@ -114,7 +114,7 @@ function leisteAnzeigen() {
     document.getElementById('groesse-regler').value = Math.round(anzeigeSkalierung * 100);
     document.getElementById('anzeige-groesse-anzeige').textContent = Math.round(anzeigeSkalierung * 100) + '%';
     const modus = document.getElementById('abspielen-modus').value;
-    document.querySelectorAll('[data-modus]').forEach(b => b.classList.toggle('an', b.dataset.modus === modus));
+    vorspielenKnopfZeichnen(document.getElementById('vorspielen'), modus !== 'selbstklatschen');
 }
 
 function anzeigeNeuZeichnen() {
@@ -736,8 +736,10 @@ function init() {
     document.getElementById('verdecken-btn').addEventListener('click', (e) => {
         anzeigeVerdeckt = !anzeigeVerdeckt;
         e.currentTarget.innerHTML = anzeigeVerdeckt
-            ? '<i class="fa-solid fa-eye"></i> Zeigen'
-            : '<i class="fa-solid fa-eye-slash"></i> Verdecken';
+            ? '<i class="fa-solid fa-eye"></i>'
+            : '<i class="fa-solid fa-eye-slash"></i>';
+        e.currentTarget.classList.toggle('an', anzeigeVerdeckt);
+        e.currentTarget.title = anzeigeVerdeckt ? 'Notenbild zeigen' : 'Notenbild verdecken - erst hören, dann zeigen';
         anzeigeNeuZeichnen();
     });
 
@@ -793,10 +795,12 @@ function init() {
             : '<i class="fa-solid fa-play"></i> Abspielen';
     });
 
-    document.querySelectorAll('[data-modus]').forEach(b => b.addEventListener('click', () => {
-        document.getElementById('abspielen-modus').value = b.dataset.modus;
+    // Vorspielen an/aus (aus = selbst klatschen: nur Puls und Mitlesen)
+    document.getElementById('vorspielen').addEventListener('click', () => {
+        const wahl = document.getElementById('abspielen-modus');
+        wahl.value = wahl.value === 'selbstklatschen' ? 'vorklatschen' : 'selbstklatschen';
         leisteAnzeigen();
-    }));
+    });
 
     // Klang wechseln = gleich einmal hoeren (statt eigenem Anhoeren-Knopf).
     const klangWahl = document.getElementById('klatsch-sound-wahl');

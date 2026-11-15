@@ -23,7 +23,7 @@ function werkstattMetronomBauen(wurzel, cfg) {
     wurzel.innerHTML = `
         <span class="metronom-puls" data-rolle="puls" title="Puls - leuchtet beim Abspielen mit"></span>
         <span class="stufen metronom-tempo" title="Tempo in Schlägen pro Minute - −/+ in 5er- oder 1er-Schritten (Schalter ±5/±1, gedrückt halten = schneller), Zahl antippen zum Eintippen, Tap = im Tempo tippen">
-            <span class="stufen-name"><i class="fa-solid fa-gauge-high"></i> Tempo</span>
+            <span class="stufen-name"><i class="fa-solid fa-gauge-high"></i></span>
             <button type="button" class="btn" data-rolle="tempo-minus" aria-label="Langsamer">−</button>
             <span class="metronom-tempo-wert">
                 <input type="number" class="stufen-wert stufen-eingabe" min="${TEMPO_MIN}" max="200" step="1" value="90" data-rolle="tempo" aria-label="Tempo in bpm">
@@ -147,6 +147,23 @@ const FreiesMetronom = (function () {
         istAn: (a) => (a ? aktiv === a : !!aktiv)
     };
 })();
+
+/* VORSPIELEN an/aus - in allen drei Werkstaetten derselbe Knopf neben
+   Loop. An: die Noten erklingen. Aus: selbst spielen/klatschen - nur
+   Metronom-Klick und Mitlesen laufen. Symbol: Lautsprecher mit Note (nicht
+   der blosse Lautsprecher, der im Metronom-Kasten fuer den Klick steht),
+   aus = durchgestrichen. */
+function vorspielenKnopfZeichnen(knopf, an) {
+    if (!knopf) return;
+    knopf.innerHTML = '<span class="ton-symbol"><i class="fa-solid fa-volume-off"></i><i class="fa-solid fa-music"></i></span>';
+    knopf.classList.toggle('an', an);
+    knopf.classList.toggle('aus', !an);
+    knopf.setAttribute('aria-pressed', an ? 'true' : 'false');
+    knopf.title = an
+        ? 'Vorspielen an: die Noten erklingen. Antippen = selbst spielen (nur Metronom und Mitlesen laufen)'
+        : 'Selbst spielen: die Noten sind stumm, nur Metronom und Mitlesen laufen. Antippen = wieder vorspielen';
+    knopf.setAttribute('aria-label', an ? 'Vorspielen an' : 'Vorspielen aus - selbst spielen');
+}
 
 /* −/+-Paar an einen Wert binden (Gedrueckthalten wiederholt). */
 function stufenBinden(minus, plus, schritt) {

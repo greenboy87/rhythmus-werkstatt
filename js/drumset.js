@@ -438,6 +438,7 @@ function dsVorhoeren(p) {
    dem aktuellen Stand geplant, Tempo und Metronom wirken sofort. Gespielt
    wird eine Folge von Achteln (Loop-Bereich, "Als Uebung", Durchgaenge);
    ohne Loop ist danach Schluss. Cursor wie in der Beat-Werkstatt. */
+let dsSelbst = false;   // Vorspielen aus: nur Metronom + Mitlesen (nicht gespeichert)
 const DrumSpieler = (function () {
     let laeuft = false, ctx = null, summe = null, uhr = null, bild = null;
     let naechsteZeit = 0, folge = [], folgePos = 0, endeTimer = null, anzeigeTimer = [], spur = [];
@@ -454,14 +455,14 @@ const DrumSpieler = (function () {
         const platz = Math.floor(achtel / 2), h = achtel % 2;
         const schlag = 60 / ds.bpm;
         if (h === 0) {
-            if (ds.metronom) metronomKlick(ctx, t, platz % dsS() === 0);
+            if (ds.metronom || dsSelbst) metronomKlick(ctx, t, platz % dsS() === 0);
             anzeigeTimer.push(setTimeout(() => { if (laeuft) { markieren(platz); if (dsMetro) dsMetro.puls(platz % dsS()); } }, Math.max(0, (t - ctx.currentTime) * 1000)));
             if (anzeigeTimer.length > 64) anzeigeTimer = anzeigeTimer.slice(-16);
         }
         const p = ds.plaetze[platz];
         if (p) p.n.forEach((inst, i) => {
             const v = i / p.r;
-            if (inst.length && v >= h / 2 - 1e-9 && v < h / 2 + 0.5 - 1e-9) dsNoteSpielen(ctx, t + (v - h / 2) * schlag, summe, inst, i === 0);
+            if (!dsSelbst && inst.length && v >= h / 2 - 1e-9 && v < h / 2 + 0.5 - 1e-9) dsNoteSpielen(ctx, t + (v - h / 2) * schlag, summe, inst, i === 0);
         });
         spur.push({ zeit: t, platz, h, r: p ? p.r : 4, dauer: schlag / 2 });
         if (spur.length > 48) spur = spur.slice(-24);
@@ -1025,6 +1026,9 @@ function dsEinrichten() {
     const vollKarte = document.getElementById('ds-anzeige-karte');
     const vollKnopf = document.getElementById('ds-vollbild');
     vollbildEinrichten(vollKarte, vollKnopf, () => dsAnzeigeZeichnen());
+    const dsVorspielen = document.getElementById('ds-vorspielen');
+    vorspielenKnopfZeichnen(dsVorspielen, true);
+    dsVorspielen.addEventListener('click', () => { dsSelbst = !dsSelbst; vorspielenKnopfZeichnen(dsVorspielen, !dsSelbst); });
     dsMetro = werkstattMetronomBauen(document.getElementById('ds-metronom-kasten'), {
         bpm: () => ds.bpm, bpmSetzen: (x) => { ds.bpm = x; dsSpeichern(); },
         an: () => ds.metronom, anSetzen: (b) => { ds.metronom = b; dsSpeichern(); },
@@ -1039,7 +1043,9 @@ function dsEinrichten() {
     stufenBinden('ds-groesse-minus', 'ds-groesse-plus', (r) => { ds.groesse = Math.max(60, Math.min(300, ds.groesse + 10 * r)); dsSpeichern(); dsSchalterZeichnen(); dsAnzeigeZeichnen(); });
     document.getElementById('ds-verdecken').addEventListener('click', (e) => {
         const an = vollKarte.classList.toggle('anzeige-verdeckt');
-        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i> Zeigen' : '<i class="fa-solid fa-eye-slash"></i> Verdecken';
+        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+        e.currentTarget.classList.toggle('an', an);
+        e.currentTarget.title = an ? 'Notenbild zeigen' : 'Notenbild verdecken - erst hören, dann zeigen';
     });
     document.getElementById('ds-titel-speichern').addEventListener('click', () => document.getElementById('ds-blatt-speichern').click());
     document.getElementById('ds-farbe-anzeige').addEventListener('click', () => document.getElementById('ds-farbe').click());

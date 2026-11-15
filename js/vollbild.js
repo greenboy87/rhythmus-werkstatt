@@ -14,7 +14,9 @@ function vollbildElement() {
 }
 function vollbildEinrichten(karte, knopf, nachWechsel) {
     const knopfZeichnen = (an) => {
-        knopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i> Verlassen' : '<i class="fa-solid fa-expand"></i> Vollbild';
+        knopf.innerHTML = an ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
+        knopf.title = an ? 'Vollbild verlassen' : 'Vollbild: Notenbild groß für den Beamer';
+        knopf.setAttribute('aria-label', knopf.title);
     };
     const melden = () => {
         const an = vollbildElement() === karte || karte.classList.contains('vollbild-ersatz');
