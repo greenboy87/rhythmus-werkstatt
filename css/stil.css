@@ -455,6 +455,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.2rem; display: flex; flex-d
 .bw-bunt ellipse.bw-snare { fill: var(--snare); }
 .bw-bunt path.bw-becken { stroke: var(--becken); }
 #reiter-beat:not(.bw-bunt) .bw-punkt { display: none; }
+/* Hoeren-Knoepfe: der Punkt bleibt immer stehen (ohne Farbe grau), sonst
+   wurden die Knoepfe beim Umschalten von Farbe breiter und alles rutschte (v94) */
+/* Farb-Symbol zeigt, ob Farbe an ist (v94) */
+#reiter-beat.bw-bunt #bw-farbe-anzeige.btn, #reiter-drumset.ds-bunt #ds-farbe-anzeige.btn { background: var(--pk-aktiv); border-color: var(--akzent); color: var(--akzent); }
+#reiter-beat:not(.bw-bunt) .bw-stumm-knopf .bw-punkt { display: inline-block; background: var(--text-schwach); opacity: .5; }
 #reiter-beat:not(.bw-bunt) .bw-hinweis-bb { color: var(--text); }
 
 /* Werkzeug: Stifte + Bausteine fuer die gewaehlte Reihe */
