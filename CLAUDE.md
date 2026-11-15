@@ -658,3 +658,19 @@ Schülerraum mit Fernbedienung/Diktat - noch nicht gebaut.
 - `?ansicht=werkstatt`: die ganze Werkstatt für den Reiter „Werkstatt“ in
   Beat Vault. Startet dunkel und meldet `{typ:'rw-aktiv'}` bei jedem Antippen
   und alle 20 s, solange etwas klingt. So zählt die Übezeit dort weiter.
+
+## Einheitliche Player-Karten (v79, 15.11.2026)
+
+Alle drei Anzeige-Karten (Rhythmus, Beat, Drumset) haben denselben Aufbau.
+Neue Bedienelemente immer in allen dreien gleich einbauen:
+1. Zeile Blatt: Titel + Speichern-Symbol, Verdecken, Vollbild, Menü „Speichern ▾“
+   (PDF, Drucken; Rhythmus zusätzlich Audio MP3/WAV).
+2. Zeile Notenbild: Zählzeiten, Als Übung (Rhythmus zusätzlich 1+2, Linien, R/L),
+   dann die Stufen Durchgänge, Größe, Takte/Zeile (−/+).
+3. Zeile nur für diese Werkstatt + ?-Hilfe: Rhythmus Klang und Note antippen,
+   Beat Hören (stumm) und Farbe, Drumset Farbe.
+4. Spieler-Leiste: Abspielen, Loop (Rhythmus: Vorspielen/Selbst), Mitlesen,
+   türkiser Metronom-Kasten (Puls, Tempo mit ±5/±1 und Tap, Vorlauf, Klick an/aus
+   + Lautstärke). Rhythmus: `Metronom.bauen` (audio.js), Beat/Drumset:
+   `werkstattMetronomBauen` (js/spieler.js). Vorlauf in Beat/Drumset über
+   `vorlaufPlanen`. `beat.vorlauf/groesse`, `ds.vorlauf/groesse` (nicht im Link).

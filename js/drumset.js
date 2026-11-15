@@ -82,8 +82,10 @@ const ds = {
     titel: '', takte: 2, schlaege: 4, bpm: 90,
     plaetze: [], zaehlzeiten: true, farbe: false, metronom: false,
     loop: true, alsUebung: false, durchgaenge: 1, proZeile: 0,
-    stift: 's', mehr: false
+    stift: 's', mehr: false,
+    vorlauf: 0, groesse: 100
 };
+let dsMetro = null;   // Metronom-Kasten der Spieler-Leiste (js/spieler.js)
 let dsAktiv = 0;
 let dsLoopAuswahl = null;      // Loop-Bereich { von, bis, s } in Plaetzen (nicht gespeichert)
 let dsAnzeigeProZeile = 4;     // zuletzt gezeichnete Takte je Zeile (fuer "Als Uebung" im auto-Modus)
@@ -108,6 +110,8 @@ function dsLaden() {
         ds.bpm = Math.max(20, Math.min(200, Math.round(Number(x.bpm) || 90)));
         ['zaehlzeiten', 'farbe', 'metronom', 'mehr', 'loop', 'alsUebung'].forEach(k => { if (typeof x[k] === 'boolean') ds[k] = x[k]; });
         ds.durchgaenge = Math.max(1, Math.min(10, Math.round(Number(x.durchgaenge) || 1)));
+        ds.vorlauf = Math.max(0, Math.min(VORLAUF_MAX_TAKTE, Math.round(Number(x.vorlauf) || 0)));
+        ds.groesse = Math.max(60, Math.min(300, Math.round(Number(x.groesse) || 100)));
         ds.proZeile = Math.max(0, Math.min(DS_TAKTE_MAX, Math.round(Number(x.proZeile) || 0)));
         if (DS[x.stift]) ds.stift = x.stift;
         if (typeof x.titel === 'string') ds.titel = x.titel.slice(0, 80);
@@ -451,7 +455,7 @@ const DrumSpieler = (function () {
         const schlag = 60 / ds.bpm;
         if (h === 0) {
             if (ds.metronom) metronomKlick(ctx, t, platz % dsS() === 0);
-            anzeigeTimer.push(setTimeout(() => { if (laeuft) markieren(platz); }, Math.max(0, (t - ctx.currentTime) * 1000)));
+            anzeigeTimer.push(setTimeout(() => { if (laeuft) { markieren(platz); if (dsMetro) dsMetro.puls(platz % dsS()); } }, Math.max(0, (t - ctx.currentTime) * 1000)));
             if (anzeigeTimer.length > 64) anzeigeTimer = anzeigeTimer.slice(-16);
         }
         const p = ds.plaetze[platz];
@@ -505,6 +509,8 @@ const DrumSpieler = (function () {
         folge = dsPlatzFolge(); folgePos = 0; spur = [];
         if (endeTimer) { clearTimeout(endeTimer); endeTimer = null; }
         naechsteZeit = ctx.currentTime + 0.12;
+        // Einzaehlen wie in der Rhythmus-Werkstatt (Vorlauf)
+        if (ds.vorlauf > 0) naechsteZeit = vorlaufPlanen(ctx, naechsteZeit, ds.bpm, dsS(), ds.vorlauf, (s) => { if (laeuft && dsMetro) dsMetro.puls(s); }, anzeigeTimer);
         uhr = setInterval(tick, 25);
         tick();
         bild = requestAnimationFrame(cursorZeichnen);
@@ -527,6 +533,7 @@ const DrumSpieler = (function () {
         summe = null;
         spur = [];
         markieren(null);
+        if (dsMetro) dsMetro.puls(-1);
         cursorWeg('ds-anzeige');
         knopf();
     }
@@ -686,10 +693,11 @@ function dsAnzeigeZeichnen() {
         return;
     }
     const breite = host.clientWidth || 900;
-    const taktBreite = (dsS() * DS_SCHLAG + 6) * DS_ANZEIGE_SKALA;
-    const proZeile = ds.proZeile || Math.max(1, Math.floor((breite - 80 * DS_ANZEIGE_SKALA) / taktBreite));
+    const skala = DS_ANZEIGE_SKALA * ds.groesse / 100;
+    const taktBreite = (dsS() * DS_SCHLAG + 6) * skala;
+    const proZeile = ds.proZeile || Math.max(1, Math.floor((breite - 80 * skala) / taktBreite));
     dsAnzeigeProZeile = proZeile;
-    host.innerHTML = dsSystemeHtml(proZeile, DS_ANZEIGE_SKALA);
+    host.innerHTML = dsSystemeHtml(proZeile, skala);
     dsLoopInfoZeichnen();
 }
 function dsLoopInfoZeichnen() {
@@ -751,17 +759,13 @@ function dsSchalterZeichnen() {
     document.getElementById('ds-takte-anzeige').textContent = ds.takte;
     document.getElementById('ds-takte-minus').disabled = ds.takte <= 1;
     document.getElementById('ds-takte-plus').disabled = ds.takte >= DS_TAKTE_MAX;
-    document.getElementById('ds-tempo-anzeige').textContent = ds.bpm + ' bpm';
-    document.getElementById('ds-tempo-regler').value = ds.bpm;
-    document.getElementById('ds-metronom').checked = ds.metronom;
     document.getElementById('ds-zaehlzeiten').checked = ds.zaehlzeiten;
     document.getElementById('ds-loop').checked = ds.loop;
     document.getElementById('ds-als-uebung').checked = ds.alsUebung;
-    document.getElementById('ds-durchgaenge').value = ds.durchgaenge;
     document.getElementById('ds-durchgaenge-wert').textContent = ds.durchgaenge + '×';
-    document.getElementById('ds-pro-zeile').value = ds.proZeile;
-    document.getElementById('ds-pro-zeile').max = DS_TAKTE_MAX;
     document.getElementById('ds-pro-zeile-wert').textContent = ds.proZeile || 'auto';
+    document.getElementById('ds-groesse-wert').textContent = ds.groesse + '%';
+    if (dsMetro) dsMetro.zeichnen();
     document.getElementById('reiter-drumset').classList.toggle('ds-bunt', ds.farbe);
     document.getElementById('ds-farbe').innerHTML = ds.farbe
         ? '<i class="fa-solid fa-palette"></i> Farbe aus' : '<i class="fa-solid fa-palette"></i> Farbe an';
@@ -1011,16 +1015,24 @@ function dsEinrichten() {
     const vollKarte = document.getElementById('ds-anzeige-karte');
     const vollKnopf = document.getElementById('ds-vollbild');
     vollbildEinrichten(vollKarte, vollKnopf, () => dsAnzeigeZeichnen());
-    const tempo = (w) => { ds.bpm = Math.max(20, Math.min(200, Math.round(Number(w) || 90))); dsSpeichern(); dsSchalterZeichnen(); };
-    gedrueckthalten(document.getElementById('ds-tempo-minus'), () => tempo(tempoNachSchritt(ds.bpm, -1)));
-    gedrueckthalten(document.getElementById('ds-tempo-plus'), () => tempo(tempoNachSchritt(ds.bpm, 1)));
-    document.getElementById('ds-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
-    document.getElementById('ds-metronom').addEventListener('change', (e) => { ds.metronom = e.target.checked; dsSpeichern(); });
+    dsMetro = werkstattMetronomBauen(document.getElementById('ds-metronom-kasten'), {
+        bpm: () => ds.bpm, bpmSetzen: (x) => { ds.bpm = x; dsSpeichern(); },
+        an: () => ds.metronom, anSetzen: (b) => { ds.metronom = b; dsSpeichern(); },
+        vorlauf: () => ds.vorlauf, vorlaufSetzen: (n) => { ds.vorlauf = n; dsSpeichern(); },
+        schlaege: dsS
+    });
     document.getElementById('ds-zaehlzeiten').addEventListener('change', (e) => { ds.zaehlzeiten = e.target.checked; dsAenderung(); });
     document.getElementById('ds-loop').addEventListener('change', (e) => { ds.loop = e.target.checked; dsSpeichern(); });
     document.getElementById('ds-als-uebung').addEventListener('change', (e) => { ds.alsUebung = e.target.checked; dsAenderung(); DrumSpieler.folgeNeu(); });
-    document.getElementById('ds-durchgaenge').addEventListener('input', (e) => { ds.durchgaenge = Number(e.target.value); dsAenderung(); });
-    document.getElementById('ds-pro-zeile').addEventListener('input', (e) => { ds.proZeile = Number(e.target.value); dsAenderung(); });
+    stufenBinden('ds-durchgaenge-minus', 'ds-durchgaenge-plus', (r) => { ds.durchgaenge = Math.max(1, Math.min(10, ds.durchgaenge + r)); dsAenderung(); });
+    stufenBinden('ds-pro-zeile-minus', 'ds-pro-zeile-plus', (r) => { ds.proZeile = Math.max(0, Math.min(DS_TAKTE_MAX, ds.proZeile + r)); dsAenderung(); });
+    stufenBinden('ds-groesse-minus', 'ds-groesse-plus', (r) => { ds.groesse = Math.max(60, Math.min(300, ds.groesse + 10 * r)); dsSpeichern(); dsSchalterZeichnen(); dsAnzeigeZeichnen(); });
+    document.getElementById('ds-verdecken').addEventListener('click', (e) => {
+        const an = vollKarte.classList.toggle('anzeige-verdeckt');
+        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i> Zeigen' : '<i class="fa-solid fa-eye-slash"></i> Verdecken';
+    });
+    document.getElementById('ds-titel-speichern').addEventListener('click', () => document.getElementById('ds-blatt-speichern').click());
+    document.getElementById('ds-farbe-anzeige').addEventListener('click', () => document.getElementById('ds-farbe').click());
     const anzeige = document.getElementById('ds-anzeige');
     anzeige.addEventListener('click', (e) => { const r = loopNachTippen(e, dsLoopAuswahl, dsS()); if (r) dsLoopSetzen(r.neu); });
     loopZiehenEinrichten(anzeige, {

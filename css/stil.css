@@ -883,3 +883,8 @@ body.vollbild-offen .kopfzeile { z-index: 1; }
 .neu-dialog h3 { font-size: 1.05rem; display: flex; gap: .5rem; align-items: center; }
 .neu-dialog p { color: var(--text-gedaempft); font-size: .9rem; margin: .6rem 0 1rem; }
 .neu-knoepfe { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* Beat/Drumset: Verdecken wie in der Rhythmus-Werkstatt */
+.anzeige-verdeckt .bw-anzeige { visibility: hidden; }
+#bw-anzeige-karte.anzeige-verdeckt .anzeige-hinweis, #ds-anzeige-karte.anzeige-verdeckt .anzeige-hinweis { display: block; }
+#bw-anzeige-karte.vollbild .anzeige-hinweis, #ds-anzeige-karte.vollbild .anzeige-hinweis { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); font-size: 1.3rem; }

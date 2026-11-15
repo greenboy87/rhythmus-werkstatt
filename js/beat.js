@@ -149,8 +149,11 @@ const beat = {
     // Wie in der Rhythmus-Werkstatt: Takte je Zeile (0 = so viele, wie
     // passen), jede Zeile als eigene Uebung, Durchgaenge (ab 2 mit
     // Wiederholungszeichen), Loop = nach dem Ende wieder von vorn.
-    proZeile: 0, alsUebung: false, durchgaenge: 1, loop: true
+    proZeile: 0, alsUebung: false, durchgaenge: 1, loop: true,
+    // wie in allen Werkstaetten: Einzaehltakte und Groesse des Notenbilds (%)
+    vorlauf: 0, groesse: 100
 };
+let bwMetro = null;   // Metronom-Kasten der Spieler-Leiste (js/spieler.js)
 /* Loop-Bereich {von, bis} (Taktnummern): Takt im Notenbild antippen -
    nur dieser Teil wird abgespielt. Nicht gespeichert. */
 let bwLoopAuswahl = null;
@@ -205,6 +208,8 @@ function beatLaden() {
         ['backbeat', 'zaehlzeiten', 'farbe', 'metronom', 'mehr', 'alsUebung', 'loop'].forEach(k => { if (typeof x[k] === 'boolean') beat[k] = x[k]; });
         beat.proZeile = Math.max(0, Math.min(BEAT_TAKTE_MAX, Math.round(Number(x.proZeile) || 0)));
         beat.durchgaenge = Math.max(1, Math.min(10, Math.round(Number(x.durchgaenge) || 1)));
+        beat.vorlauf = Math.max(0, Math.min(VORLAUF_MAX_TAKTE, Math.round(Number(x.vorlauf) || 0)));
+        beat.groesse = Math.max(60, Math.min(300, Math.round(Number(x.groesse) || 100)));
         ['oben', 'unten', 'easy'].forEach(eb => {
             beat[eb] = Array.isArray(x[eb]) ? x[eb].slice(0, BEAT_TAKTE_MAX * BW_SCHLAEGE_MAX).map(platzGueltig) : [];
         });
@@ -762,7 +767,7 @@ const BeatSpieler = (function () {
         const dauer = 60 / beat.bpm / 4;
         if (h === 0) {
             if (beat.metronom) metronomKlick(ctx, t, platz % bwS() === 0);
-            anzeigeTimer.push(setTimeout(() => { if (laeuft) markieren(platz); }, Math.max(0, (t - ctx.currentTime) * 1000)));
+            anzeigeTimer.push(setTimeout(() => { if (laeuft) { markieren(platz); if (bwMetro) bwMetro.puls(platz % bwS()); } }, Math.max(0, (t - ctx.currentTime) * 1000)));
             if (anzeigeTimer.length > 64) anzeigeTimer = anzeigeTimer.slice(-16);
         }
         bwEbenen().forEach(eb => {
@@ -813,6 +818,8 @@ const BeatSpieler = (function () {
         folge = bwPlatzFolge(); folgePos = 0; spur = [];
         if (endeTimer) { clearTimeout(endeTimer); endeTimer = null; }
         naechsteZeit = ctx.currentTime + 0.12;
+        // Einzaehlen wie in der Rhythmus-Werkstatt (Vorlauf)
+        if (beat.vorlauf > 0) naechsteZeit = vorlaufPlanen(ctx, naechsteZeit, beat.bpm, bwS(), beat.vorlauf, (s) => { if (laeuft && bwMetro) bwMetro.puls(s); }, anzeigeTimer);
         uhr = setInterval(tick, 25);
         tick();
         bild = requestAnimationFrame(cursorZeichnen);
@@ -837,6 +844,7 @@ const BeatSpieler = (function () {
         summe = null;
         spur = [];
         markieren(null);
+        if (bwMetro) bwMetro.puls(-1);
         cursorWeg('bw-anzeige');
         knopf();
     }
@@ -848,7 +856,7 @@ const BeatSpieler = (function () {
     }
     function knopf() {
         const b = document.getElementById('bw-abspielen');
-        if (b) b.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i> Stopp' : '<i class="fa-solid fa-play"></i> Beat abspielen';
+        if (b) b.innerHTML = laeuft ? '<i class="fa-solid fa-stop"></i> Stopp' : '<i class="fa-solid fa-play"></i> Abspielen';
     }
     return { starten, stoppen, folgeNeu, umschalten: () => (laeuft ? stoppen() : starten()), istAn: () => laeuft };
 })();
@@ -1092,10 +1100,11 @@ function bwAnzeigeZeichnen() {
         return;
     }
     const breite = host.clientWidth || 900;
-    const taktBreite = (bwS() * BW_SCHLAG + 6) * BW_ANZEIGE_SKALA;
-    const proZeile = beat.proZeile || Math.max(1, Math.floor((breite - 120 * BW_ANZEIGE_SKALA) / taktBreite));
+    const skala = BW_ANZEIGE_SKALA * beat.groesse / 100;
+    const taktBreite = (bwS() * BW_SCHLAG + 6) * skala;
+    const proZeile = beat.proZeile || Math.max(1, Math.floor((breite - 120 * skala) / taktBreite));
     bwAnzeigeProZeile = proZeile;
-    host.innerHTML = bwSystemeHtml(proZeile, BW_ANZEIGE_SKALA);
+    host.innerHTML = bwSystemeHtml(proZeile, skala);
     bwLoopInfoZeichnen();
 }
 function bwLoopInfoZeichnen() {
@@ -1348,17 +1357,13 @@ function bwSchalterZeichnen() {
     document.getElementById('bw-takte-anzeige').textContent = beat.takte;
     document.getElementById('bw-takte-minus').disabled = beat.takte <= 1;
     document.getElementById('bw-takte-plus').disabled = beat.takte >= BEAT_TAKTE_MAX;
-    document.getElementById('bw-tempo-anzeige').textContent = beat.bpm + ' bpm';
-    document.getElementById('bw-tempo-regler').value = beat.bpm;
-    document.getElementById('bw-metronom').checked = beat.metronom;
     document.getElementById('bw-zaehlzeiten').checked = beat.zaehlzeiten;
     document.getElementById('bw-loop').checked = beat.loop;
     document.getElementById('bw-als-uebung').checked = beat.alsUebung;
-    document.getElementById('bw-durchgaenge').value = beat.durchgaenge;
     document.getElementById('bw-durchgaenge-wert').textContent = beat.durchgaenge + '×';
-    document.getElementById('bw-pro-zeile').value = beat.proZeile;
-    document.getElementById('bw-pro-zeile').max = BEAT_TAKTE_MAX;
     document.getElementById('bw-pro-zeile-wert').textContent = beat.proZeile || 'auto';
+    document.getElementById('bw-groesse-wert').textContent = beat.groesse + '%';
+    if (bwMetro) bwMetro.zeichnen();
     document.getElementById('reiter-beat').classList.toggle('bw-bunt', beat.farbe);
     document.getElementById('bw-farbe').innerHTML = beat.farbe
         ? '<i class="fa-solid fa-palette"></i> Farbe aus' : '<i class="fa-solid fa-palette"></i> Farbe an';
@@ -1899,16 +1904,24 @@ function bwEinrichten() {
     const vollKarte = document.getElementById('bw-anzeige-karte');
     const vollKnopf = document.getElementById('bw-vollbild');
     vollbildEinrichten(vollKarte, vollKnopf, () => bwAnzeigeZeichnen());
-    const tempo = (w) => { beat.bpm = Math.max(BW_BPM_MIN, Math.min(200, Math.round(Number(w) || 90))); beatSpeichern(); bwSchalterZeichnen(); };
-    gedrueckthalten(document.getElementById('bw-tempo-minus'), () => tempo(tempoNachSchritt(beat.bpm, -1)));
-    gedrueckthalten(document.getElementById('bw-tempo-plus'), () => tempo(tempoNachSchritt(beat.bpm, 1)));
-    document.getElementById('bw-tempo-regler').addEventListener('input', (e) => tempo(e.target.value));
-    document.getElementById('bw-metronom').addEventListener('change', (e) => { beat.metronom = e.target.checked; beatSpeichern(); });
+    bwMetro = werkstattMetronomBauen(document.getElementById('bw-metronom-kasten'), {
+        bpm: () => beat.bpm, bpmSetzen: (x) => { beat.bpm = Math.max(BW_BPM_MIN, x); beatSpeichern(); },
+        an: () => beat.metronom, anSetzen: (b) => { beat.metronom = b; beatSpeichern(); },
+        vorlauf: () => beat.vorlauf, vorlaufSetzen: (n) => { beat.vorlauf = n; beatSpeichern(); },
+        schlaege: bwS
+    });
     document.getElementById('bw-zaehlzeiten').addEventListener('change', (e) => { beat.zaehlzeiten = e.target.checked; bwAenderung(); });
     document.getElementById('bw-loop').addEventListener('change', (e) => { beat.loop = e.target.checked; beatSpeichern(); });
     document.getElementById('bw-als-uebung').addEventListener('change', (e) => { beat.alsUebung = e.target.checked; bwAenderung(); });
-    document.getElementById('bw-durchgaenge').addEventListener('input', (e) => { beat.durchgaenge = Number(e.target.value); bwAenderung(); });
-    document.getElementById('bw-pro-zeile').addEventListener('input', (e) => { beat.proZeile = Number(e.target.value); bwAenderung(); });
+    stufenBinden('bw-durchgaenge-minus', 'bw-durchgaenge-plus', (r) => { beat.durchgaenge = Math.max(1, Math.min(10, beat.durchgaenge + r)); bwAenderung(); });
+    stufenBinden('bw-pro-zeile-minus', 'bw-pro-zeile-plus', (r) => { beat.proZeile = Math.max(0, Math.min(BEAT_TAKTE_MAX, beat.proZeile + r)); bwAenderung(); });
+    stufenBinden('bw-groesse-minus', 'bw-groesse-plus', (r) => { beat.groesse = Math.max(60, Math.min(300, beat.groesse + 10 * r)); beatSpeichern(); bwSchalterZeichnen(); bwAnzeigeZeichnen(); });
+    document.getElementById('bw-verdecken').addEventListener('click', (e) => {
+        const an = vollKarte.classList.toggle('anzeige-verdeckt');
+        e.currentTarget.innerHTML = an ? '<i class="fa-solid fa-eye"></i> Zeigen' : '<i class="fa-solid fa-eye-slash"></i> Verdecken';
+    });
+    document.getElementById('bw-titel-speichern').addEventListener('click', () => document.getElementById('bw-blatt-speichern').click());
+    document.getElementById('bw-farbe-anzeige').addEventListener('click', () => document.getElementById('bw-farbe').click());
     document.getElementById('bw-anzeige').addEventListener('click', bwAnzeigeAngetippt);
     loopZiehenEinrichten(document.getElementById('bw-anzeige'), {
         S: bwS, aktuell: () => bwLoopAuswahl,
