@@ -704,3 +704,9 @@ Neue Bedienelemente immer in allen dreien gleich einbauen:
   - Stufen, Segmente und Metronom sind je ein Kasten mit dünnen Trennlinien.
   - Aktiv heißt zartes Violett, nicht Vollfarbe. Nur „Abspielen“ ist voll violett. Türkis gibt es nur noch für den Puls.
   - Neue Bedienelemente der Karten müssen dieses Raster nutzen. Spezifität beachten: `.btn.btn` in Gruppen.
+
+## Symbole, Vorlauf am Abspielen, Knöpfe bleiben stehen (v86, 15.11.2026)
+- Zählzeiten und Als Übung sind nur noch Symbole: `b.zaehl-symbol` („1 +“) und `svg.uebung-symbol` (① ② mit Punkten). Erklärung steht im `title`.
+- Vorlauf: `.abspiel-gruppe` = Abspielen + angedockter `.vorlauf-knopf` (`#vorlauf-knopf`, `#bw-vorlauf`, `#ds-vorlauf`). Er zeigt ein Metronom-Symbol und einen Punkt je Einzähltakt. Antippen schaltet aus → 1 → 2 → aus (`vorlaufKnopfEinrichten`/`vorlaufKnoepfeZeichnen` in spieler.js). Die alte Vorlauf-Stufe (`.vorlauf-stufe`) wird nur in `.anzeige-karte` ausgeblendet, im Diktat und im Klassenspiel bleibt sie.
+- Wenig Farbe: Die Abspiel-Leiste hat keinen Rahmen mehr, Abspielen ist grau. Aktiv heißt neutral grau gefüllt (`--pk-aktiv`), nicht mehr Violett.
+- Knöpfe springen nicht mehr: Ein IIFE am Ende von spieler.js merkt sich beim `pointerdown` in Steuer-Zeile oder Spieler-Leiste die Bildschirmlage des Knopfs. Danach scrollt es nach (auch beim Gedrückthalten) und verlängert bei Bedarf `body.style.minHeight`.

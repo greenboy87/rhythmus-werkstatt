@@ -786,6 +786,7 @@ function init() {
     generatorAufbauen();
 
     Metronom.bauen(document.getElementById('metronom'), () => editor.zeichen());
+    vorlaufKnopfEinrichten(document.getElementById('vorlauf-knopf'), Metronom.vorlaufTakte, Metronom.vorlaufSetzen);
 
     document.getElementById('abspielen-btn').addEventListener('click', () => {
         const nurMetronom = document.getElementById('abspielen-modus').value === 'selbstklatschen';

@@ -1045,6 +1045,7 @@ function dsEinrichten() {
         vorlauf: () => ds.vorlauf, vorlaufSetzen: (n) => { ds.vorlauf = n; dsSpeichern(); },
         schlaege: dsS
     });
+    vorlaufKnopfEinrichten(document.getElementById('ds-vorlauf'), () => ds.vorlauf, (n) => { ds.vorlauf = n; dsSpeichern(); });
     document.getElementById('ds-zaehlzeiten').addEventListener('change', (e) => { ds.zaehlzeiten = e.target.checked; dsAenderung(); });
     document.getElementById('ds-loop').addEventListener('change', (e) => { ds.loop = e.target.checked; dsSpeichern(); });
     document.getElementById('ds-als-uebung').addEventListener('change', (e) => { ds.alsUebung = e.target.checked; dsAenderung(); DrumSpieler.folgeNeu(); });

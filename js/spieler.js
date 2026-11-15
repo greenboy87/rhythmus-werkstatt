@@ -33,7 +33,7 @@ function werkstattMetronomBauen(wurzel, cfg) {
             <button type="button" class="btn tempo-schritt-knopf">±5</button>
             <button type="button" class="btn metronom-tap" data-rolle="tap" title="Mehrmals im gewünschten Tempo antippen">Tap</button>
         </span>
-        <span class="stufen" title="Einzähltakte vor dem Abspielen">
+        <span class="stufen vorlauf-stufe" title="Einzähltakte vor dem Abspielen">
             <span class="stufen-name">Vorlauf</span>
             <button type="button" class="btn" data-rolle="vorlauf-minus" aria-label="Weniger Vorlauf">−</button>
             <span class="stufen-wert" data-rolle="vorlauf-anzeige">0</span>
@@ -77,6 +77,7 @@ function werkstattMetronomBauen(wurzel, cfg) {
         if (document.activeElement !== feld) feld.value = bpm;
         teil('tempo-name').textContent = tempoBezeichnung(bpm);
         teil('vorlauf-anzeige').textContent = cfg.vorlauf() === 0 ? 'aus' : cfg.vorlauf();
+        vorlaufKnoepfeZeichnen();
         const an = cfg.an();
         teil('mute').innerHTML = an ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
         teil('mute').classList.toggle('an', !an);
@@ -153,6 +154,27 @@ const FreiesMetronom = (function () {
    Metronom-Klick und Mitlesen laufen. Symbol: Lautsprecher mit Note (nicht
    der blosse Lautsprecher, der im Metronom-Kasten fuer den Klick steht),
    aus = durchgestrichen. */
+/* Vorlauf-Knopf direkt an „Abspielen“ (alle drei Werkstaetten, v86):
+   Metronom-Symbol + ein Punkt je Einzaehltakt. Antippen: aus -> 1 -> 2 -> aus
+   (mehr als 2 Takte kommen nur ueber einen Link, dann stehen mehr Punkte da). */
+const METRONOM_SYMBOL = '<svg class="metronom-symbol" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M5.6 1.5h4.8l3.1 13H2.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 11.2 11.6 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3.6 11.2h8.8" stroke="currentColor" stroke-width="1.2"/></svg>';
+const vorlaufKnoepfe = [];
+function vorlaufKnopfEinrichten(knopf, holen, setzen) {
+    vorlaufKnoepfe.push({ knopf, holen });
+    knopf.addEventListener('click', () => { const n = holen(); setzen(n >= 2 ? 0 : n + 1); vorlaufKnoepfeZeichnen(); });
+    vorlaufKnoepfeZeichnen();
+}
+function vorlaufKnoepfeZeichnen() {
+    for (const { knopf, holen } of vorlaufKnoepfe) {
+        const n = holen();
+        knopf.innerHTML = METRONOM_SYMBOL + `<span class="vorlauf-punkte">${'<i></i>'.repeat(n)}</span>`;
+        knopf.classList.toggle('an', n > 0);
+        const text = n === 0 ? 'Kein Vorlauf - es geht sofort los' : `Vorlauf: ${n === 1 ? '1 Takt' : n + ' Takte'} einzählen`;
+        knopf.title = text + ' (antippen: aus → 1 → 2 Takte)';
+        knopf.setAttribute('aria-label', text);
+    }
+}
+
 function vorspielenKnopfZeichnen(knopf, an) {
     if (!knopf) return;
     knopf.innerHTML = '<span class="ton-symbol"><i class="fa-solid fa-volume-off"></i><i class="fa-solid fa-music"></i></span>';
@@ -189,3 +211,44 @@ document.addEventListener('input', (e) => {
     if (!e.target.matches || !e.target.matches('[data-rolle="lautstaerke"]')) return;
     document.querySelectorAll('[data-rolle="lautstaerke"]').forEach(r => { if (r !== e.target) r.value = e.target.value; });
 });
+
+/* Bedienelemente bleiben stehen (v86): Aendert ein Knopf der Player-Karte
+   das Notenbild (Groesse, Takte/Zeile, Durchgaenge …), wird die Seite so
+   nachgescrollt, dass der angetippte Knopf an derselben Stelle am Bildschirm
+   bleibt - auch beim Gedrueckthalten. Wird das Notenbild kuerzer, waechst
+   die Seite unten so weit, dass nichts nach oben rutschen muss. */
+(function () {
+    let ziel = null, oben = 0, bisZeit = 0, lauf = 0;
+    function halten() {
+        if (!ziel || !ziel.isConnected || document.fullscreenElement || document.webkitFullscreenElement) { ziel = null; return; }
+        const d = ziel.getBoundingClientRect().top - oben;
+        if (Math.abs(d) > 0.5) {
+            const noetig = window.scrollY + d + window.innerHeight;
+            if (noetig > document.documentElement.scrollHeight) {
+                document.body.style.minHeight = Math.ceil(noetig) + 'px';
+            }
+            window.scrollBy(0, d);
+        }
+        if (performance.now() < bisZeit) lauf = requestAnimationFrame(halten);
+        else ziel = null;
+    }
+    function merken(e) {
+        const k = e.target.closest('.anzeige-karte .steuer-zeile button, .anzeige-karte .steuer-zeile .chip, .anzeige-karte .spieler-leiste button, .anzeige-karte .spieler-leiste .chip');
+        if (!k || k.closest('.vollbild, .vollbild-ersatz')) return;
+        ziel = k; oben = k.getBoundingClientRect().top;
+        bisZeit = performance.now() + 600;
+        cancelAnimationFrame(lauf);
+        lauf = requestAnimationFrame(halten);
+    }
+    document.addEventListener('pointerdown', merken, true);
+    document.addEventListener('pointerup', () => { if (ziel) bisZeit = performance.now() + 600; }, true);
+    // Gedrueckthalten: solange der Finger unten ist, weiter festhalten
+    document.addEventListener('pointerdown', () => {
+        const id = setInterval(() => { if (ziel) bisZeit = Math.max(bisZeit, performance.now() + 300); }, 100);
+        const los = () => { clearInterval(id); document.removeEventListener('pointerup', los, true); document.removeEventListener('pointercancel', los, true); };
+        document.addEventListener('pointerup', los, true);
+        document.addEventListener('pointercancel', los, true);
+    }, true);
+    // Neuer Reiter: zusaetzlicher Platz unten wieder weg
+    document.addEventListener('click', (e) => { if (e.target.closest('[data-reiter], .reiter button')) document.body.style.minHeight = ''; }, true);
+})();

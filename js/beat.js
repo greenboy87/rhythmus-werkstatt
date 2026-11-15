@@ -1951,6 +1951,7 @@ function bwEinrichten() {
         vorlauf: () => beat.vorlauf, vorlaufSetzen: (n) => { beat.vorlauf = n; beatSpeichern(); },
         schlaege: bwS
     });
+    vorlaufKnopfEinrichten(document.getElementById('bw-vorlauf'), () => beat.vorlauf, (n) => { beat.vorlauf = n; beatSpeichern(); });
     document.getElementById('bw-zaehlzeiten').addEventListener('change', (e) => { beat.zaehlzeiten = e.target.checked; bwAenderung(); });
     document.getElementById('bw-loop').addEventListener('change', (e) => { beat.loop = e.target.checked; beatSpeichern(); });
     document.getElementById('bw-als-uebung').addEventListener('change', (e) => { beat.alsUebung = e.target.checked; bwAenderung(); });

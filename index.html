@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/stil.css?v=85">
-<link rel="stylesheet" href="css/druck.css?v=85">
+<link rel="stylesheet" href="css/stil.css?v=86">
+<link rel="stylesheet" href="css/druck.css?v=86">
 </head>
 <body>
 
@@ -148,9 +148,9 @@
 
         <!-- Zeile 2: Notenbild (was auf dem Blatt steht) -->
         <div class="leiste steuer-zeile">
-            <label class="chip" title="Zählzeiten über den Noten"><input type="checkbox" id="opt-zaehlzeiten"><span>Zählzeiten</span></label>
+            <label class="chip chip-icon" title="Zählzeiten über den Noten (1 + 2 +)"><input type="checkbox" id="opt-zaehlzeiten" aria-label="Zählzeiten"><span><b class="zaehl-symbol" aria-hidden="true">1 +</b></span></label>
             <label class="chip hidden" id="und-plus-feld" title="An: „1 + 2 +“, aus: „1 und 2 und“"><input type="checkbox" id="opt-und-als-plus"><span>1 + 2</span></label>
-            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen"><input type="checkbox" id="opt-als-uebung"><span>Als Übung</span></label>
+            <label class="chip chip-icon" title="Als Übung: Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen"><input type="checkbox" id="opt-als-uebung" aria-label="Als Übung"><span><svg class="uebung-symbol" viewBox="0 0 22 16" width="22" height="16" aria-hidden="true"><circle cx="4" cy="4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="5.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">1</text><circle cx="4" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="13.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">2</text><g fill="currentColor"><circle cx="10.5" cy="4" r="1"/><circle cx="14.5" cy="4" r="1"/><circle cx="18.5" cy="4" r="1"/><circle cx="10.5" cy="12" r="1"/><circle cx="14.5" cy="12" r="1"/><circle cx="18.5" cy="12" r="1"/></g></svg></span></label>
             <label class="chip"><input type="checkbox" id="opt-notenlinien"><span>Linien</span></label>
             <label class="chip" title="Rechts/Links unter jede Note: R L R L im Raster des Schlags"><input type="checkbox" id="opt-handsatz"><span>R / L</span></label>
             <span class="trenner"></span>
@@ -204,7 +204,7 @@
 
         <!-- Abspielen + Metronom: alles zusammen, direkt über dem Notenbild -->
         <div class="spieler-leiste">
-            <button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <span class="abspiel-gruppe"><button type="button" class="btn btn-primär" id="abspielen-btn"><i class="fa-solid fa-play"></i> Abspielen</button><button type="button" class="btn vorlauf-knopf" id="vorlauf-knopf"></button></span>
             <span class="segment mitlesen-wahl" role="group" aria-label="Mitlesen beim Abspielen">
                 <button type="button" class="btn btn-icon" data-mitlesen="cursor" title="Mitlesen: ein Cursor läuft durch die Noten" aria-label="Mitlesen mit Cursor"><i class="fa-solid fa-i-cursor"></i></button>
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
@@ -345,8 +345,8 @@
 
         <!-- Zeile 2: Notenbild -->
         <div class="leiste steuer-zeile">
-            <label class="chip" title="Zählzeiten über den Noten"><input type="checkbox" id="bw-zaehlzeiten"><span>Zählzeiten</span></label>
-            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="bw-als-uebung"><span>Als Übung</span></label>
+            <label class="chip chip-icon" title="Zählzeiten über den Noten (1 + 2 +)"><input type="checkbox" id="bw-zaehlzeiten" aria-label="Zählzeiten"><span><b class="zaehl-symbol" aria-hidden="true">1 +</b></span></label>
+            <label class="chip chip-icon" title="Als Übung: Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="bw-als-uebung" aria-label="Als Übung"><span><svg class="uebung-symbol" viewBox="0 0 22 16" width="22" height="16" aria-hidden="true"><circle cx="4" cy="4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="5.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">1</text><circle cx="4" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="13.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">2</text><g fill="currentColor"><circle cx="10.5" cy="4" r="1"/><circle cx="14.5" cy="4" r="1"/><circle cx="18.5" cy="4" r="1"/><circle cx="10.5" cy="12" r="1"/><circle cx="14.5" cy="12" r="1"/><circle cx="18.5" cy="12" r="1"/></g></svg></span></label>
             <span class="trenner"></span>
             <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
                 <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
@@ -388,7 +388,7 @@
 
         <!-- Abspielen + Metronom: wie in allen Werkstaetten -->
         <div class="spieler-leiste">
-            <button type="button" class="btn btn-primär" id="bw-abspielen"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <span class="abspiel-gruppe"><button type="button" class="btn btn-primär" id="bw-abspielen"><i class="fa-solid fa-play"></i> Abspielen</button><button type="button" class="btn vorlauf-knopf" id="bw-vorlauf"></button></span>
             <span class="segment mitlesen-wahl" role="group" aria-label="Mitlesen beim Abspielen">
                 <button type="button" class="btn btn-icon" data-mitlesen="cursor" title="Mitlesen: ein Cursor läuft durch die Noten" aria-label="Mitlesen mit Cursor"><i class="fa-solid fa-i-cursor"></i></button>
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
@@ -493,8 +493,8 @@
 
         <!-- Zeile 2: Notenbild -->
         <div class="leiste steuer-zeile">
-            <label class="chip" title="Zählzeiten über den Noten"><input type="checkbox" id="ds-zaehlzeiten"><span>Zählzeiten</span></label>
-            <label class="chip" title="Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="ds-als-uebung"><span>Als Übung</span></label>
+            <label class="chip chip-icon" title="Zählzeiten über den Noten (1 + 2 +)"><input type="checkbox" id="ds-zaehlzeiten" aria-label="Zählzeiten"><span><b class="zaehl-symbol" aria-hidden="true">1 +</b></span></label>
+            <label class="chip chip-icon" title="Als Übung: Jede Zeile wird zu einer eigenen, nummerierten Übung - mit eigener Taktangabe und Schlussstrichen; beim Abspielen wird jede Zeile für sich wiederholt"><input type="checkbox" id="ds-als-uebung" aria-label="Als Übung"><span><svg class="uebung-symbol" viewBox="0 0 22 16" width="22" height="16" aria-hidden="true"><circle cx="4" cy="4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="5.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">1</text><circle cx="4" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.1"/><text x="4" y="13.6" text-anchor="middle" font-size="4.8" font-weight="700" fill="currentColor">2</text><g fill="currentColor"><circle cx="10.5" cy="4" r="1"/><circle cx="14.5" cy="4" r="1"/><circle cx="18.5" cy="4" r="1"/><circle cx="10.5" cy="12" r="1"/><circle cx="14.5" cy="12" r="1"/><circle cx="18.5" cy="12" r="1"/></g></svg></span></label>
             <span class="trenner"></span>
             <span class="stufen" title="Wie oft gespielt wird - ab 2× mit Wiederholungszeichen (bei „Als Übung“ jede Zeile für sich)">
                 <span class="stufen-name"><i class="fa-solid fa-rotate-right"></i></span>
@@ -530,7 +530,7 @@
 
         <!-- Abspielen + Metronom: wie in allen Werkstaetten -->
         <div class="spieler-leiste">
-            <button type="button" class="btn btn-primär" id="ds-abspielen"><i class="fa-solid fa-play"></i> Abspielen</button>
+            <span class="abspiel-gruppe"><button type="button" class="btn btn-primär" id="ds-abspielen"><i class="fa-solid fa-play"></i> Abspielen</button><button type="button" class="btn vorlauf-knopf" id="ds-vorlauf"></button></span>
             <span class="segment mitlesen-wahl" role="group" aria-label="Mitlesen beim Abspielen">
                 <button type="button" class="btn btn-icon" data-mitlesen="cursor" title="Mitlesen: ein Cursor läuft durch die Noten" aria-label="Mitlesen mit Cursor"><i class="fa-solid fa-i-cursor"></i></button>
                 <button type="button" class="btn btn-icon" data-mitlesen="feld" title="Mitlesen: die aktuelle Stelle wird farbig" aria-label="Mitlesen mit farbigem Feld"><i class="fa-solid fa-square"></i></button>
@@ -758,27 +758,27 @@
 
 <div id="toast-bereich"></div>
 
-<script src="js/version.js?v=85"></script>
-<script src="js/noten.js?v=85"></script>
-<script src="js/editor.js?v=85"></script>
-<script src="js/audio.js?v=85"></script>
-<script src="js/vollbild.js?v=85"></script>
-<script src="js/uebemetronom.js?v=85"></script>
-<script src="js/neu.js?v=85"></script>
-<script src="js/spieler.js?v=85"></script>
-<script src="js/generator.js?v=85"></script>
-<script src="js/link.js?v=85"></script>
-<script src="js/vendor/lame.min.js?v=85"></script>
-<script src="js/export.js?v=85"></script>
-<script src="js/pdf.js?v=85"></script>
-<script src="js/druckvorschau.js?v=85"></script>
-<script src="js/app.js?v=85"></script>
-<script src="js/beat.js?v=85"></script>
-<script src="js/drumset.js?v=85"></script>
-<script src="js/eigene.js?v=85"></script>
-<script src="js/zaehlkern.js?v=85"></script>
-<script src="js/zaehlspiel.js?v=85"></script>
-<script src="js/spiele.js?v=85"></script>
-<script src="js/reiter.js?v=85"></script>
+<script src="js/version.js?v=86"></script>
+<script src="js/noten.js?v=86"></script>
+<script src="js/editor.js?v=86"></script>
+<script src="js/audio.js?v=86"></script>
+<script src="js/vollbild.js?v=86"></script>
+<script src="js/uebemetronom.js?v=86"></script>
+<script src="js/neu.js?v=86"></script>
+<script src="js/spieler.js?v=86"></script>
+<script src="js/generator.js?v=86"></script>
+<script src="js/link.js?v=86"></script>
+<script src="js/vendor/lame.min.js?v=86"></script>
+<script src="js/export.js?v=86"></script>
+<script src="js/pdf.js?v=86"></script>
+<script src="js/druckvorschau.js?v=86"></script>
+<script src="js/app.js?v=86"></script>
+<script src="js/beat.js?v=86"></script>
+<script src="js/drumset.js?v=86"></script>
+<script src="js/eigene.js?v=86"></script>
+<script src="js/zaehlkern.js?v=86"></script>
+<script src="js/zaehlspiel.js?v=86"></script>
+<script src="js/spiele.js?v=86"></script>
+<script src="js/reiter.js?v=86"></script>
 </body>
 </html>

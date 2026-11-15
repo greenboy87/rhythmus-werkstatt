@@ -390,6 +390,7 @@ const Metronom = (function () {
             const anzeige = teil('vorlauf-anzeige');
             if (anzeige) anzeige.textContent = vorlaufTakte === 0 ? 'aus' : vorlaufTakte;
         });
+        if (typeof vorlaufKnoepfeZeichnen === 'function') vorlaufKnoepfeZeichnen();
     }
     function vorlaufSetzen(wert) {
         vorlaufTakte = Math.max(0, Math.min(VORLAUF_MAX, Math.round(Number(wert))));
@@ -449,7 +450,7 @@ const Metronom = (function () {
                 <button type="button" class="btn tempo-schritt-knopf">±5</button>
                 <button type="button" class="btn metronom-tap" data-rolle="tap" title="Mehrmals im gewünschten Tempo antippen">Tap</button>
             </span>
-            <span class="stufen" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
+            <span class="stufen vorlauf-stufe" title="Einzähltakte vor dem Abspielen (gilt nicht für das freie Metronom)">
                 <span class="stufen-name">Vorlauf</span>
                 <button type="button" class="btn" data-rolle="vorlauf-minus" aria-label="Weniger Vorlauf">−</button>
                 <span class="stufen-wert" data-rolle="vorlauf-anzeige">1</span>
